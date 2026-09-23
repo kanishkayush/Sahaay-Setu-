@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Find my scheme · Sahaay Setu (iOS)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="ios.css" />
+</head>
+<body>
+<div class="app" data-od-id="ios-recommend">
+
+  <header class="navbar is-stuck" data-od-id="ios-recommend-navbar">
+    <button class="nav-btn leading neutral" id="back" aria-label="Go back">
+      <i data-icon="left" data-ic="ic-sm"></i><span>Back</span>
+    </button>
+    <span class="nav-title" style="opacity:1;transform:none">Find my scheme</span>
+    <a class="nav-btn trailing neutral" href="ios-home.html">Cancel</a>
+  </header>
+
+  <div class="wizard-head" data-od-id="ios-recommend-progress">
+    <div class="wizard-dots" id="dots" aria-hidden="true"></div>
+    <p class="eyebrow" style="margin-top:10px" id="stepOf">Step 1 of 5</p>
+  </div>
+
+  <div class="scroll" data-od-id="ios-recommend-body">
+    <div class="gutter" style="padding-bottom:var(--space-6)">
+      <h1 class="t-display" id="q"></h1>
+      <p class="t-sm muted" id="hint" style="margin-top:var(--space-2)"></p>
+    </div>
+    <div id="answer"></div>
+    <div class="pad-bottom"></div>
+  </div>
+
+  <div class="dock" data-od-id="ios-recommend-dock">
+    <button class="btn btn-primary btn-block" id="next">Continue</button>
+  </div>
+</div>
+
+<script src="icons.js"></script>
+<script src="emi.js"></script>
+<script>
+(function () {
+  var STEPS = [
+    { id: 'projectType', q: 'What do you want the loan for?', hint: '',
+      type: 'choice', options: [
+        ['AGRICULTURE', 'Farming'],
+        ['ANIMAL_HUSBANDRY', 'Dairy or livestock'],
+        ['ARTISAN_CRAFT', 'Handicraft or artisan work'],
+        ['RETAIL_SHOP', 'Shop or small trade'],
+        ['SERVICES', 'Service business'],
+        ['SMALL_MANUFACTURING', 'Small manufacturing'],
+        ['TRANSPORT_VEHICLE', 'Vehicle or transport'],
+        ['EDUCATION', 'Studies or course fees'],
+        ['OTHER', 'Something else']
+      ] },
+    { id: 'projectCost', q: 'About how much will it cost?', hint: 'A rough figure is fine — you can change it later.',
+      type: 'amount', min: 10000, max: 5000000, step: 5000, value: 250000,
+      presets: [50000, 140000, 500000, 2000000],
+      note: 'Schemes fund up to 90% of your project cost.' },
+    { id: 'annualFamilyIncome', q: "What is your family's yearly income?", hint: 'Total income of everyone in your household.',
+      type: 'amount', min: 0, max: 900000, step: 10000, value: 240000,
+      presets: [120000, 300000, 500000],
+      note: 'Every NSFDC scheme has a ₹5,00,000 ceiling. Above it, nothing matches.' },
+    { id: 'education', q: 'How far did you study?', hint: '',
+      type: 'choice', options: [
+        ['NONE', 'Did not attend school'],
+        ['PRIMARY', 'Primary school'],
+        ['SECONDARY', 'Class 10'],
+        ['HIGHER_SECONDARY', 'Class 12'],
+        ['VOCATIONAL', 'ITI or diploma'],
+        ['GRADUATE', 'Graduate'],
+        ['POSTGRADUATE', 'Post-graduate']
+      ] },
+    { id: 'gender', q: 'Which of these describes you?', hint: 'Some schemes offer women a lower interest rate.',
+      type: 'choice', options: [
+        ['FEMALE', 'Woman'],
+        ['MALE', 'Man'],
+        ['OTHER', 'Other'],
+        ['PREFER_NOT', 'Prefer not to say']
+      ] }
+  ];
+
+  var answers = { projectCost: 250000, annualFamilyIncome: 240000 };
+  var i = 0;
+
+  var $q = document.getElementById('q'),
+      $hint = document.getElementById('hint'),
+      $ans = document.getElementById('answer'),
+      $dots = document.getElementById('dots'),
+      $stepOf = document.getElementById('stepOf'),
+      $next = document.getElementById('next'),
+      $back = document.getElementById('back');
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function renderDots() {
+    var h = '';
+    for (var k = 0; k < STEPS.length; k++) {
+      h += '<i class="' + (k < i ? 'done' : k === i ? 'now' : '') + '"></i>';
+    }
+    $dots.innerHTML = h;
+    $stepOf.textContent = 'Step ' + (i + 1) + ' of ' + STEPS.length;
+  }
+
+  function renderChoice(s) {
+    var h = '<section class="inset" data-od-id="wizard-options"><div class="card" role="radiogroup" aria-label="' + esc(s.q) + '">';
+    for (var k = 0; k < s.options.length; k++) {
+      var v = s.options[k][0], label = s.options[k][1];
+      var on = answers[s.id] === v;
+      h += '<button class="opt" role="radio" aria-checked="' + on + '" data-v="' + v + '">' +
+             '<span class="opt-label row-fill">' + esc(label) + '</span>' +
+             '<i data-icon="check" data-ic="ic-sm" class="tick"></i>' +
+           '</button>';
+    }
+    h += '</div></section>';
+    $ans.innerHTML = h;
+    window.paintIcons();
+    $ans.querySelectorAll('.opt').forEach(function (b) {
+      b.addEventListener('click', function () {
+        answers[s.id] = b.getAttribute('data-v');
+        renderChoice(s);
+        syncNext(s);
+      });
+    });
+  }
+
+  function renderAmount(s) {
+    var val = answers[s.id];
+    var chips = s.presets.map(function (p) {
+      return '<button class="chip" data-p="' + p + '" aria-pressed="' + (p === val) + '">' +
+             EMI.compactInr(p) + '</button>';
+    }).join('');
+    $ans.innerHTML =
+      '<section class="inset" data-od-id="wizard-amount"><div class="card card-pad">' +
+        '<p class="num" id="amt" style="font-size:var(--text-2xl);font-weight:600;letter-spacing:-0.035em;line-height:1.02">' +
+          EMI.inr(val) + '</p>' +
+        '<p class="t-sm muted" id="amtWords" style="margin-top:4px"></p>' +
+        '<input type="range" id="rng" min="' + s.min + '" max="' + s.max + '" step="' + s.step +
+          '" value="' + val + '" aria-label="' + esc(s.q) + '" style="margin-top:var(--space-4)" />' +
+        '<div class="between t-xs meta num" style="margin-top:-2px">' +
+          '<span>' + EMI.compactInr(s.min) + '</span><span>' + EMI.compactInr(s.max) + '</span>' +
+        '</div>' +
+      '</div></section>' +
+      '<div class="chip-scroll" style="margin-top:var(--space-3)">' + chips + '</div>' +
+      '<section class="inset" data-od-id="wizard-amount-note"><p class="t-sm muted">' + esc(s.note) + '</p></section>';
+
+    var $amt = document.getElementById('amt'),
+        $words = document.getElementById('amtWords'),
+        $rng = document.getElementById('rng');
+
+    function words(n) {
+      if (n >= 100000) return '≈ ' + (n / 100000).toFixed(2).replace(/\.00$/, '') + ' lakh';
+      return '≈ ' + (n / 1000).toFixed(0) + ' thousand';
+    }
+    function set(n) {
+      answers[s.id] = n;
+      $amt.textContent = EMI.inr(n);
+      $words.textContent = words(n);
+      $ans.querySelectorAll('.chip').forEach(function (c) {
+        c.setAttribute('aria-pressed', String(Number(c.getAttribute('data-p')) === n));
+      });
+    }
+    set(val);
+    $rng.addEventListener('input', function () { set(Number($rng.value)); });
+    $ans.querySelectorAll('.chip').forEach(function (c) {
+      c.addEventListener('click', function () {
+        var n = Number(c.getAttribute('data-p'));
+        $rng.value = n; set(n);
+      });
+    });
+    syncNext(s);
+  }
+
+  function syncNext(s) {
+    var ready = s.type === 'amount' || answers[s.id] != null;
+    $next.disabled = !ready;
+    $next.textContent = i === STEPS.length - 1 ? 'Show my schemes' : 'Continue';
+  }
+
+  function render() {
+    var s = STEPS[i];
+    $q.textContent = s.q;
+    $hint.textContent = s.hint;
+    $hint.style.display = s.hint ? '' : 'none';
+    renderDots();
+    if (s.type === 'choice') renderChoice(s); else renderAmount(s);
+    syncNext(s);
+    document.querySelector('.scroll').scrollTop = 0;
+    $back.style.visibility = i === 0 ? 'hidden' : 'visible';
+  }
+
+  $next.addEventListener('click', function () {
+    if (i === STEPS.length - 1) { location.href = 'ios-results.html'; return; }
+    i++; render();
+  });
+  $back.addEventListener('click', function () {
+    if (i === 0) { location.href = 'ios-home.html'; return; }
+    i--; render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

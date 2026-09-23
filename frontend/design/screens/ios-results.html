@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Your best matches · Sahaay Setu (iOS)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="ios.css" />
+<style>
+  .disclose { max-height: 0; overflow: hidden; transition: max-height var(--motion-base) var(--ease-standard); }
+  .disclose.open { max-height: 460px; }
+  .reason { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; }
+  .reason .ic { color: var(--fg-2); margin-top: 3px; }
+  .reason.block .ic { color: color-mix(in oklab, var(--danger), var(--fg) 15%); }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="ios-results">
+
+  <header class="navbar" id="navbar" data-od-id="ios-results-navbar">
+    <button class="nav-btn leading neutral" onclick="location.href='ios-recommend.html'">
+      <i data-icon="left" data-ic="ic-sm"></i><span>Answers</span>
+    </button>
+    <span class="nav-title">Your best matches</span>
+    <button class="nav-btn trailing neutral" aria-label="Filter schemes"><i data-icon="filter" data-ic="ic-sm"></i></button>
+  </header>
+
+  <div class="scroll" id="scroll">
+
+    <div class="large-title" data-od-id="ios-results-title">
+      <h1>Your best matches</h1>
+      <p class="t-body muted" style="margin-top:6px">3 schemes matched your details.</p>
+    </div>
+
+    <!-- The answers this ranking rests on, editable in place. -->
+    <section class="inset" data-od-id="ios-results-answers" style="margin-top:var(--space-3)">
+      <a class="card row" href="ios-recommend.html" style="border-radius:var(--radius-lg)">
+        <span class="row-fill stack" style="gap:3px">
+          <span class="t-xs eyebrow">Based on</span>
+          <span class="t-sm">Shop or small trade · <span class="num">₹2,50,000</span> project ·
+            <span class="num">₹2,40,000</span> income · Class 10 · Woman</span>
+        </span>
+        <i data-icon="edit" data-ic="ic-sm" class="chev"></i>
+      </a>
+    </section>
+
+    <p class="group-head">Eligible</p>
+    <div id="matches"></div>
+
+    <p class="group-head">Close, but not eligible</p>
+    <section class="inset" data-od-id="ios-results-nearmiss">
+      <div class="card" id="misses"></div>
+      <p class="t-xs muted" style="padding:var(--space-3) var(--space-1) 0">
+        What blocked you is often more useful than the match itself — fix the blocker and the scheme opens up.
+      </p>
+    </section>
+
+    <section class="inset" data-od-id="ios-results-notice" style="margin-top:var(--space-6)">
+      <div class="notice">
+        <i data-icon="alert" data-ic="ic-sm" style="margin-top:2px"></i>
+        <span>Prototype data. Confirm figures with a Channel Partner before applying.</span>
+      </div>
+    </section>
+
+    <div class="pad-bottom"></div>
+  </div>
+
+  <nav class="tabbar" data-od-id="ios-results-tabbar">
+    <a href="ios-home.html"><i data-icon="home"></i><span>Home</span></a>
+    <a href="ios-results.html" aria-current="page"><i data-icon="list"></i><span>Schemes</span></a>
+    <a href="ios-calculator.html"><i data-icon="calc"></i><span>EMI</span></a>
+    <a href="ios-partners.html"><i data-icon="pin"></i><span>Partners</span></a>
+    <a href="ios-assistant.html"><i data-icon="user"></i><span>Profile</span></a>
+  </nav>
+</div>
+
+<script src="icons.js"></script>
+<script src="emi.js"></script>
+<script>
+(function () {
+  /* Ranked against the answers above by the same rules the app's engine uses:
+     income ceiling, project-cost band, activity, and the women's rate. */
+  var MATCHES = [
+    {
+      code: 'NSFDC-LVY', name: 'Laghu Vyavsay Yojana',
+      blurb: 'Mid-sized small business loans — shops, service outlets, light trading.',
+      score: 94, loan: 225000, rate: 6, tenure: 72, moratorium: 6, cap: 500000,
+      reasons: [
+        'Your shop or small trade is exactly what this scheme funds.',
+        'A ₹2,50,000 project sits inside the ₹1.10–5.60 lakh band.',
+        'Family income ₹2,40,000 is under the ₹5,00,000 ceiling.',
+        'Funds 90% of project cost — you arrange the remaining ₹25,000.'
+      ]
+    },
+    {
+      code: 'NSFDC-MSY', name: 'Mahila Samriddhi Yojana',
+      blurb: 'Micro-credit for SC women entrepreneurs at the lowest concessional rate.',
+      score: 88, loan: 140000, rate: 5, tenure: 48, moratorium: 3, cap: 140000,
+      reasons: [
+        'Reserved for women — you qualify, and at 5% it is the cheapest money here.',
+        'Family income ₹2,40,000 is under the ₹5,00,000 ceiling.',
+        'Capped at ₹1,40,000, so it covers part of your project, not all of it.'
+      ]
+    },
+    {
+      code: 'NSFDC-TL', name: 'Term Loan Scheme',
+      blurb: 'For larger self-employment projects — manufacturing, transport, service ventures.',
+      score: 81, loan: 225000, rate: 6.5, tenure: 120, moratorium: 6, cap: 5000000,
+      reasons: [
+        'Your project is above the ₹1.55 lakh floor this scheme starts at.',
+        'Longest tenure on offer — up to 120 months.',
+        'Costs more than Laghu Vyavsay at the same amount.'
+      ]
+    }
+  ];
+
+  var MISSES = [
+    { name: 'Micro Credit Finance Scheme',
+      why: 'Project cost must stay under ₹1.55 lakh. Yours is ₹2.50 lakh.' },
+    { name: 'Educational Loan Scheme (India)',
+      why: 'Needs admission to a recognised professional or technical course.' },
+    { name: 'Green Business Scheme',
+      why: 'Funds clean-energy assets only — e-rickshaws, solar units.' }
+  ];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var html = MATCHES.map(function (m, idx) {
+    var primary = idx === 0;
+    return '' +
+    '<section class="inset" data-od-id="scheme-card-' + m.code.toLowerCase() + '" style="margin-bottom:var(--space-3)">' +
+      '<article class="card card-pad">' +
+        '<div class="between" style="align-items:flex-start">' +
+          '<div class="inline" style="gap:10px;min-width:0">' +
+            '<span class="badge-rank">' + (idx + 1) + '</span>' +
+            '<div class="stack" style="min-width:0">' +
+              '<h3 class="t-title">' + esc(m.name) + '</h3>' +
+              '<span class="eyebrow" style="margin-top:3px">' + m.code + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span class="badge badge-plain num">' + m.score + '% match</span>' +
+        '</div>' +
+
+        '<p class="t-sm muted" style="margin-top:var(--space-3)">' + esc(m.blurb) + '</p>' +
+
+        '<div style="margin-top:var(--space-4);padding:var(--space-3) 0;box-shadow:inset 0 1px 0 var(--border-soft),inset 0 -1px 0 var(--border-soft);display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:var(--space-2)">' +
+          '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + EMI.compactInr(m.loan) + '</span><span class="lbl">you could get</span></div>' +
+          '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + m.rate + '<span style="font-size:0.6em">%</span></span><span class="lbl">a year</span></div>' +
+          '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + m.tenure + '</span><span class="lbl">months max</span></div>' +
+        '</div>' +
+
+        '<button class="between" data-toggle="' + idx + '" aria-expanded="false" aria-controls="why-' + idx + '"' +
+          ' style="width:100%;min-height:44px;text-align:left">' +
+          '<span class="t-body-em">Why this scheme?</span>' +
+          '<i data-icon="down" data-ic="ic-sm" class="chev" data-caret="' + idx + '"' +
+            ' style="transition:transform var(--motion-base) var(--ease-standard)"></i>' +
+        '</button>' +
+        '<div class="disclose" id="why-' + idx + '">' +
+          '<div style="padding-bottom:var(--space-2)">' +
+            m.reasons.map(function (r) {
+              return '<div class="reason"><i data-icon="check" data-ic="ic-sm"></i>' +
+                     '<span class="t-sm">' + esc(r) + '</span></div>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+
+        '<div class="inline" style="margin-top:var(--space-3);gap:var(--space-2)">' +
+          '<a class="btn btn-sm ' + (primary ? 'btn-primary' : 'btn-secondary') + '" style="flex:1 1 0"' +
+            ' href="ios-calculator.html?p=' + m.loan + '&r=' + m.rate + '&t=' + m.tenure +
+            '&m=' + m.moratorium + '&s=' + encodeURIComponent(m.name) + '">Calculate EMI</a>' +
+          '<a class="btn btn-sm btn-secondary" style="flex:1 1 0" href="ios-partners.html">Find a partner</a>' +
+        '</div>' +
+      '</article>' +
+    '</section>';
+  }).join('');
+
+  document.getElementById('matches').innerHTML = html;
+
+  document.getElementById('misses').innerHTML = MISSES.map(function (m) {
+    return '<div class="row" style="align-items:flex-start;padding-top:var(--space-4);padding-bottom:var(--space-4)">' +
+      '<i data-icon="close" data-ic="ic-sm" style="color:color-mix(in oklab, var(--danger), var(--fg) 15%);margin-top:3px"></i>' +
+      '<span class="row-fill stack" style="gap:2px">' +
+        '<span class="t-body-em">' + esc(m.name) + '</span>' +
+        '<span class="t-sm muted">' + esc(m.why) + '</span>' +
+      '</span></div>';
+  }).join('');
+
+  window.paintIcons();
+
+  document.querySelectorAll('[data-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = b.getAttribute('data-toggle');
+      var panel = document.getElementById('why-' + i);
+      var open = panel.classList.toggle('open');
+      b.setAttribute('aria-expanded', String(open));
+      var caret = document.querySelector('[data-caret="' + i + '"]');
+      if (caret) caret.style.transform = open ? 'rotate(180deg)' : '';
+    });
+  });
+  document.querySelector('[data-toggle="0"]').click();
+
+  var sc = document.getElementById('scroll'), nb = document.getElementById('navbar');
+  sc.addEventListener('scroll', function () {
+    nb.classList.toggle('is-stuck', sc.scrollTop > 28);
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

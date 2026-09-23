@@ -1,0 +1,197 @@
+/* ─── Android chrome ──────────────────────────────────────────────────
+ * Same Apple token contract, Material 3 structure: top app bar, bottom
+ * navigation with an active pill indicator, filled-tonal actions, and a
+ * 48dp minimum target. The device frame supplies the status bar and the
+ * gesture nav bar.
+ * ─────────────────────────────────────────────────────────────────── */
+
+.appbar {
+  flex: none;
+  position: relative;
+  z-index: 20;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) 0 var(--space-4);
+  background: var(--surface);
+  transition: background var(--motion-base) var(--ease-standard),
+              box-shadow var(--motion-base) var(--ease-standard);
+}
+.appbar.is-stuck {
+  background: color-mix(in oklab, var(--surface), var(--fg) 4%);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--fg), transparent 90%);
+}
+.appbar h1 {
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.appbar-lead { margin-left: calc(var(--space-2) * -1); }
+
+/* Material headline block below the bar. */
+.headline { padding: var(--space-1) var(--container-gutter-phone) var(--space-4); }
+.headline h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+}
+
+/* Bottom navigation. */
+.navbar-m3 {
+  flex: none;
+  display: flex;
+  padding: var(--space-2) var(--space-1);
+  background: color-mix(in oklab, var(--surface), var(--fg) 3%);
+  box-shadow: inset 0 1px 0 var(--border-soft);
+}
+.navbar-m3 a {
+  flex: 1 1 0;
+  min-height: 52px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+.navbar-m3 a:hover { color: var(--fg); }
+.navbar-m3 .ind {
+  width: 62px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  transition: background var(--motion-base) var(--ease-standard);
+}
+.navbar-m3 a:hover .ind { background: color-mix(in oklab, var(--surface), var(--fg) 8%); }
+.navbar-m3 a[aria-current="page"] { color: var(--fg); font-weight: 600; }
+.navbar-m3 a[aria-current="page"] .ind {
+  background: color-mix(in oklab, var(--accent), var(--surface) 82%);
+  color: var(--accent-active);
+}
+
+/* Material cards sit on the surface with a hairline instead of a shadow. */
+.m-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-ring);
+  overflow: hidden;
+}
+.m-card-pad { padding: var(--space-4); }
+
+/* Filled-tonal button — Material's secondary emphasis, Apple's palette. */
+.btn-tonal {
+  background: color-mix(in oklab, var(--accent), var(--surface) 86%);
+  color: var(--accent-active);
+}
+.btn-tonal:hover { background: color-mix(in oklab, var(--accent), var(--surface) 78%); color: var(--accent-active); }
+.btn-tonal:active { background: color-mix(in oklab, var(--accent), var(--surface) 70%); }
+
+/* Extended FAB. */
+.fab {
+  position: absolute; right: var(--space-4); bottom: 84px;
+  z-index: 30;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 56px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--accent-on);
+  font-size: var(--text-base);
+  font-weight: 600;
+  box-shadow: 0 6px 16px color-mix(in oklab, var(--fg), transparent 78%);
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.fab:hover { background: var(--accent-hover); color: var(--accent-on); }
+.fab:active { background: var(--accent-active); color: var(--accent-on); }
+
+/* Material outlined text field with a floating label. */
+.m-field { position: relative; }
+.m-field > input {
+  width: 100%;
+  min-height: 56px;
+  padding: 20px var(--space-4) 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: var(--text-base);
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+.m-field > span {
+  position: absolute; top: 8px; left: 17px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--muted);
+  pointer-events: none;
+}
+.m-field > input:hover { border-color: var(--meta); }
+.m-field > input:focus-visible { border-color: var(--accent); box-shadow: var(--focus-ring); }
+.m-field > input:focus-visible + span { color: var(--accent-active); }
+
+/* Material list row: 48dp minimum, ripple-free but with a real pressed tone. */
+.m-row {
+  display: flex; align-items: center; gap: var(--space-4);
+  width: 100%; min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.m-row + .m-row { box-shadow: inset 0 1px 0 var(--border-soft); }
+.m-row:hover { background: color-mix(in oklab, var(--bg), var(--fg) 5%); }
+.m-row:active { background: color-mix(in oklab, var(--bg), var(--fg) 11%); }
+
+/* Material slider — thicker track and a bar thumb. The fill runs on --fg
+   rather than the accent so a screen full of sliders does not blow the
+   two-accents-per-screen budget. --fill is live state, not a palette value. */
+.m-slider input[type="range"] { height: 34px; }
+.m-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px; border-radius: var(--radius-pill);
+  background: linear-gradient(to right,
+    var(--fg) 0 var(--fill, 0%),
+    color-mix(in oklab, var(--surface), var(--fg) 12%) var(--fill, 0%) 100%);
+}
+.m-slider input[type="range"]::-webkit-slider-thumb {
+  width: 6px; height: 32px; margin-top: -11px;
+  border-radius: var(--radius-pill);
+  background: var(--fg);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+.m-slider input[type="range"]::-moz-range-track {
+  height: 10px; border-radius: var(--radius-pill);
+  background: linear-gradient(to right,
+    var(--fg) 0 var(--fill, 0%),
+    color-mix(in oklab, var(--surface), var(--fg) 12%) var(--fill, 0%) 100%);
+}
+.m-slider input[type="range"]::-moz-range-thumb {
+  width: 6px; height: 32px; border: 3px solid var(--bg); border-radius: var(--radius-pill);
+  background: var(--fg); box-shadow: none;
+}
+
+/* Plain icon button in the app bar / dialog chrome. */
+.m-icon-btn {
+  width: 48px; height: 48px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  color: var(--fg-2);
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.m-icon-btn:hover { background: color-mix(in oklab, var(--surface), var(--fg) 8%); color: var(--fg); }
+.m-icon-btn:active { background: color-mix(in oklab, var(--surface), var(--fg) 14%); }
+
+/* Full-screen dialog — Material's mobile equivalent of the iOS bottom sheet. */
+.m-dialog {
+  position: absolute; inset: 0; z-index: 41;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  transform: translateY(100%);
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+.dialog-open .m-dialog { transform: translateY(0); }

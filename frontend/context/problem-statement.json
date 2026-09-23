@@ -1,0 +1,152 @@
+{
+  "contextVersion": "1.0.0",
+  "id": "26092",
+  "title": "AI-Driven Scheme Matching for Marginalized Entrepreneurs",
+  "organization": "Ministry of Social Justice and Empowerment (MoSJE)",
+  "department": "Department of Social Justice and Empowerment",
+  "category": "Software",
+  "theme": "Smart Automation",
+  "background": "To promote the socio-economic empowerment of the Scheduled Caste (SC) population, the government provides concessional financial assistance and educational loans. Beneficiaries with an annual family income of up to ₹5.00 Lakhs are eligible for various tailored financial products covering up to 90% of their project or education costs at highly concessional interest rates (typically 6.5% to 8% per annum). However, direct loan applications are not entertained. Instead, funds are routed through a 'Channel Finance System' comprising over 100 Channel Partners, including State Channelizing Agencies (SCAs), Public Sector Banks (PSBs), Regional Rural Banks (RRBs), and NBFC-MFIs.",
+  "challenge": "Citizens often lack awareness regarding which specific credit scheme fits their needs — such as distinguishing between a Micro Finance Scheme for small projects (up to ₹1.40 lakh), a Term Loan for larger projects (up to ₹50.00 lakh), or an Educational Loan Scheme. Furthermore, applicants face difficulties identifying and locating the nearest authorized Channel Partner equipped to process their specific loan category. This fragmentation leads to offline confusion, misrouted applications, and delays in disbursement. The challenge is to develop an intelligent, multi-lingual digital platform or mobile application that bridges the gap between the beneficiaries and the channelizing agencies.",
+  "fieldEvidence": {
+    "purpose": "Measured findings about how this population actually reaches credit, used to justify design decisions instead of asserting them. Every entry carries its source item number so it can be checked.",
+    "source": {
+      "id": "mosje-nsfdc-evaluation-2020",
+      "title": "Evaluation Study on the Functioning of NSFDC — Summary Report",
+      "author": "Centre for Market Research and Social Development, for the Ministry of Social Justice & Empowerment",
+      "year": 2020,
+      "url": "https://socialjustice.gov.in/public/ckeditor/upload/Summary%20Report-Evaluation%20of%20NSFDC_1648795113.pdf",
+      "retrievedVia": "LIVE_PDF",
+      "retrievedOn": "2026-09-07",
+      "sampleCaveat": "The channel-partner findings come from a sample of FIVE partners (Punjab Gramin Bank RRB; TSCDC Tripura SCA; CSASFDC Chhattisgarh SCA; Syndicate Bank PSB Tamil Nadu; AFSPL NBFC-MFI Maharashtra), not the whole network. Beneficiary findings are from the wider household survey. Quote the sample size whenever these numbers are used.",
+      "datedCaveat": "Published 2020 — predates the 01.10.2023 interest-rate revision and the 07.01.2026 income-ceiling change. Use it for behaviour and process findings, never for current scheme figures."
+    },
+    "findings": [
+      {
+        "id": "E1",
+        "finding": "57.2% of beneficiaries submitted their application at the gram panchayat office; only 15.9% at the channel partner's head office and 10.3% at its district office.",
+        "item": "Summary finding 31",
+        "supports": ["R3"],
+        "soWhat": "People do not know which institution actually processes their loan. This is the single strongest justification for the partner locator — the app's job is to name the right counter before someone walks to the wrong one."
+      },
+      {
+        "id": "E2",
+        "finding": "61.1% first heard about their scheme from friends or relatives; only 30.8% from a government official, 5.5% from an NGO.",
+        "item": "Summary finding 30",
+        "supports": ["R1", "R4"],
+        "soWhat": "Official channels reach a minority. Scheme discovery is word of mouth, which is exactly how wrong figures spread — and why the recommender has to be both reachable and correct."
+      },
+      {
+        "id": "E3",
+        "finding": "Channel partners took between one month and one year to deploy funds received from NSFDC.",
+        "item": "Summary finding 15",
+        "supports": ["R3"],
+        "soWhat": "Disbursement latency is real and varies enormously by partner. It is the reason the app tells users to call ahead rather than presenting a partner as ready to lend."
+      },
+      {
+        "id": "E4",
+        "finding": "Of beneficiaries who reported difficulty getting a loan, 93.4% cited providing security for the loan and 77.5% cited repeated visits to the channel partner's office.",
+        "item": "Summary finding 35",
+        "supports": ["R2", "R3"],
+        "soWhat": "Collateral and travel are the two friction points. The calculator surfaces margin money up front for the first; the locator exists to reduce the second."
+      },
+      {
+        "id": "E5",
+        "finding": "15.3% of beneficiaries were illiterate; 28.4% had primary education and 45% middle school. Only 10.4% were educated to matriculation or above.",
+        "item": "Summary finding 26",
+        "supports": ["R4"],
+        "soWhat": "The literacy floor for this audience, measured rather than assumed. It is why the app has a 16px body minimum, a 13px absolute floor, no drag sliders, and six languages instead of two."
+      },
+      {
+        "id": "E6",
+        "finding": "42.1% of beneficiaries were women; 89.5% were rural.",
+        "item": "Summary findings 23-24",
+        "supports": ["R1"],
+        "soWhat": "Women are a large minority of borrowers and several schemes price differently for them, so gender belongs in the recommender inputs rather than in an optional profile screen."
+      },
+      {
+        "id": "E7",
+        "finding": "Scheme mix among surveyed beneficiaries: Micro Credit Finance 40.8%, Laghu Vyavsaya Yojana 36.8%, Term Loan 13.5%, Mahila Samriddhi Yojana 5.5%, Aajeevika Micro Finance Yojana 3.3%.",
+        "item": "Summary finding 32",
+        "supports": ["R1"],
+        "soWhat": "Corroborates that LVY and MSY are live, heavily used schemes — both currently carry verified:false in our catalogue because their CURRENT figures could not be sourced. Real usage, unverified numbers: that gap is exactly what N2 tracks."
+      },
+      {
+        "id": "E8",
+        "finding": "Four of the five sampled partners disbursed more than 90% of funds received; the fifth disbursed more than double. In aggregate partners disbursed 11% MORE than NSFDC provided. Only CSASFDC, Chhattisgarh lagged, and the report attributes that to the state government withholding equity over poor recovery.",
+        "item": "Summary findings 13-14, 18",
+        "supports": ["R3"],
+        "soWhat": "Recorded to prevent a misreading. This is NOT a story about widespread under-utilisation — it is close to the opposite. Anyone citing this report as evidence of poor fund utilisation is wrong, and a judge who opens the PDF will see it."
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "name": "Smart Scheme Recommender",
+      "statement": "An AI/rule-based engine that takes basic user inputs (project type, estimated cost, income level, education status) and automatically recommends the most suitable credit or educational loan scheme.",
+      "inputs": ["project type", "estimated cost", "income level", "education status"],
+      "implementation": {
+        "frontend": [
+          "app/recommend/index.tsx",
+          "app/recommend/results.tsx",
+          "src/features/recommender/ruleEngine.ts"
+        ],
+        "backend": "POST /v1/recommendations",
+        "notes": "The wizard collects the four stated inputs plus optional gender, because several schemes give women a lower concessional rate. The rule engine answers offline; the backend adds AI/RAG reasoning and citations."
+      }
+    },
+    {
+      "id": "R2",
+      "name": "Financial Calculator",
+      "statement": "A dynamic tool to calculate projected EMIs, accounting for specific scheme guidelines like maximum loan limits, interest rates (e.g., 6.5% to 15% depending on the scheme), and moratorium periods (3 to 12 months).",
+      "implementation": {
+        "frontend": ["app/(tabs)/calculator.tsx", "src/features/calculator/emi.ts"],
+        "backend": "none — intentionally offline",
+        "notes": "Supports both moratorium treatments (interest capitalised vs serviced monthly) and renders the full amortisation schedule. Rate range 4–15%, moratorium 0–12 months."
+      }
+    },
+    {
+      "id": "R3",
+      "name": "Geo-Spatial Partner Locator & Router",
+      "statement": "Integration of a mapping service to identify the nearest eligible Channel Partner (SCA/Bank/NBFC-MFI) based on the user's location and the partner's current fund utilization eligibility (ensuring applications aren't sent to partners with high NPAs or overdues).",
+      "implementation": {
+        "frontend": [
+          "app/(tabs)/partners.tsx",
+          "app/partner/[id].tsx",
+          "src/components/domain/PartnerMap.tsx",
+          "src/components/domain/PartnerNorms.tsx",
+          "src/features/partners/eligibilityNorms.ts"
+        ],
+        "backend": "POST /v1/partners/search",
+        "notes": "The fund-health judgement is server-side; the client renders eligibility.status and filters to accepting partners by default. When that empties the list the response sets fallbackUsed and the UI explains why. The status enum is ACCEPTING / LIMITED / NOT_ACCEPTING / UNKNOWN, and UNKNOWN is what every real partner currently carries — NSFDC publishes the prudential norms but not the per-partner figures. Those norms are encoded per partner type (SCA / RRB / PSB / NBFC-MFI) and shown on the partner detail screen alongside an explicit statement of what cannot be checked. See ADR-018."
+      }
+    },
+    {
+      "id": "R4",
+      "name": "Multilingual platform",
+      "statement": "Develop an intelligent, MULTI-LINGUAL digital platform or mobile application.",
+      "implementation": {
+        "frontend": [
+          "src/i18n/",
+          "app/onboarding/language.tsx",
+          "app/assistant.tsx",
+          "app/voice.tsx",
+          "src/features/voice/"
+        ],
+        "backend": "POST /v1/assistant/query must answer in the requested language",
+        "notes": "Six languages wired: en, hi, mr, bn, ta, te, all complete. Language selection is the first screen. The chosen language is sent with every AI request so answers come back in the same language. Queries can also be SPOKEN: a dedicated voice screen and a mic in the chat composer share one pipeline (STT -> assistant endpoint -> TTS), with speech locales mapped to the Indian BCP-47 variants. Speech-to-text is capability-detected, so the mic is absent rather than dead where no provider exists. See ADR-019."
+      }
+    }
+  ],
+  "impactGoals": [
+    "Enhance financial literacy among the target demographic regarding concessional lending.",
+    "Improve transparency and efficiency in the channel finance ecosystem, ensuring faster disbursements and better fund utilization."
+  ],
+  "designImplications": [
+    "Users are often first-time smartphone users on low-cost devices with poor connectivity — the app must work offline for its core value (calculator + rule engine).",
+    "Financial literacy is the stated problem, so every recommendation must explain itself in plain language ('Why this scheme?').",
+    "Public money and vulnerable users mean unverified figures must be visibly labelled, never presented as authoritative.",
+    "The ₹5 lakh income ceiling and the 90% funding share are the two numbers that drive almost every eligibility decision."
+  ]
+}

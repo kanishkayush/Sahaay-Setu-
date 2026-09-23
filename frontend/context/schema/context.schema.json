@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sahaay Setu agent context",
+  "description": "Shape of context/context.json. Kept deliberately permissive — this file exists so an editor can autocomplete and so a CI check can catch a truncated or malformed context file, not to constrain what context we record.",
+  "type": "object",
+  "required": [
+    "contextVersion",
+    "project",
+    "ownership",
+    "stack",
+    "commands",
+    "structure",
+    "conventions",
+    "pointers"
+  ],
+  "properties": {
+    "contextVersion": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "readThisFirst": { "type": "string" },
+    "project": {
+      "type": "object",
+      "required": ["name", "problemStatementId", "stage"],
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "oneLiner": { "type": "string" },
+        "problemStatementId": { "type": "string" },
+        "stage": { "type": "string" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "required": ["thisRepo", "backendPartner"],
+      "description": "Who owns what. Prevents two agents editing the same surface."
+    },
+    "stack": { "type": "object" },
+    "commands": {
+      "type": "object",
+      "description": "Every command an agent may need to run, by intent."
+    },
+    "structure": { "type": "object", "description": "Directory → what belongs there." },
+    "conventions": {
+      "type": "object",
+      "description": "Rules an agent must follow when writing code here."
+    },
+    "dataHonesty": {
+      "type": "object",
+      "description": "What in this repo is seed/invented data. Must never be dropped."
+    },
+    "privacy": { "type": "object" },
+    "requirementCoverage": { "type": "object" },
+    "knownGaps": { "type": "array", "items": { "type": "string" } },
+    "pointers": { "type": "object", "description": "Paths to every other context and doc file." }
+  }
+}

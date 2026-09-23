@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260907T185655_claude-code_6d04c7",
+  "created_at": "2026-09-07T18:56:55Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Wire the assistant chat screen to the voice pipeline",
+    "plan": [],
+    "status": "in_progress"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Extracted listening into the shared useSpeechInput hook",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Refactored useVoiceQuery to compose it",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Added a capability-gated mic to the chat composer",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Routed all TTS through features/voice/textToSpeech",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Voice-in means voice-out, typed stays silent",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "npm run verify, format:check and the Android bundle all pass",
+      "proof": "npm run verify",
+      "verified_at": "2026-09-07T18:56:55Z"
+    },
+    {
+      "fact": "npm run format:check",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T18:56:55Z"
+    },
+    {
+      "fact": "npx expo export --platform android exit 0",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T18:56:55Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "8f01380c1393729e32525322a3ec41f476a353af",
+    "git_commit_message": "feat(voice): ask by voice, on the pipeline from the backend diagram",
+    "files_changed": [
+      "README.md",
+      "app/assistant.tsx",
+      "context/state.json",
+      "docs/BACKEND_HANDOFF.md",
+      "src/hooks/useVoiceQuery.ts",
+      "src/hooks/useSpeechInput.ts"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " README.md                  |  24 ++++-----\n app/assistant.tsx          | 125 +++++++++++++++++++++++++++++++++++++--------\n context/state.json         |   8 ++-\n docs/BACKEND_HANDOFF.md    |   3 ++\n src/hooks/useVoiceQuery.ts | 109 ++++++++++++++-------------------------\n 5 files changed, 165 insertions(+), 104 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Still needs a human to speak into the mic on both screens - device capture is blocked in the preview pane",
+    "target_file": "app/assistant.tsx",
+    "context": ""
+  },
+  "context_notes": "expo-speech is now imported only by features/voice/textToSpeech, so both screens speak at the same rate (0.92) and through speechLocaleFor rather than string-concatenating '-IN'. The chat screen fills the composer instead of auto-sending because it is multi-turn with an edit field on screen; the voice screen sends immediately because waiting would defeat it."
+}

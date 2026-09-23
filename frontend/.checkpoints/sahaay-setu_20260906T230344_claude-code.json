@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T230344_claude-code_021810",
+  "created_at": "2026-09-06T23:03:44Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Verify the scheme catalogue against official NSFDC sources",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Retrieved nsfdc.nic.in/scheme and verified 5 schemes with citations",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Confirmed the 5 lakh income ceiling from two independent official sources",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Corrected materially wrong seed figures",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Removed the invented women's concessional rate",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Removed 2 schemes of contested status",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Added Aajeevika and Udyam Nidhi which were missing",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Corrected the home hero rate claim",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Raised rule-engine rate weighting for the wider real spread",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ADR-016",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "5 of 8 schemes verified against the issuing body",
+      "proof": "nsfdc.nic.in/scheme retrieved 2026-09-07, each carrying a Citation",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "Income ceiling confirmed twice",
+      "proof": "nsfdc.nic.in and socialjustice.gov.in/schemes/34, 5.00 lakh effective 07.01.2026",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "Seed data was materially wrong",
+      "proof": "MFS max loan 1.40L vs actual 1.25L, TL 50L vs 45L and 10yr vs 7yr, invented women's rate on every scheme",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "Rule engine correct on the new catalogue",
+      "proof": "5 personas re-run, MFS tops street vendor at 6.5% with Aajeevika correctly demoted at 15%",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "npm run verify clean",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "Android bundle builds",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:03:44Z"
+    },
+    {
+      "fact": "EMI suite 36/36",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:03:44Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "d65371a0d78e7c7912a05c891a81a8f876ef4b52",
+    "git_commit_message": "feat(i18n): complete Marathi, Bengali, Tamil and Telugu",
+    "files_changed": [
+      "context/decisions.json",
+      "context/domain.json",
+      "context/state.json",
+      "src/api/mock/fixtures/schemes.ts",
+      "src/features/recommender/ruleEngine.ts",
+      "src/i18n/locales/bn.json",
+      "src/i18n/locales/en.json",
+      "src/i18n/locales/hi.json",
+      "src/i18n/locales/mr.json",
+      "src/i18n/locales/ta.json",
+      "src/i18n/locales/te.json"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " context/decisions.json                 |  13 +\n context/domain.json                    |  33 ++-\n context/state.json                     |  27 ++-\n src/api/mock/fixtures/schemes.ts       | 422 ++++++++++++++++-----------------\n src/features/recommender/ruleEngine.ts |   6 +-\n src/i18n/locales/bn.json               |   2 +-\n src/i18n/locales/en.json               |   2 +-\n src/i18n/locales/hi.json               |   2 +-\n src/i18n/locales/mr.json               |   2 +-\n src/i18n/locales/ta.json               |   2 +-\n src/i18n/locales/te.json               |   2 +-\n 11 files changed, 264 insertions(+), 249 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Verify the remaining three schemes (MSY, LVY, GBS) from their nsfdc.nic.in pages in a browser — the /en/* paths 404 to an automated fetcher. Also settle whether MKY and SSY are closed.",
+    "target_file": "src/api/mock/fixtures/schemes.ts",
+    "context": ""
+  },
+  "context_notes": "Only nsfdc.nic.in counts as verification (ADR-016). Third-party aggregators contradict NSFDC and each other, apparently quoting pre-01.10.2023 figures. The most consequential fix: Shilpi Samridhi Yojana was the top recommendation for the woman-artisan persona and may have been closed since 2020."
+}

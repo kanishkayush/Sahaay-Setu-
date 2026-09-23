@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T194610_claude-code_920bc6",
+  "created_at": "2026-09-06T19:46:10Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Build Sahaay Setu v0 frontend — all four PS 26092 requirements against a mock backend",
+    "plan": [
+      "Scaffold Expo + TypeScript",
+      "Define the Zod API contract",
+      "Build mock backend and seed fixtures",
+      "Build EMI engine and rule engine",
+      "Build i18n and design system",
+      "Build all screens",
+      "Write agent context layer",
+      "Verify and commit"
+    ],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Expo SDK 57 + expo-router + TS strict",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Zod API contract with runtime validation",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Mock backend + seed fixtures",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "EMI calculator (pure, offline)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Rule engine (offline fallback + explainability)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "6-language i18n with English fallback",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Design system + accessibility floor",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "All 12 screens",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "context/ + .agents/ + docs/",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "GitHub CI and templates",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "Production bundle builds",
+      "proof": "npx expo export --platform android -> 4.5MB hbc, 27 assets, no errors",
+      "verified_at": "2026-09-06T19:46:10Z"
+    },
+    {
+      "fact": "TypeScript strict clean",
+      "proof": "npm run typecheck",
+      "verified_at": "2026-09-06T19:46:10Z"
+    },
+    {
+      "fact": "ESLint clean",
+      "proof": "npm run lint (0 errors 0 warnings)",
+      "verified_at": "2026-09-06T19:46:10Z"
+    },
+    {
+      "fact": "EMI math correct",
+      "proof": "P=100000 @10%/12mo -> 8791.59 exact, schedules close at zero, both moratorium modes correct",
+      "verified_at": "2026-09-06T19:46:10Z"
+    },
+    {
+      "fact": "Rule engine correct across 5 personas",
+      "proof": "vendor->MCF, woman artisan->SSY @5%, 20L manufacturing->Term Loan, education->EDU only, 9L income->0 results with ceiling reason",
+      "verified_at": "2026-09-06T19:46:10Z"
+    },
+    {
+      "fact": "i18n coverage gated",
+      "proof": "npm run i18n:check -> en 231 keys, hi 100%, mr/bn/ta/te 20%",
+      "verified_at": "2026-09-06T19:46:10Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "c70f1d908d7c5b8e3ca494548a1bb789927a99c2",
+    "git_commit_message": "feat: Sahaay Setu v0 — multilingual scheme-matching mobile app",
+    "files_changed": [".agents/checkpoint.sh"],
+    "has_uncommitted": true,
+    "diff_summary": ""
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Create the GitHub repo and push, then begin backend integration endpoint by endpoint",
+    "target_file": "docs/BACKEND_HANDOFF.md",
+    "context": ""
+  },
+  "context_notes": "Frontend is complete and runs with no server (USE_MOCK_API defaults true). Two items block a real demo, both owned by the backend/data teammate: scheme figures are unverified against NSFDC circulars, and all 10 Channel Partner records are synthetic. Both are labelled verified:false and surfaced as UI warnings — do not remove those labels. GitHub repo not yet created: gh token expired, needs 'gh auth login' in an interactive terminal."
+}

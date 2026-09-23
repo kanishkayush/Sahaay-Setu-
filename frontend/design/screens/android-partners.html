@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Channel Partners · Sahaay Setu (Android)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="android.css" />
+<style>
+  .btn-dark { background: var(--fg); color: var(--bg); }
+  .btn-dark:hover { background: var(--fg-2); color: var(--bg); }
+  .btn-dark:active { background: var(--fg); color: var(--bg); transform: scale(0.985); }
+  .type-mark {
+    width: 44px; height: 44px; flex: none;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="android-partners">
+
+  <header class="appbar" id="appbar" data-od-id="android-partners-appbar">
+    <button class="m-icon-btn appbar-lead" onclick="location.href='android-home.html'" aria-label="Go back"
+     >
+      <i data-icon="left"></i>
+    </button>
+    <h1>Channel Partners</h1>
+    <button class="m-icon-btn" id="locBtn" aria-label="Use my location"
+     >
+      <i data-icon="target"></i>
+    </button>
+  </header>
+
+  <div class="scroll" id="scroll">
+
+    <div class="headline" style="padding-bottom:var(--space-3)">
+      <p class="t-body muted">You apply through a partner, not to NSFDC directly.</p>
+    </div>
+
+    <section class="gutter" data-od-id="android-partners-search">
+      <div class="inline" style="gap:var(--space-2);align-items:stretch">
+        <div class="m-field" style="flex:1 1 auto">
+          <input id="pin" inputmode="numeric" maxlength="6" aria-label="Search by PIN code" />
+          <span>PIN code</span>
+        </div>
+        <button class="btn btn-secondary" id="searchBtn" style="min-height:56px;padding:0 var(--space-4);border-radius:var(--radius-sm)" aria-label="Search">
+          <i data-icon="search" data-ic="ic-sm"></i>
+        </button>
+      </div>
+      <p class="t-xs muted" style="margin-top:8px" id="locNote">Showing partners near Pune, 411001 · within 100 km</p>
+    </section>
+
+    <section class="gutter" style="margin-top:var(--space-4)" data-od-id="android-partners-view">
+      <div class="segment" role="tablist" id="viewSeg">
+        <button role="tab" aria-selected="true"  data-v="list">List</button>
+        <button role="tab" aria-selected="false" data-v="map">Map</button>
+      </div>
+    </section>
+
+    <div class="chip-scroll" style="margin-top:var(--space-3)" id="typeFilter">
+      <button class="chip" aria-pressed="true"  data-t="ALL">All types</button>
+      <button class="chip" aria-pressed="false" data-t="SCA">State agency</button>
+      <button class="chip" aria-pressed="false" data-t="PSB">Public bank</button>
+      <button class="chip" aria-pressed="false" data-t="RRB">Rural bank</button>
+      <button class="chip" aria-pressed="false" data-t="NBFC_MFI">NBFC / MFI</button>
+    </div>
+
+    <section class="gutter" data-od-id="android-partners-onlyopen">
+      <div class="m-card">
+        <div class="m-row">
+          <span class="row-fill stack" style="gap:2px">
+            <span class="t-body">Only those accepting</span>
+            <span class="t-xs muted">Hides partners with high NPAs or exhausted funds</span>
+          </span>
+          <button class="switch" id="onlyOpen" role="switch" aria-checked="true" aria-label="Only those accepting applications"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="gutter" id="mapView" style="display:none;margin-top:var(--space-4)" data-od-id="android-partners-map">
+      <div class="map" style="height:280px">
+        <svg viewBox="0 0 412 280" preserveAspectRatio="xMidYMid slice" aria-label="Schematic locator view of partner branches">
+          <path class="water" d="M0 206 C64 194 98 222 160 214 C228 205 266 230 330 220 C366 214 392 224 412 218 L412 280 L0 280 Z" />
+          <g class="block">
+            <rect x="20" y="24" width="92" height="58" rx="4" />
+            <rect x="134" y="18" width="74" height="50" rx="4" />
+            <rect x="232" y="28" width="102" height="62" rx="4" />
+            <rect x="32" y="114" width="68" height="56" rx="4" />
+            <rect x="130" y="104" width="100" height="66" rx="4" />
+            <rect x="258" y="118" width="82" height="52" rx="4" />
+            <rect x="56" y="196" width="62" height="32" rx="4" />
+            <rect x="252" y="190" width="76" height="28" rx="4" />
+          </g>
+          <g class="street" stroke-width="2">
+            <path d="M0 94 H412" /><path d="M0 182 H412" />
+            <path d="M120 0 V280" /><path d="M242 0 V280" /><path d="M350 0 V280" />
+          </g>
+          <g class="street-major" stroke-width="4">
+            <path d="M0 140 H412" /><path d="M66 0 V280" />
+            <path d="M318 0 L212 280" />
+          </g>
+        </svg>
+        <span class="pin pin-me"   style="left:66px;  top:140px"><span>YOU</span></span>
+        <span class="pin"          style="left:126px; top:104px"><span>SCA</span></span>
+        <span class="pin"          style="left:246px; top:70px"><span>PSB</span></span>
+        <span class="pin pin-stop" style="left:338px; top:194px"><span>MFI</span></span>
+        <span class="map-legend">Schematic view — not to scale</span>
+      </div>
+    </section>
+
+    <p class="group-head" id="listHead" style="padding-left:var(--container-gutter-phone)">4 partners nearby</p>
+    <div id="list"></div>
+
+    <section class="gutter" style="margin-top:var(--space-6)" data-od-id="android-partners-notice">
+      <div class="notice">
+        <i data-icon="alert" data-ic="ic-sm" style="margin-top:2px"></i>
+        <span>Prototype directory. Branch names, phone numbers and fund-health figures are synthetic placeholders, not a real partner list.</span>
+      </div>
+    </section>
+
+    <div style="height:var(--space-8)"></div>
+  </div>
+
+  <nav class="navbar-m3" data-od-id="android-partners-nav">
+    <a href="android-home.html"><span class="ind"><i data-icon="home"></i></span><span>Home</span></a>
+    <a href="android-results.html"><span class="ind"><i data-icon="list"></i></span><span>Schemes</span></a>
+    <a href="android-calculator.html"><span class="ind"><i data-icon="calc"></i></span><span>EMI</span></a>
+    <a href="android-partners.html" aria-current="page"><span class="ind"><i data-icon="pin"></i></span><span>Partners</span></a>
+  </nav>
+</div>
+
+<script src="icons.js"></script>
+<script src="emi.js"></script>
+<script>
+(function () {
+  var PARTNERS = [
+    { id: 'sca-mh-001', mark: 'SCA', type: 'SCA', typeLabel: 'State Channelizing Agency',
+      name: 'Maharashtra SC Finance & Development Corporation',
+      branch: 'Pune District Office', address: 'Sadhu Vaswani Chowk, Camp · 411001',
+      km: 0.2, status: 'ACCEPTING', npa: 4.2, free: 48000000,
+      note: 'Good fund position and low overdues.',
+      handles: 'All seven categories', langs: 'Marathi, Hindi, English' },
+    { id: 'psb-mh-002', mark: 'PSB', type: 'PSB', typeLabel: 'Public Sector Bank',
+      name: 'Bank of Maharashtra', branch: 'Shivajinagar Branch',
+      address: 'FC Road, Shivajinagar · 411005',
+      km: 1.5, status: 'ACCEPTING', npa: 3.1, free: 92000000,
+      note: 'Good fund position and low overdues.',
+      handles: 'Term loan, Education loan', langs: 'Marathi, Hindi, English' },
+    { id: 'rrb-mh-004', mark: 'RRB', type: 'RRB', typeLabel: 'Regional Rural Bank',
+      name: 'Maharashtra Gramin Bank', branch: 'Baramati Main',
+      address: 'Station Road, Baramati · 413102',
+      km: 87, status: 'LIMITED', npa: 8.6, free: 4200000,
+      note: "Most of this partner's funds are already committed.",
+      handles: 'Micro finance, Agriculture, Green business', langs: 'Marathi, Hindi' },
+    { id: 'nbfc-mh-003', mark: 'MFI', type: 'NBFC_MFI', typeLabel: 'NBFC / Micro-finance',
+      name: 'Sahyadri Micro Finance Ltd', branch: 'Hadapsar',
+      address: 'Magarpatta Road, Hadapsar · 411028',
+      km: 7.4, status: 'NOT_ACCEPTING', npa: 14.8, free: 0,
+      note: 'High NPAs — applications here are likely to be delayed.',
+      handles: 'Micro finance, For women, For artisans', langs: 'Marathi, Hindi' }
+  ];
+
+  var STATUS = {
+    ACCEPTING:     { cls: 'badge-ok',   label: 'Accepting applications' },
+    LIMITED:       { cls: 'badge-warn', label: 'Limited capacity' },
+    NOT_ACCEPTING: { cls: 'badge-stop', label: 'Not accepting now' }
+  };
+
+  var state = { type: 'ALL', onlyOpen: true };
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function render() {
+    var rows = PARTNERS.filter(function (p) {
+      if (state.type !== 'ALL' && p.type !== state.type) return false;
+      if (state.onlyOpen && p.status === 'NOT_ACCEPTING') return false;
+      return true;
+    });
+
+    document.getElementById('listHead').textContent =
+      rows.length + (rows.length === 1 ? ' partner nearby' : ' partners nearby');
+
+    document.getElementById('list').innerHTML = rows.length ? rows.map(function (p, i) {
+      var st = STATUS[p.status];
+      return '' +
+      '<section class="gutter" data-od-id="partner-card-' + p.id + '" style="margin-bottom:var(--space-3)">' +
+        '<article class="m-card m-card-pad">' +
+          '<div class="inline" style="align-items:flex-start;gap:var(--space-3)">' +
+            '<span class="type-mark">' + p.mark + '</span>' +
+            '<div class="row-fill stack" style="gap:2px">' +
+              '<h3 class="t-body-em" style="line-height:1.3">' + esc(p.name) + '</h3>' +
+              '<p class="t-sm muted">' + esc(p.branch) + '</p>' +
+            '</div>' +
+            '<span class="num t-sm" style="color:var(--muted);white-space:nowrap">' +
+              (p.km < 1 ? (p.km * 1000).toFixed(0) + ' m' : p.km + ' km') + '</span>' +
+          '</div>' +
+          '<p class="t-sm muted" style="margin-top:var(--space-3)">' + esc(p.address) + '</p>' +
+          '<div style="margin-top:var(--space-3)">' +
+            '<span class="badge ' + st.cls + '"><span class="dot"></span>' + st.label + '</span>' +
+          '</div>' +
+          '<dl style="margin:var(--space-3) 0 0">' +
+            '<div class="kv"><dt>Type</dt><dd style="font-family:var(--font-body);font-weight:500">' + esc(p.typeLabel) + '</dd></div>' +
+            '<div class="kv"><dt>NPA</dt><dd>' + p.npa.toFixed(1) + '%</dd></div>' +
+            '<div class="kv"><dt>Unused limit</dt><dd>' + (p.free ? EMI.compactInr(p.free) : '₹0') + '</dd></div>' +
+            '<div class="kv"><dt>Handles</dt><dd style="font-family:var(--font-body);font-weight:500;text-align:right">' + esc(p.handles) + '</dd></div>' +
+            '<div class="kv"><dt>Languages</dt><dd style="font-family:var(--font-body);font-weight:500">' + esc(p.langs) + '</dd></div>' +
+          '</dl>' +
+          '<p class="t-xs muted" style="margin-top:var(--space-3)">' + esc(p.note) + ' Fund status checked 1 Sep 2026.</p>' +
+          '<div class="inline" style="margin-top:var(--space-4);gap:var(--space-2)">' +
+            '<button class="btn btn-sm ' + (i === 0 ? 'btn-dark' : 'btn-secondary') + '" style="flex:1 1 0">' +
+              '<i data-icon="phone" data-ic="ic-sm"></i>Call</button>' +
+            '<button class="btn btn-sm btn-secondary" style="flex:1 1 0">' +
+              '<i data-icon="nav" data-ic="ic-sm"></i>Directions</button>' +
+          '</div>' +
+        '</article>' +
+      '</section>';
+    }).join('') :
+      '<section class="gutter" data-od-id="partners-empty"><div class="m-card m-card-pad stack" style="gap:6px">' +
+      '<span class="t-body-em">No partners match these filters.</span>' +
+      '<span class="t-sm muted">Try another partner type, or turn off “Only those accepting”.</span></div></section>';
+
+    window.paintIcons();
+  }
+
+  document.getElementById('typeFilter').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    state.type = b.getAttribute('data-t');
+    this.querySelectorAll('.chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', String(c === b));
+    });
+    render();
+  });
+
+  var sw = document.getElementById('onlyOpen');
+  sw.addEventListener('click', function () {
+    state.onlyOpen = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', String(state.onlyOpen));
+    render();
+  });
+
+  document.getElementById('viewSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-v]'); if (!b) return;
+    Array.prototype.forEach.call(this.children, function (c) {
+      c.setAttribute('aria-selected', String(c === b));
+    });
+    document.getElementById('mapView').style.display =
+      b.getAttribute('data-v') === 'map' ? '' : 'none';
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', function () {
+    var v = document.getElementById('pin').value.trim();
+    document.getElementById('locNote').textContent = /^\d{6}$/.test(v)
+      ? 'Showing partners near ' + v + ' · within 100 km'
+      : 'Enter all six digits of your PIN code.';
+  });
+  document.getElementById('locBtn').addEventListener('click', function () {
+    document.getElementById('pin').value = '';
+    document.getElementById('locNote').textContent = 'Showing partners near Pune, 411001 · within 100 km';
+  });
+
+  var sc = document.getElementById('scroll'), ab = document.getElementById('appbar');
+  sc.addEventListener('scroll', function () {
+    ab.classList.toggle('is-stuck', sc.scrollTop > 8);
+  }, { passive: true });
+
+  render();
+})();
+</script>
+</body>
+</html>

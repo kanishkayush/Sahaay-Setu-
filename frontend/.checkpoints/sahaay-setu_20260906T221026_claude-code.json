@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T221026_claude-code_449c35",
+  "created_at": "2026-09-06T22:10:26Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Fix all bugs and complete the Open Design port",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Every emoji replaced by the ported icon set",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Hardcoded marker colours moved to theme",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Nested-pressable bugs fixed in PartnerCard and SettingToggle",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Rules-of-hooks violation fixed in results",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "formatStatCurrency precision restored",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Grouped OptionList with single checkmark",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Partner type badge, distance and NPA rows",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Results category filter chips",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Segmented recommender progress",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Assistant empty state with six scripts",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ResultCard on calculator",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ADR-014 recorded",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "No nested interactive elements",
+      "proof": "walked all 12 routes, 0 nested-button violations and 0 raw i18n keys everywhere",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "fresh /partners load 36 buttons 0 nested",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "Zero emoji as functional icons",
+      "proof": "grep across app and src tsx returns nothing",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "npm run verify clean",
+      "proof": "typecheck + lint + format + i18n",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "Android bundle builds",
+      "proof": "5.5MB export, no errors",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "EMI suite passes",
+      "proof": "36 assertions over 6 scenarios",
+      "verified_at": "2026-09-06T22:10:26Z"
+    },
+    {
+      "fact": "Rule engine unchanged",
+      "proof": "5 personas produce identical rankings",
+      "verified_at": "2026-09-06T22:10:26Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "6e233c6038ceb5a986fbd28c8e73663a25a98ded",
+    "git_commit_message": "feat(design): port the iOS screens",
+    "files_changed": [
+      "app/onboarding/intro.tsx",
+      "app/recommend/index.tsx",
+      "app/recommend/results.tsx",
+      "app/scheme/[id].tsx",
+      "context/decisions.json",
+      "context/state.json",
+      "src/components/domain/PartnerCard.tsx",
+      "src/components/domain/PartnerMap.tsx",
+      "src/components/domain/ReasonList.tsx",
+      "src/components/ui/Chip.tsx",
+      "src/components/ui/OptionList.tsx",
+      "src/i18n/locales/en.json",
+      "src/i18n/locales/hi.json"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " app/onboarding/intro.tsx              |  23 ++++---\n app/recommend/index.tsx               |  27 ++++----\n app/recommend/results.tsx             |  40 ++++++++++--\n app/scheme/[id].tsx                   |  20 +++---\n context/decisions.json                |  13 ++++\n context/state.json                    |  18 +++++-\n src/components/domain/PartnerCard.tsx | 114 +++++++++++++++++++++++++++-------\n src/components/domain/PartnerMap.tsx  |  11 ++--\n src/components/domain/ReasonList.tsx  |  27 +++++---\n src/components/ui/Chip.tsx            |  11 +---\n src/components/ui/OptionList.tsx      |  83 ++++++++++++-------------\n src/i18n/locales/en.json              |   8 ++-\n src/i18n/locales/hi.json              |   8 ++-\n 13 files changed, 274 insertions(+), 129 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Fill in mr/bn/ta/te translations (N4), or begin backend integration per docs/BACKEND_HANDOFF.md",
+    "target_file": "src/i18n/locales/mr.json",
+    "context": ""
+  },
+  "context_notes": "Design port complete across all screens. Four source values deliberately not adopted (sub-13px text, 1.47 leading, SF Pro stack, AA-failing semantic colours) plus 48dp targets over the source's iOS 44 — see ADR-014. Two Indic bugs the English-only mockups could not surface were found by running in Hindi."
+}

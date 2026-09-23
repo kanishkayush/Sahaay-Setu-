@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T232028_claude-code_2cfcf5",
+  "created_at": "2026-09-06T23:20:28Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Verify the Channel Partner directory",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Verified real SCA names from state government and NSFDC sources",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Replaced the entire fabricated directory",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Removed all invented phone numbers and NPA figures",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Added UNKNOWN as a first-class eligibility state in the contract and UI",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Encoded the real published thresholds",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ADR-017",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "Fabricated agencies confirmed non-existent",
+      "proof": "Maharashtra's real SCAs are MPBCDC, LASDC and LIDCOM per sjsa.maharashtra.gov.in",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "the seed data's 'Maharashtra SC Finance & Development Corporation' does not exist",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "Real agency names verified",
+      "proof": "MPBCDC, LIDCOM, DSFDC (dsfdc.delhi.gov.in), TAHDCO, WB SC/ST/OBC Dev & Fin Corp",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "Eligibility thresholds are public",
+      "proof": "net NPA below 10 percent, cumulative fund utilisation at or above 80 percent",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "Per-partner fund data is NOT public",
+      "proof": "searched NSFDC and socialjustice.gov.in, no partner-wise NPA report exists",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "Zero fabricated data remains",
+      "proof": "0 phone fields and 0 npaPct values in the fixture",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "npm run verify clean",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "Android bundle builds",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "EMI suite 36/36",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:20:28Z"
+    },
+    {
+      "fact": "0 nested buttons on the partners screen",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T23:20:28Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "8a269ca66a2c3696bb4684853638cf5654a2fd4f",
+    "git_commit_message": "fix(data): verify the scheme catalogue against NSFDC",
+    "files_changed": [
+      "app/partner/[id].tsx",
+      "context/decisions.json",
+      "context/domain.json",
+      "context/state.json",
+      "src/api/contracts/partner.ts",
+      "src/api/mock/fixtures/partners.ts",
+      "src/components/domain/PartnerCard.tsx",
+      "src/components/domain/PartnerMap.tsx",
+      "src/i18n/locales/bn.json",
+      "src/i18n/locales/en.json",
+      "src/i18n/locales/hi.json",
+      "src/i18n/locales/mr.json",
+      "src/i18n/locales/ta.json",
+      "src/i18n/locales/te.json"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " app/partner/[id].tsx                  |  14 +-\n context/decisions.json                |  13 ++\n context/domain.json                   |  18 +-\n context/state.json                    |  27 ++-\n src/api/contracts/partner.ts          |  14 +-\n src/api/mock/fixtures/partners.ts     | 304 ++++++++++------------------------\n src/components/domain/PartnerCard.tsx |   2 +\n src/components/domain/PartnerMap.tsx  |   1 +\n src/i18n/locales/bn.json              |   3 +-\n src/i18n/locales/en.json              |   3 +-\n src/i18n/locales/hi.json              |   3 +-\n src/i18n/locales/mr.json              |   3 +-\n src/i18n/locales/ta.json              |   3 +-\n src/i18n/locales/te.json              |   3 +-\n 14 files changed, 172 insertions(+), 239 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Obtain the partner master and a fund-health feed from NSFDC (N3) — R3 cannot be fully satisfied from open data",
+    "target_file": "src/api/mock/fixtures/partners.ts",
+    "context": ""
+  },
+  "context_notes": "The most serious finding of the whole project: the seed data asserted specific NPA percentages against named real institutions and attached fabricated phone numbers to a Call button. Both removed. R3's design is correct and its rules are now encoded from published sources; only the per-partner data is missing, and it is not publicly available."
+}

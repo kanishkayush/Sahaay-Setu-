@@ -1,0 +1,212 @@
+{
+  "contextVersion": "1.0.0",
+  "purpose": "Architecture decision log. Read before proposing a change that contradicts one of these — each entry records why the alternative was rejected.",
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "date": "2026-09-07",
+      "title": "React Native via Expo, not native or Flutter",
+      "decision": "Build the mobile app with Expo SDK 57 and TypeScript.",
+      "why": "One codebase for Android and iOS, and Expo Go lets a teammate or judge run the app from a QR code with no build toolchain. Android reach matters most for this demographic.",
+      "rejected": [
+        "Native Android (Kotlin) — doubles the work for an iOS demo",
+        "Flutter — team's TypeScript familiarity wins for a hackathon timeline"
+      ]
+    },
+    {
+      "id": "ADR-002",
+      "date": "2026-09-07",
+      "title": "Zod schemas are the API contract",
+      "decision": "src/api/contracts/*.ts holds Zod schemas shared conceptually with the backend, and every response is parsed through them at the network boundary.",
+      "why": "The backend is built by a different person in parallel. A contract break then fails loudly at the boundary with a readable message instead of rendering undefined three screens deep. The schemas double as the API documentation.",
+      "rejected": [
+        "Hand-written TypeScript interfaces — no runtime checking",
+        "OpenAPI codegen — heavier than a hackathon needs"
+      ]
+    },
+    {
+      "id": "ADR-003",
+      "date": "2026-09-07",
+      "title": "Mock backend ships in the app, toggled by one env var",
+      "decision": "USE_MOCK_API defaults to true; every service picks mock or real HTTP.",
+      "why": "Frontend work must never block on the backend, and the app must be demoable offline on a conference floor. Integration day becomes a one-line change.",
+      "rejected": [
+        "MSW / a separate mock server — more setup, and does not survive being run from Expo Go on a phone with no laptop"
+      ]
+    },
+    {
+      "id": "ADR-004",
+      "date": "2026-09-07",
+      "title": "Keep an on-device rule engine even though AI is coming",
+      "decision": "src/features/recommender/ruleEngine.ts stays permanently as the offline fallback, and the recommendation service falls back to it when the backend fails.",
+      "why": "Two reasons. Connectivity: the target user often has none. Accountability: public money is involved, so an AI recommendation can always be diffed against a deterministic rule-based answer.",
+      "rejected": ["AI-only — an unreachable backend would leave the core feature dead"]
+    },
+    {
+      "id": "ADR-005",
+      "date": "2026-09-07",
+      "title": "EMI calculator is pure and never hits the network",
+      "decision": "src/features/calculator/emi.ts has no React and no I/O.",
+      "why": "It is the one feature that must work with zero connectivity, and purity makes the money math trivially testable. Verified against textbook EMI values during development.",
+      "rejected": ["Server-side calculation — pointless network dependency for arithmetic"]
+    },
+    {
+      "id": "ADR-006",
+      "date": "2026-09-07",
+      "title": "English is the permanent fallback for every string",
+      "decision": "Locales may be partial; missing keys resolve to en.json. `npm run i18n:check` reports coverage and fails only on unknown keys.",
+      "why": "Six languages cannot all be translated well in a hackathon. A partially translated app is useful; an app showing raw i18n keys is broken. This lets translations land incrementally without ever breaking a build.",
+      "rejected": [
+        "Blocking on complete translations — would have shipped two languages instead of six"
+      ]
+    },
+    {
+      "id": "ADR-007",
+      "date": "2026-09-07",
+      "title": "Steppers instead of drag sliders for numeric input",
+      "decision": "src/components/ui/Stepper.tsx is a −/+ stepper, not a draggable slider.",
+      "why": "Dragging a thin handle precisely is hard on a cheap touchscreen and inaccessible to users with limited dexterity or screen readers. Two large buttons are unambiguous.",
+      "rejected": ["@react-native-community/slider — worse accessibility for the target users"]
+    },
+    {
+      "id": "ADR-008",
+      "date": "2026-09-07",
+      "title": "No babel.config.js; Metro resolves tsconfig paths",
+      "decision": "The '@/' alias comes from tsconfig `paths`, which Expo's Metro config reads natively. A custom babel config was added and then removed.",
+      "why": "The custom config required babel-preset-expo as an explicit dependency and broke the bundler. Expo's defaults already do the job.",
+      "rejected": ["babel-plugin-module-resolver — redundant and it broke `expo export`"]
+    },
+    {
+      "id": "ADR-009",
+      "date": "2026-09-07",
+      "title": "Unverified data is labelled in the UI, not hidden",
+      "decision": "Scheme.verified drives a visible warning chip and banner; seed fixtures carry loud file-header warnings.",
+      "why": "Presenting invented loan terms as authoritative to people making real financial decisions is the worst failure mode this project has. Being visibly honest about prototype data is better than looking polished.",
+      "rejected": ["Silently shipping seed data — unacceptable given the user population"]
+    },
+    {
+      "id": "ADR-010",
+      "date": "2026-09-07",
+      "title": "No voice input in v0, and no fake mic button",
+      "decision": "Text-to-speech (output) ships via expo-speech. Speech-to-text (input) does not ship, and no mic button is rendered.",
+      "why": "STT needs a native module (dev build) or the backend transcribe endpoint, neither available for v0. A mic button that does nothing is worse than no button.",
+      "rejected": ["A placeholder mic that shows 'coming soon' — erodes trust in a demo"],
+      "supersededBy": "ADR-019 (2026-09-08). Its principle is NOT relaxed — 'no mic button that does nothing' is now enforced in code by detectProvider() rather than by omitting the feature. What changed is the premise: a real STT provider exists on web."
+    },
+    {
+      "id": "ADR-011",
+      "date": "2026-09-07",
+      "title": "Collect no identifying information",
+      "decision": "The recommender asks only project type, cost, income, education and optional gender. No name, Aadhaar, PAN or certificate numbers.",
+      "why": "None of it is needed to recommend a scheme, and collecting government IDs from a vulnerable population creates risk with no product benefit. Actual application happens at the Channel Partner.",
+      "rejected": ["A full application form in-app — out of scope and a liability"]
+    },
+    {
+      "id": "ADR-012",
+      "date": "2026-09-07",
+      "title": "Two-layer agent memory: durable context/ plus session .checkpoints/",
+      "decision": "Keep slow-changing project truth in context/*.json and per-session working state in .checkpoints/*.json, with .agents/checkpoint.sh as the CLI. Every session starts with `checkpoint.sh resume`, which reconciles the last checkpoint against actual git state before any work begins.",
+      "why": "Chat history is not project state — a crashed or context-exhausted session must be resumable from files alone. The pattern is adapted from a checkpoint protocol used in a separate internal project. The two layers answer different questions: context/ says what the project is, .checkpoints/ says where the last agent stopped and whether that record can still be trusted. Reconciliation matters because two AI tools and a human share this repo, so a checkpoint can be stale by the time it is read.",
+      "rejected": [
+        "context/state.json alone — no per-session granularity, no record of what another agent was mid-way through, and no way to detect that the file is stale relative to git",
+        "Checkpoints alone — session snapshots accumulate and get pruned, so durable truth (domain rules, ADRs, ownership) would be lost with them",
+        "Copying that multi-repo checkpoint layout verbatim — it assumes a non-git root wrapping several repos; this is a single repo, so the repo/repo_path fields and the workspace-root indirection were dropped"
+      ],
+      "notes": "Enforced in CI: every context/ and .checkpoints/ JSON is parsed, and checkpoint.sh is syntax-checked, so a malformed handoff file cannot land on main."
+    },
+    {
+      "id": "ADR-013",
+      "date": "2026-09-07",
+      "title": "Skills use progressive disclosure: short SKILL.md plus one file per rule",
+      "decision": "Each skill in .agents/skills/ is a SKILL.md with trigger-rich frontmatter, core principles and a rules table, plus a references/ directory holding one file per rule — each with a wrong example, a right example, and why it matters. SKILL.md never inlines reference content.",
+      "why": "A skill an agent must read in full every time gets skipped once it grows past a screen. Splitting it means SKILL.md stays short enough to always read and carries only the rules that are expensive to get wrong, while the detail is loaded on demand. The wrong/right pair is the load-bearing part: a rule with no realistic wrong example is a preference, not a rule, and does not belong. The frontmatter description lists explicit triggers so an agent knows to load the skill before writing the file, not after.",
+      "rejected": [
+        "One long SKILL.md per skill — grows past the point where it is reliably read, and mixes must-know rules with edge cases",
+        "Rules as prose in docs/ — documentation is read by people who go looking; a skill is loaded by an agent because its triggers matched",
+        "Generating rules from lint config — most of these are judgement calls about users on cheap phones making financial decisions, which no linter encodes"
+      ],
+      "notes": "Enforced in CI: every SKILL.md must carry name/description frontmatter and every references/ link it makes must resolve. A broken link is a rule an agent silently never reads. Adding a rule: copy references/_template.md, add the row to the SKILL.md table, note it in CHANGELOG.md."
+    },
+    {
+      "id": "ADR-014",
+      "date": "2026-09-07",
+      "title": "Adopt the Open Design system, minus four values that break the accessibility floor",
+      "decision": "Port the Open Design tokens, components and icon set into src/theme and src/components. Reject four things verbatim: text below 13px, --leading-body 1.47, the SF Pro/Helvetica font stack, and the semantic colours that fail WCAG AA on white. Hold touch targets at 48dp rather than the source's iOS 44px.",
+      "why": "The design is a genuine improvement in hierarchy and polish, and its own notes call out replacing the emoji we used as functional icons. But it is an Apple web design system pasted verbatim, tuned for Latin text on good screens. Our users are often first-time smartphone owners on low-cost Android devices, outdoors, in six languages, making a real financial decision. 12px text is unreadable in sunlight; 1.47 leading clips Devanagari matras and Tamil descenders; SF Pro has no Indic coverage and would render tofu; success #16a34a is 3.30:1 and warn #eab308 is 1.92:1 on white, both failing AA. Adopting the look while holding those five constraints gets both.",
+      "rejected": [
+        "Adopting the system verbatim — would have shipped unreadable labels and tofu for four of our six languages",
+        "Rejecting it wholesale to protect the constraints — the hierarchy, the value card, the icon set and the explained partner toggle are all real improvements",
+        "Porting to React web as the handoff requested — this is a mobile app; a web port would not run where it is needed"
+      ],
+      "notes": "Deviations are documented in the src/theme header and design/README.md. Two Indic-specific bugs the English-only mockups could not surface were found by running it in Hindi: stat values wrapping the row, and tab labels clipping at the baseline."
+    },
+    {
+      "id": "ADR-015",
+      "date": "2026-09-07",
+      "title": "Ship complete mr/bn/ta/te translations, labelled as pending native review",
+      "decision": "Translate all 251 keys into Marathi, Bengali, Tamil and Telugu using the glossary in docs/TRANSLATION_GLOSSARY.md, and record reviewStatus 'ai-translated-pending-native-review' in each locale's _meta. Do not present them as verified.",
+      "why": "At 18% coverage a Marathi or Tamil speaker saw roughly 82% English, so the app's central promise — that it speaks your language — was hollow for four of the six. Careful translation against a fixed glossary is materially better than English for someone who cannot read English, and the English fallback still covers anything removed. But these are financial terms in front of people deciding whether to take on debt, and claiming they are reviewed when they are not would repeat exactly the mistake ADR-009 exists to prevent. Labelling the real status keeps both the reach and the honesty.",
+      "rejected": [
+        "Leaving them at 18% until a native speaker is available — the gap was the larger harm, and no reviewer was scheduled",
+        "Shipping them silently as complete — indistinguishable to a reviewer from verified copy, and the same error as presenting seed scheme data as authoritative",
+        "Translating only the safe UI copy and leaving financial terms in English — produces a jarring half-language and hides exactly the terms a user most needs to understand"
+      ],
+      "notes": "Validated: 0 interpolation-placeholder mismatches across all five locales; endonyms left untranslated; the three highest-risk strings (interest accrues during the moratorium, figures unverified, high NPA means delay) checked individually per language. Two rendering bugs found and fixed: tab labels were clipping mid-word in Tamil and Telugu (labels now wrap to two lines and the longest were shortened), verified 0 clipped elements in all four."
+    },
+    {
+      "id": "ADR-016",
+      "date": "2026-09-07",
+      "title": "Treat only nsfdc.nic.in as verification; drop schemes whose status is unresolved",
+      "decision": "Verify scheme figures solely against nsfdc.nic.in, flipping verified:true per scheme with a citation. Keep schemes NSFDC lists but whose figures could not be retrieved as verified:false. Remove Mahila Kisan Yojana and Shilpi Samridhi Yojana, whose active status is contested.",
+      "why": "Third-party aggregators disagree with NSFDC and with each other — one lists Term Loan at 9–10% where NSFDC says 8%, and Micro Finance at ₹60,000 where NSFDC says ₹1.25 lakh, apparently quoting figures from before the 01.10.2023 revision. Averaging or trusting them would produce confident wrong numbers, which is worse than an honest unverified flag. For MKY and SSY the sources conflict on whether the schemes still exist at all; recommending a discontinued scheme sends someone to a branch for a product that is not there, which costs them a day's earnings and a bus fare.",
+      "rejected": [
+        "Trusting aggregator figures to reach 100% verified — they contradict the issuing body",
+        "Keeping MKY and SSY with a warning — a warning does not stop the recommender ranking them first, and SSY was previously the top match for the woman-artisan persona",
+        "Leaving the whole catalogue unverified — five schemes were confirmable and the difference matters to a user comparing rates"
+      ],
+      "notes": "The seed data was materially wrong: Micro Finance max loan was ₹1.40L (actually ₹1.25L), Term Loan ₹50L (actually ₹45L) over 10 years (actually 7), and every scheme carried an invented women's concessional rate that appears on no official page. The home screen also claimed '5–8% a year' while Aajeevika is 15% and Udyam Nidhi 13–15%; corrected to 'from 6.5%'. Rate weighting in the rule engine was raised from 10 to 20 because the real spread is far wider than the seed data suggested."
+    },
+    {
+      "id": "ADR-017",
+      "date": "2026-09-07",
+      "title": "Replace the invented partner directory; model unknown fund status as a first-class state",
+      "decision": "Delete the v0 partner seed data entirely and replace it with five State Channelizing Agencies whose names and role are verified. Carry no phone number that the organisation does not publish, and no NPA figure at all. Add UNKNOWN to PartnerEligibilityStatus and use it for every partner.",
+      "why": "The seed data asserted specific NPA percentages against named real institutions, which is a defamatory claim, and attached fabricated phone numbers to a Call button that would dial real strangers. It also invented agencies outright — there is no 'Maharashtra SC Finance & Development Corporation'; the real bodies are MPBCDC, LASDC and LIDCOM. Separately, per-partner NPA and fund-utilisation data is not published anywhere public, so there is no honest way to populate an ACCEPTING/NOT_ACCEPTING status today. A three-value enum forced a claim we cannot support; UNKNOWN lets the model say what is true.",
+      "rejected": [
+        "Keeping synthetic NPA figures for the demo — inventing financial distress about a named real corporation is not a demo detail",
+        "Keeping the fake agencies to preserve the partner count — a directory that sends someone to a non-existent office is worse than a short one",
+        "Filtering UNKNOWN partners out — we cannot assert they are unavailable either; showing them with 'call before you travel' is the honest behaviour"
+      ],
+      "notes": "The eligibility RULES are public and now encoded: net NPA below 10%, cumulative fund utilisation at or above 80%. So R3's design is right; its data dependency is real and named in context/domain.json partnerDataStatus. NSFDC operates 37 SCAs plus 55 other Channelizing Agencies; this file holds five.",
+      "correctedBy": "ADR-018 (2026-09-07). The note below states the eligibility rules as 'net NPA below 10%, cumulative fund utilisation at or above 80%'. The 10% figure is the Stand-up India condition for RRBs, not the general norm, and the norms are partner-type-specific. The decision recorded here — delete the fabricated directory, carry no NPA figure, add UNKNOWN — stands unchanged and correct; only the threshold quoted in its note was wrong."
+    },
+    {
+      "id": "ADR-018",
+      "date": "2026-09-07",
+      "title": "Encode NSFDC's prudential norms per partner type instead of one NPA threshold",
+      "decision": "Replace the single 'net NPA < 10%, utilisation >= 80%' rule with per-partner-type norms in src/features/partners/eligibilityNorms.ts, each carrying its source, its retrieval method, and the data field required to evaluate it. Render them on the partner detail screen alongside an explicit statement of what cannot be checked. Keep every partner UNKNOWN.",
+      "why": "The old rule was wrong. 'Net NPA below 10%' is the Stand-up India condition for RRBs; the general allocation norm for an RRB is net NPA below 15% in at least 3 of the last 6 years, and an NBFC-MFI must hold gross NPA below 2% and net NPA below 0.5%. One threshold was wrong for three of the four partner types, and it also dropped the overdues condition entirely — arguably the most operationally relevant one, since an overdue blocks disbursement outright. Beyond correctness: the norms are the only part of requirement R3 that open data can actually support, so encoding them precisely and naming the missing inputs is a stronger and more honest position than either a fake score or silence.",
+      "rejected": [
+        "Keeping the single threshold because it was simpler — it was simple and false",
+        "Computing a partner health score from the norms — the inputs are unpublished, so any score would be invented, which is the exact failure ADR-017 removed",
+        "Rendering the norms with checkmarks — a checkmark beside an unevaluated condition is a false claim rendered as an icon; the UI uses neutral dots",
+        "Citing the norms as live NSFDC pages — every /en/* path returns 404 today"
+      ],
+      "notes": "Provenance is recorded honestly and is weaker than the scheme catalogue's. NSFDC restructured its site: nsfdc.nic.in/scheme serves 200 (verified by curl 2026-09-07), but /en/allocation-of-funds, /en/stand-up-india and /en/schemes-to-be-implemented-through-nbfc-mfis all return 404, as does the psb.pdf partner list. The norm text comes from search-index snapshots of those NSFDC pages and is stored with retrievedVia: SEARCH_INDEX_SNAPSHOT and confidence 0.6. Re-verify before presenting any of it as authoritative. Prompted by a research note forwarded by the backend teammate; the note's core correction was right, though its cited URL did not resolve and its fund-utilisation claim misread the 2020 evaluation — see problem-statement.json fieldEvidence E8, which records the correct reading so the misreading is not repeated. UPDATE (same day): all three sources were subsequently recovered from Wayback Machine captures and every norm confirmed verbatim against NSFDC's own wording. Provenance upgraded from SEARCH_INDEX_SNAPSHOT/0.6 to WEB_ARCHIVE_SNAPSHOT/0.9 with permanent URLs and capture dates. The archive is also the answer for the backend teammate's RAG corpus — the live NSFDC /en/ tree is gone, so crawling it yields 404s while the index still lists every URL."
+    },
+    {
+      "id": "ADR-019",
+      "date": "2026-09-08",
+      "title": "Ship a voice screen, with capability detection instead of a promise",
+      "decision": "Add app/voice.tsx implementing the backend teammate's pipeline: VOICE UI → Speech-to-Text → text query → the existing assistant endpoint → ChatResponse → Text-to-Speech. STT is a provider abstraction (src/features/voice/speechToText.ts) with capability detection at module load; the Web Speech API is the working provider today and POST /v1/transcribe is contracted but not claimed. Where no provider exists the screen explains why and offers typing — it never renders a mic that cannot listen.",
+      "why": "ADR-010 refused voice because neither a native module nor a backend transcribe endpoint was available, and 'a mic button that does nothing is worse than no button'. That premise is now partly false: the Web Speech API is real, free, needs no backend, supports en/hi/mr/bn/ta/te via -IN locales, and works on the surface the demo runs on. The principle survives intact, moved from 'do not build it' into a runtime check. Separately, voice is the strongest accessibility answer this app has: the government's own 2020 evaluation puts 15.3% of beneficiaries as illiterate and 45% at middle school, and a form requires reading while speech does not.",
+      "rejected": [
+        "Making the app conversation-first. The brief's R1 explicitly takes structured inputs, and a blank box asks a question of someone whose stated problem is not knowing what to ask. Voice is a peer surface, not the front door.",
+        "Speaking the answer only. A rupee figure that exists solely as sound cannot be re-read or checked against a citation, and that is exactly where a wrong number does most harm — so the answer is always also rendered as text with its sources.",
+        "A mic that falls back silently to typing when STT is missing — the user never learns why the feature did not work, which is the ADR-010 failure in a new costume.",
+        "Continuous listening. The mic would stay open through our own spoken reply and transcribe it."
+      ],
+      "notes": "Naming to reconcile: the teammate's diagram calls the chat stage /v1/chat; this repo has always called it POST /v1/assistant/query. Same endpoint, two names — settle it in the contract, not with a client-side alias. Building the screen also exposed that src/api/mock/fixtures/assistant.ts had never been updated after the scheme verification: it was answering '5-6%' for micro-credit when Micro Finance is 6.5% and Aajeevika is 15%, quoting a Rs 50 lakh Term Loan when that is the project cost and Rs 45 lakh the loan, and deep-linking to two ids that no longer exist. Every figure in that file is now derived from MOCK_SCHEMES, so the class of bug cannot recur. It was found only because the voice screen read the wrong number out loud."
+    }
+  ]
+}

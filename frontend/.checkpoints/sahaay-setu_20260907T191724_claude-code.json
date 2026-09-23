@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260907T191724_claude-code_9f66cf",
+  "created_at": "2026-09-07T19:17:24Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "README voice section; handover-readiness audit of the frontend",
+    "plan": [],
+    "status": "in_progress"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Added the voice pipeline section to the README",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Audited all nine routes for service+doc coverage",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed the last screen-imports-from-mock violation by moving starter prompts into i18n",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Gave GET /v1/health a contract, service and docs",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Documented what still ships in backend mode",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "npm run verify, format:check and the Android bundle pass",
+      "proof": "npm run verify",
+      "verified_at": "2026-09-07T19:17:24Z"
+    },
+    {
+      "fact": "npm run format:check",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T19:17:24Z"
+    },
+    {
+      "fact": "npx expo export --platform android exit 0",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T19:17:24Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "0cc66e771af0fec465bc37a92593753c96515de0",
+    "git_commit_message": "feat(assistant): run the chat screen on the voice pipeline too",
+    "files_changed": [
+      "README.md",
+      "app/assistant.tsx",
+      "context/state.json",
+      "docs/API_CONTRACT.md",
+      "docs/BACKEND_HANDOFF.md",
+      "src/api/contracts/common.ts",
+      "src/api/services/index.ts",
+      "src/i18n/locales/bn.json",
+      "src/i18n/locales/en.json",
+      "src/i18n/locales/hi.json",
+      "src/i18n/locales/mr.json",
+      "src/i18n/locales/ta.json",
+      "src/i18n/locales/te.json",
+      "src/api/services/health.service.ts"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " README.md                   | 41 +++++++++++++++++++++++++++++++++++++----\n app/assistant.tsx           | 21 +++++++++++++++++----\n context/state.json          | 19 ++++++++++++++++++-\n docs/API_CONTRACT.md        | 20 ++++++++++++++++++++\n docs/BACKEND_HANDOFF.md     | 30 ++++++++++++++++++++++++++++++\n src/api/contracts/common.ts | 15 +++++++++++++++\n src/api/services/index.ts   |  1 +\n src/i18n/locales/bn.json    |  7 +++++++\n src/i18n/locales/en.json    |  7 +++++++\n src/i18n/locales/hi.json    |  7 +++++++\n src/i18n/locales/mr.json    |  7 +++++++\n src/i18n/locales/ta.json    |  7 +++++++\n src/i18n/locales/te.json    |  7 +++++++\n 13 files changed, 180 insertions(+), 9 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Human to speak into the mic on both screens (device capture is blocked in the preview pane), then hand over",
+    "target_file": "app/voice.tsx",
+    "context": ""
+  },
+  "context_notes": "Corrected an overstatement: removing the screen's mock import did NOT stop the fixtures shipping - they ship via the service layer's static imports either way. Behaviour is still correct in backend mode; documented as a characteristic, not a bug, and offered a fix if the teammate wants it."
+}

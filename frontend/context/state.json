@@ -1,0 +1,245 @@
+{
+  "contextVersion": "1.0.0",
+  "purpose": "Living build state. This is the handoff file — an AI agent or teammate starting fresh reads context/context.json for WHAT the project is, and this file for WHERE IT STANDS RIGHT NOW. Update it when you finish something meaningful; do not let it drift.",
+  "updatedAt": "2026-09-08",
+  "updatedBy": "claude-code",
+  "milestone": "v0 complete — all six languages at 100%, design system ported, CI green",
+  "verified": [
+    {
+      "claim": "The app bundles for production",
+      "proof": "npx expo export --platform android → 4.5MB hbc bundle, 27 assets, no errors",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "TypeScript strict passes with zero errors",
+      "proof": "npm run typecheck",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "ESLint passes with zero errors and zero warnings",
+      "proof": "npm run lint",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "The rule engine produces sensible matches across personas",
+      "proof": "Street vendor (₹80k) → Micro Credit Finance top. Woman artisan → Shilpi Samridhi at the 5% women's rate. ₹20L manufacturing → Term Loan. Education → education loans only. Income ₹9L → zero results with the income-ceiling reason shown.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "i18n coverage is measured and gated",
+      "proof": "npm run i18n:check → en 231 keys (baseline), hi 100%, mr/bn/ta/te 20% with English fallback",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Prettier formatting is clean across the repo",
+      "proof": "npm run format:check (part of npm run verify in CI)",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "The checkpoint CLI works end to end",
+      "proof": "checkpoint.sh save wrote a checkpoint with 6 verified_facts and updated _latest.json; list/show/diff all render it; diff correctly reported SAME COMMIT with an uncommitted working tree; `checkpoint.sh verify claude-code` ran npm run verify, passed, and saved a checkpoint with the proof attached",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Every skill is well-formed and every reference link resolves",
+      "proof": "All 4 SKILL.md files carry name/description frontmatter; every references/*.md path linked from a SKILL.md exists on disk; enforced in CI by the 'Skills are well-formed' step",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "EMI math is correct, including the moratorium total",
+      "proof": "36-assertion suite over 6 scenarios: totalPayable === sum of every instalment in all cases; schedules close at zero; row counts match totalMonths; interest reconciles within rounding; textbook P=100000 @10%/12mo -> 8791.59 exact. Confirmed live in the app: 126000 @5%/48mo with 3mo moratorium -> EMI 2938, total 141024 = 48 x 2938.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "The app runs and the full flow works end to end",
+      "proof": "Ran on Expo web at localhost:8081 and walked it: language switch EN->HI flips the whole UI; onboarding; home; 5-step recommender (woman + artisan, 1.4L project, 2.5L income) -> Shilpi Samridhi 82% at the 5% women's rate with explanations; calculator deep-link carries all params including a Devanagari scheme name.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "No nested interactive elements anywhere in the app",
+      "proof": "Walked all 12 routes in the browser: 0 nested-button violations and 0 raw i18n keys on every route; fresh load of /partners shows 36 buttons, 0 nested",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Zero emoji remain as functional icons",
+      "proof": "grep for emoji across app/ and src/ *.tsx returns nothing; all replaced by the ported Icon set",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "All six locales are complete and structurally sound",
+      "proof": "npm run i18n:check -> en/hi/mr/bn/ta/te all 100% of 251 keys, 0 unknown keys; 0 interpolation-placeholder mismatches across all locales; endonyms untranslated in every file",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "No text clips in any of the four new languages",
+      "proof": "Rendered home in mr/bn/ta/te and measured scrollWidth/scrollHeight against clientWidth/clientHeight for every leaf text node: 0 clipped elements in each. Tab labels previously truncated Tamil 'முகப்பு' to 'மகப்ப'; now wrap to two lines.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Five schemes verified against the issuing body",
+      "proof": "Retrieved nsfdc.nic.in/scheme 2026-09-07: Micro Finance ₹1.40L unit/₹1.25L loan @6.5%/3yr/3mo; Term Loan ₹50L/₹45L @8%/7yr/6mo; Educational ₹40L or 90% of fee @6.5%/12yr; Aajeevika ₹1.40L/₹1.25L @15%/3yr; Udyam Nidhi ₹5L/₹4.50L @13-15%/5yr. Income ceiling ₹5.00 lakh confirmed independently by socialjustice.gov.in/schemes/34.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "The v0 seed figures were materially wrong",
+      "proof": "Micro Finance max loan was ₹1.40L against an actual ₹1.25L; Term Loan ₹50L against ₹45L and 10 years against 7; every scheme carried an invented women's concessional rate found on no official page. The home hero claimed '5-8% a year' while Aajeevika is 15%.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Partner directory now contains only verified agencies",
+      "proof": "Names and SCA role confirmed 2026-09-07 for MPBCDC and LIDCOM (Maharashtra, via sjsa.maharashtra.gov.in), DSFDC (Delhi, dsfdc.delhi.gov.in), TAHDCO (Tamil Nadu), WB SC/ST/OBC Dev & Fin Corp. The previous entry 'Maharashtra SC Finance & Development Corporation' does not exist.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "Per-partner fund-health data is not publicly available",
+      "proof": "NSFDC publishes the norms but not the per-partner figures. Searched NSFDC and socialjustice.gov.in; no partner-wise NPA report exists publicly. All partners carry status UNKNOWN. NOTE: the norms are partner-type-specific — RRB net NPA below 15% in 3 of 6 years (general allocation) vs below 10% (Stand-up India) vs NBFC-MFI below 0.5%. An earlier version of this entry recorded a single '10%' threshold, which was the Stand-up India rule misread as the general one.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "All encoded partner prudential norms match NSFDC's own wording verbatim",
+      "proof": "Fetched three Wayback captures of the original NSFDC pages and diffed against eligibilityNorms.ts. Confirmed exactly: RRB 'Net NPA must be less than 15% in at least 3 years out of last 6 years'; RRB profit 'at least in 3 out of last 6 financial years'; release norms '(a) Government/Bank Guarantee (b) no overdues more than one year old (c) minimum 80% cumulative utilization'; PSB 'Utilisation Certificate for interest switch over ... no overdues payable at the time of disbursement'; NBFC-MFI 'Gross NPA less than 2% and net NPA below 0.5%', 'mfr5 by CRISIL', '3 years of continuous profit track record'.",
+      "at": "2026-09-07"
+    },
+    {
+      "claim": "The voice pipeline works end to end from the text-query stage onward",
+      "proof": "Typed a question into /voice in the browser: phase advanced idle -> thinking -> speaking, the answer rendered with its NSFDC citations, TTS fired, and the suggested action and follow-up chips appeared. Web Speech API constructor confirmed present (window.SpeechRecognition || window.webkitSpeechRecognition === true), so the mic path is live on web rather than stubbed.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "The assistant stub was answering with pre-verification loan figures",
+      "proof": "Asked 'What interest rate will I pay?' on the new voice screen and it read aloud 'micro-credit products sit around 5-6% per year' — Micro Finance is verified at 6.5% and Aajeevika at 15%, so the answer understated the dearest product by threefold. Also found 'Term Loan goes up to Rs 50 lakh' (that is the project cost; the loan cap is Rs 45 lakh), an education loan quoted at 'about 6%' and 'Rs 30 lakh in India' against a verified 6.5% and Rs 40 lakh, and OPEN_SCHEME/OPEN_PARTNER actions pointing at 'nsfdc-education-india' and 'sca-mh-001', neither of which exists any more. All figures now derived from MOCK_SCHEMES; re-tested and the answer reads 6.5%-15% with NSFDC citations.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "Voice works on the chat screen and degrades exactly as ADR-010 requires",
+      "proof": "In the preview browser at /assistant: mic renders as 'Speak' alongside 'Send'. Mic access is blocked in the pane, and tapping it showed 'I need permission to use the microphone. You can type your question instead.' with the button resetting to 'Speak' rather than sticking. A TYPED question did not auto-speak (spied window.speechSynthesis.speak -> [] and the button still read 'Read aloud'); tapping 'Read aloud' then spoke and flipped it to 'Stop'. Forcing detectProvider() unavailable in source and reloading: the mic disappeared entirely while Send and the composer stayed usable, and /voice showed 'This browser cannot listen to speech. Try Chrome, or type your question below.' Source restored, git diff clean.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "The frontend is ready to hand over: data-flow rules hold and every consumed endpoint is wired and documented",
+      "proof": "Audited all nine routes in src/api/endpoints.ts. Six consumed endpoints each have a service function and a section in docs/API_CONTRACT.md; assistant.stream and assistant.transcribe are documented and contracted but deliberately not consumed. grep for \"from '@/api/mock\" across app/, src/components/, src/hooks/ -> clean. grep for fetch( outside src/api/client.ts -> clean.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "Flipping EXPO_PUBLIC_USE_MOCK_API=false produces a working bundle, but the mock DATA still ships",
+      "proof": "EXPO_PUBLIC_USE_MOCK_API=false EXPO_PUBLIC_API_BASE_URL=https://api.example.com npx expo export --platform android -> exit 0. Grepping the resulting Hermes bundle still finds MPBCDC, TAHDCO, Aajeevika, sca-mh-mpbcdc and nsfdc-term-loan, because every service statically imports @/api/mock/server and USE_MOCK_API is a runtime branch Metro cannot drop. Behaviour is correct — requests do go to the API — so this is a bundle-size characteristic, documented in BACKEND_HANDOFF § What still ships in backend mode, not a bug.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "Starter prompts now render in the user's own script",
+      "proof": "Set language to ta in the preview browser and opened /assistant: all five chips rendered in Tamil with zero Latin-initial strings. Previously the fixture carried only en and hi, so mr/bn/ta/te users saw English chips as the first thing on the screen.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "No stale claim survives in any Markdown doc or context file",
+      "proof": "Swept for the specific false statements found: 'emoji in v0', '251 keys', 'partner data is synthetic', 'scheme figures are unverified', '~20% translated', 'speech-to-text is not implemented', 'replacing emoji', 'no fake mic button exists today' -> all CLEAN. Every relative link in every .md resolves (0 broken). Every non-tab screen is registered in app/_layout.tsx.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "Marathi has no text-to-speech voice on macOS, and asking for one fails silently",
+      "proof": "speechSynthesis.getVoices() in the preview browser (180 voices): en-IN Rishi, hi-IN Lekha, bn-IN Piya, ta-IN Vani, te-IN Geeta all present; mr-IN returned ZERO, including base-language matches. Speaking Marathi text with lang='mr-IN' fired onstart then onend with no error and utterance.voice === null — i.e. it read Devanagari with a substituted default voice and reported success. Now gated: /voice in Marathi shows the noVoice banner and hides replay; in Tamil it does not.",
+      "at": "2026-09-08"
+    },
+    {
+      "claim": "Every speech-to-text error kind renders its own actionable message",
+      "proof": "Stubbed SpeechRecognition in the preview browser and drove each engine code through the UI: network -> 'needs an internet connection'; audio-capture -> 'No microphone was found'; language-not-supported -> 'cannot recognise speech in your language yet'; no-speech -> 'I did not hear anything'; an unrecognised code -> 'Listening failed (weird-new-code)', naming it so it can be reported.",
+      "at": "2026-09-08"
+    }
+  ],
+  "done": [
+    "Expo SDK 57 + TypeScript strict + expo-router file-based navigation",
+    "Six-language i18n with device detection, persistence and English fallback",
+    "Language selection as the first screen, plus an intro carousel",
+    "Five bottom tabs: home, schemes, calculator, partners, profile",
+    "Smart Scheme Recommender: 5-step wizard + results with 'Why this scheme?' explanations and near-misses",
+    "Deterministic on-device rule engine (offline fallback + explainability baseline)",
+    "EMI calculator with moratorium handling and full amortisation schedule",
+    "Partner locator: location/PIN search, radius and type filters, fund-health filtering, map + list",
+    "Scheme and partner detail screens",
+    "Multilingual assistant chat with citations, suggested actions, follow-ups and text-to-speech",
+    "Typed API contract (Zod) with runtime validation at the network boundary",
+    "Mock backend + seed fixtures so the app runs with no server",
+    "Design system: theme tokens, Text/Button/Card/Chip/Screen/Banner/AmountInput/OptionList/Stepper",
+    "Persisted store (language, applicant profile, saved schemes)",
+    "Machine-readable agent context in context/ (context, state, problem-statement, domain, decisions + JSON schema)",
+    "Cross-AI working protocol (.agents/PROTOCOL.md) and three project skills (frontend, api-contract-change, add-a-language)",
+    "Tool-specific entry points: CLAUDE.md, AGENTS.md, .cursor/rules/project.mdc",
+    "Documentation set: ARCHITECTURE, API_CONTRACT, BACKEND_HANDOFF, I18N, DESIGN_SYSTEM, ROADMAP",
+    "GitHub CI (verify + production bundle), PR template, three issue templates",
+    "README, CONTRIBUTING, .env.example",
+    "Two-layer agent memory: .agents/checkpoint.sh CLI (resume/save/verify/list/show/diff/prune), .checkpoints/ session state, reconciliation against git state",
+    "Skill library: 4 skills (sahaay-frontend, api-contract-change, scheme-domain, add-a-language) with 31 reference rules using progressive disclosure",
+    "Web target enabled (react-native-web + @expo/metro-runtime) so the app is testable in a browser as well as Expo Go",
+    "Open Design system ported: tokens, ValueCard, ResultCard, ListRow, StatRow, SegmentedControl, SettingToggle, grouped OptionList",
+    "29-icon monoline SVG set replacing every emoji used as a functional icon",
+    "Partner cards show partner type, distance and an explicit UNKNOWN fund status; no NPA figure is displayed because none is published",
+    "Category filter chips on results; segmented progress on the recommender",
+    "All six languages at 100% coverage (251 keys each), with a domain glossary and honest review-status labelling",
+    "Scheme catalogue verified against nsfdc.nic.in — 5 of 8 schemes now carry verified:true with citations; 2 schemes of contested status removed",
+    "Partner directory replaced with five verified State Channelizing Agencies; fabricated names, phone numbers and NPA figures removed; UNKNOWN added as a first-class eligibility state",
+    "Partner prudential norms split by partner type (SCA / RRB / PSB / NBFC-MFI) in src/features/partners/eligibilityNorms.ts, each carrying its source and the data field required to evaluate it; corrected the flattened 'net NPA < 10%' claim",
+    "Partner detail screen renders the norms for that partner's type and names the exact missing fields (src/components/domain/PartnerNorms.tsx), in all six languages",
+    "Field evidence from the 2020 MoSJE evaluation of NSFDC recorded in context/problem-statement.json fieldEvidence, with sample-size and date caveats",
+    "Voice screen (app/voice.tsx) implementing the full pipeline: VOICE UI -> Speech-to-Text -> text query -> assistant endpoint -> ChatResponse -> Text-to-Speech, in all six languages",
+    "STT provider abstraction with capability detection (src/features/voice/speechToText.ts); Web Speech API works today, POST /v1/transcribe contracted but not claimed until it exists",
+    "Assistant knowledge base rewritten to derive every figure from MOCK_SCHEMES; four answers carried pre-verification rates and two deep-linked to scheme/partner ids that no longer exist",
+    "Assistant chat screen wired to the same voice pipeline: mic in the composer, transcript into the field for review, replies auto-spoken only when the question was spoken; listening extracted to the shared useSpeechInput hook and all TTS routed through features/voice/textToSpeech",
+    "Assistant starter prompts moved from the mock fixture into i18n — closes the last screen-imports-from-mock violation and gives all six languages their own chips",
+    "GET /v1/health given a contract, a service function and a section in API_CONTRACT.md; it was step 1 of the handoff with nothing behind it",
+    "Documentation swept for staleness after the voice work: ARCHITECTURE, DESIGN_SYSTEM, I18N, ROADMAP, one skill reference, context.json and problem-statement.json all corrected",
+    "Text-to-speech now checks voice availability per language and degrades honestly — the platform silently substitutes a default voice and reports success when a language has none",
+    "Speech-to-text errors mapped individually instead of collapsing into UNKNOWN; the engine's raw code is surfaced when a failure is genuinely unrecognised, and detectProvider now gates on secure context"
+  ],
+  "next": [
+    {
+      "id": "N2",
+      "task": "Finish verifying the remaining three schemes",
+      "detail": "Mahila Samriddhi Yojana, Laghu Vyavsay Yojana and Green Business Scheme are listed by NSFDC but their figures could not be retrieved — nsfdc.nic.in/en/* paths 404 to an automated fetcher. Open each scheme's page in a browser, confirm the figures, add a Citation, and flip verified for that scheme alone. Only nsfdc.nic.in counts (ADR-016). Also settle whether Mahila Kisan Yojana and Shilpi Samridhi Yojana are closed — sources conflict; both are currently removed.",
+      "owner": "backend/data",
+      "blockedBy": null
+    },
+    {
+      "id": "N3",
+      "task": "Obtain the Channel Partner master and a fund-health feed from NSFDC",
+      "detail": "Per-partner NPA, profit, overdue and fund-utilisation figures are not published publicly, so requirement R3 cannot be fully satisfied from open data. The NORMS are public and are now encoded per partner type in src/features/partners/eligibilityNorms.ts — they are not one threshold (RRB net NPA below 15% in 3 of 6 years; NBFC-MFI below 0.5%; SCAs a guarantee condition; PSBs an MoA and utilisation certificate; plus 80% cumulative utilisation and no year-old overdue for all four). What is needed is the DATA: the full list of 37 SCAs and 55 CAs with addresses and published phone numbers, plus a fund-health feed. requiredInputsFor(type) returns the exact fields to ask NSFDC for. Until then every partner is status UNKNOWN and the UI tells users to call ahead.",
+      "owner": "backend/data",
+      "blockedBy": "NSFDC data access"
+    },
+    {
+      "id": "N1",
+      "task": "Backend integration",
+      "detail": "When the partner's API is up: set EXPO_PUBLIC_USE_MOCK_API=false and EXPO_PUBLIC_API_BASE_URL, then walk docs/BACKEND_HANDOFF.md endpoint by endpoint.",
+      "owner": "both",
+      "blockedBy": "backend availability"
+    },
+    {
+      "id": "N5",
+      "task": "Add a test suite",
+      "detail": "Start with emi.ts and ruleEngine.ts — both are pure and were verified by throwaway script, which should become real tests.",
+      "owner": "frontend",
+      "blockedBy": null
+    },
+    {
+      "id": "N6",
+      "task": "Voice input (speech-to-text)",
+      "detail": "Needs a development build with a native STT module, or POST /v1/assistant/transcribe from the backend. See ADR-010.",
+      "owner": "both",
+      "blockedBy": "dev build or backend endpoint"
+    },
+    {
+      "id": "N4",
+      "task": "Native-speaker review of mr/bn/ta/te",
+      "detail": "All four are complete but carry reviewStatus 'ai-translated-pending-native-review' in their _meta. Financial terminology in front of vulnerable users needs a native speaker before public deployment. Start from docs/TRANSLATION_GLOSSARY.md — settle the glossary, then the files follow.",
+      "owner": "frontend + native speakers",
+      "blockedBy": "reviewer availability"
+    }
+  ],
+  "openQuestions": [
+    "Which languages beyond these six does the jury expect? The i18n layer takes a new one in about 15 minutes.",
+    "Will the backend serve the scheme catalogue, or does it stay bundled for offline use? (Recommendation: serve it, cache aggressively — the client already caches for an hour.)",
+    "Is there a real data source for partner NPA / fund-utilisation, or is that figure modelled for the demo?",
+    "AMY income ceiling: the archived NSFDC AMY page (2025-02-15 capture) reads 'Annual Family Income of applicants should be below Rs. 30.00 lakhs for both rural and urban areas'. Our catalogue applies the general ₹5.00 lakh ceiling to AMY. ₹30 lakh is 6x the ceiling we verified twice (NSFDC + socialjustice.gov.in, effective 07.01.2026), is implausible for an SC micro-finance product, and reads like a decimal slip for 'Rs. 3.00 lakh' — which was the pre-2026 general ceiling, consistent with a capture that predates the change. NOT changed: relaxing a hard eligibility gate on an ambiguous figure would wrongly admit applicants, and tightening it wrongly excludes them. Needs a current official page or a circular to settle. See src/api/mock/fixtures/schemes.ts (nsfdc-amy).",
+    "Endpoint naming: the backend teammate's pipeline diagram calls the chat stage '/v1/chat'; this repo's contract has always called it 'POST /v1/assistant/query' (docs/API_CONTRACT.md). Same endpoint, two names. Settle it in the contract rather than aliasing in the client.",
+    "Which speech-to-text languages actually work? The Web Speech API does not expose a supported-language list, so this cannot be enumerated in code — it needs a human speaking each of the six into a real device. Chrome delegates to Google's engine (which documents all six Indian locales); Safari uses Apple's, with different coverage. Untested as of 2026-09-08."
+  ]
+}

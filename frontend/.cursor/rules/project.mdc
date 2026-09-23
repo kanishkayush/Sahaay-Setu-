@@ -1,0 +1,68 @@
+---
+description: Sahaay Setu project rules — context bootstrap, architecture, conventions
+alwaysApply: true
+---
+
+# Sahaay Setu — Cursor rules
+
+Frontend for SIH PS 26092 (MoSJE): a multilingual React Native app matching SC entrepreneurs
+and students to concessional credit schemes and to Channel Partners who can process them.
+
+## Read first, every session
+
+1. `context/context.json` — what the project is, who owns what, where things live
+2. `context/state.json` — current state, what's done, what's next
+3. `.agents/PROTOCOL.md` — the working protocol shared with other AI tools
+
+`context/decisions.json` records why things are the way they are. Read it before proposing a
+change that contradicts one.
+
+## Architecture
+
+```
+app/            expo-router routes (screens only, no business logic)
+src/api/        contracts (Zod) · services · mock backend
+src/features/   pure business logic (EMI math, rule engine)
+src/components/ ui (generic) · domain (scheme/partner aware)
+src/i18n/       6 locales, en.json is the baseline
+src/theme/      design tokens — the only source of colour and spacing
+```
+
+Data flow is strictly `screen → hook → service → mock or HTTP`. A screen must never import
+from `src/api/mock/` or call `fetch`.
+
+## Conventions
+
+- `@/` alias for `src` (Metro resolves it from tsconfig paths; there is no babel.config.js)
+- All user-visible strings via `t()` into `src/i18n/locales/en.json`
+- `Text` from `@/components/ui`, never react-native's — ours has Indic line heights
+- Colours and spacing from `@/theme` only
+- Touch targets ≥ 48dp, body text ≥ 16px, status never colour-only
+- Money as whole-rupee integers, formatted via `@/utils/format`
+
+## Skills
+
+Read the matching playbook in `.agents/skills/` before starting that kind of work:
+`sahaay-frontend` (screens/components) · `api-contract-change` (anything under `src/api/`) ·
+`scheme-domain` (eligibility, EMI, partner routing) · `add-a-language` (i18n).
+
+Each `SKILL.md` is short and points at `references/` files — one rule each, wrong example and
+right example.
+
+## Verify
+
+```bash
+npm run verify                        # typecheck + lint + i18n
+npx expo export --platform android    # real bundle
+```
+
+## Data honesty
+
+Scheme figures are unverified; all Channel Partner records are invented. They carry
+`verified: false` and the UI shows warnings. Do not remove those warnings.
+
+## Handoff
+
+Update `context/state.json` when you finish something — set `updatedBy` to `cursor`, add
+`verified` entries with the command output that proves them, and adjust `next`. Claude Code
+reads the same file.

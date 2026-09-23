@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T195104_claude-code_55413f",
+  "created_at": "2026-09-06T19:51:04Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Add two-layer agent memory (context/ + .checkpoints/)",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "checkpoint.sh CLI with resume/save/verify/list/show/diff/prune",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Reconciliation against actual git state",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "PROTOCOL.md rewritten around the two layers",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "CLAUDE.md checkpoint protocol + dual-AI section",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": ".cursor/rules/agent-protocol.mdc",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "AGENTS.md, README, CONTRIBUTING updated",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "CI validates all context and checkpoint JSON",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ADR-012 recorded",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "Checkpoint CLI works end to end",
+      "proof": "save wrote 6 verified_facts and updated _latest.json",
+      "verified_at": "2026-09-06T19:51:04Z"
+    },
+    {
+      "fact": "list/show/diff render it",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T19:51:04Z"
+    },
+    {
+      "fact": "verify ran npm run verify, passed, saved a checkpoint with the proof",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T19:51:04Z"
+    },
+    {
+      "fact": "Reconciliation is correct",
+      "proof": "diff reported SAME COMMIT with uncommitted tree before the commit, then COMMITS DIVERGED naming bcd32b7 after it",
+      "verified_at": "2026-09-06T19:51:04Z"
+    },
+    {
+      "fact": "All handoff JSON parses",
+      "proof": "9 files under context/ and .checkpoints/ validated with the same loop CI runs",
+      "verified_at": "2026-09-06T19:51:04Z"
+    },
+    {
+      "fact": "npm run verify passes",
+      "proof": "typecheck + lint + format + i18n all clean",
+      "verified_at": "2026-09-06T19:51:04Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "bcd32b7c0166261fcd6b4784855500a53d2c0e03",
+    "git_commit_message": "feat(agents): two-layer agent memory with checkpoint system",
+    "files_changed": [],
+    "has_uncommitted": false,
+    "diff_summary": ""
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Create the GitHub repo and push — gh token expired, needs 'gh auth login' in an interactive terminal, then 'gh repo create sahaay-setu --private --source=. --remote=origin --push'",
+    "target_file": "README.md",
+    "context": ""
+  },
+  "context_notes": "Frontend is complete and demoable with no server. Two blockers for a real demo, both owned by the backend/data teammate: scheme figures unverified against NSFDC circulars, and all 10 Channel Partner records are synthetic — both labelled verified:false with UI warnings, do not remove. Agent memory is now two-layer: run 'bash .agents/checkpoint.sh resume' at the start of every session."
+}

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260907T093959_claude-code_467fb3",
+  "created_at": "2026-09-07T09:39:59Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Fact-check teammate's NSFDC research message against primary sources",
+    "plan": [],
+    "status": "in_progress"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Checked the cited URL",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Traced both NPA thresholds to their real scopes",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Extracted the 2020 MoSJE evaluation study",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "Real citable findings in that report: 1 month to 1 year to deploy funds",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T09:39:59Z"
+    },
+    {
+      "fact": "57.2% applied at gram panchayat vs 15.9% at partner head office",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T09:39:59Z"
+    },
+    {
+      "fact": "61.1% heard of the scheme from friends vs 30.8% from officials",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T09:39:59Z"
+    },
+    {
+      "fact": "93.4% of those who struggled cited collateral, 77.5% repeated office visits",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T09:39:59Z"
+    },
+    {
+      "fact": "15.3% illiterate",
+      "proof": "same PDF, items 15, 30, 31, 35, 26",
+      "verified_at": "2026-09-07T09:39:59Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "f8b910005621656e3bb56a7110eaf089ac353d7c",
+    "git_commit_message": "docs: rewrite the README for the verified state",
+    "files_changed": [],
+    "has_uncommitted": false,
+    "diff_summary": ""
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Decide whether to split partner eligibility norms by partner type (SCA/RRB/PSB/NBFC-MFI) in domain.json and the routing rule",
+    "target_file": "context/domain.json",
+    "context": ""
+  },
+  "context_notes": "Teammate forwarded an AI research message. Its core correction is right (norms are partner-type-specific and we flattened them) but its cited URL 404s and its utilisation-disparity claim misreads the report. Do not let them overwrite the verified scheme figures with aggregator numbers - that was the exact failure mode found on 2026-09-07."
+}

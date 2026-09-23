@@ -1,0 +1,220 @@
+{
+  "$schema": "./schema/context.schema.json",
+  "contextVersion": "1.0.0",
+  "generatedAt": "2026-09-07",
+  "readThisFirst": "Any AI agent or new contributor working on this repository should start by running `bash .agents/checkpoint.sh resume`. That reads the latest session checkpoint AND this durable context. If there is no checkpoint, read this file first — it is the machine-readable index of everything else. Human-readable equivalents live in CLAUDE.md, AGENTS.md and docs/.",
+  "project": {
+    "name": "Sahaay Setu",
+    "slug": "sahaay-setu",
+    "oneLiner": "Multilingual mobile app that matches marginalised entrepreneurs and students to the right concessional credit scheme and the nearest Channel Partner who can actually process it.",
+    "competition": "Smart India Hackathon",
+    "problemStatementId": "26092",
+    "problemStatementTitle": "AI-Driven Scheme Matching for Marginalized Entrepreneurs",
+    "organization": "Ministry of Social Justice and Empowerment (MoSJE)",
+    "department": "Department of Social Justice and Empowerment",
+    "category": "Software",
+    "theme": "Smart Automation",
+    "stage": "v0 prototype",
+    "detail": "See context/problem-statement.json for the full statement and the parsed requirement list."
+  },
+  "ownership": {
+    "note": "This repository is the FRONTEND. It is built so a backend teammate can work in parallel without either side blocking the other.",
+    "thisRepo": {
+      "owner": "frontend",
+      "responsibilities": [
+        "React Native (Expo) mobile app, all screens and navigation",
+        "Multilingual UI (i18n) and language switching",
+        "On-device rule engine (offline scheme recommendation fallback)",
+        "EMI / financial calculator (pure, offline, no backend)",
+        "Mock API server so the app is fully demoable with zero backend",
+        "The API contract (Zod schemas in src/api/contracts) — shared, changed jointly"
+      ]
+    },
+    "backendPartner": {
+      "owner": "backend / AI teammate",
+      "responsibilities": [
+        "Multilingual AI + RAG pipeline behind POST /v1/assistant/query",
+        "AI-assisted scheme recommendation behind POST /v1/recommendations",
+        "Real scheme catalogue (verified against official NSFDC circulars)",
+        "Real Channel Partner directory + live fund-health / NPA data",
+        "Speech-to-text for voice queries (POST /v1/assistant/transcribe)"
+      ],
+      "handoffDoc": "docs/BACKEND_HANDOFF.md",
+      "contractDoc": "docs/API_CONTRACT.md",
+      "integrationSwitch": "Set EXPO_PUBLIC_USE_MOCK_API=false in .env. Nothing else in the app changes."
+    }
+  },
+  "stack": {
+    "language": "TypeScript (strict)",
+    "framework": "React Native via Expo SDK 57",
+    "routing": "expo-router (file-based, app/ directory)",
+    "state": "zustand (persisted device state) + @tanstack/react-query (server state)",
+    "i18n": "i18next + react-i18next + expo-localization",
+    "validation": "zod — the API contract is Zod schemas, validated at the network boundary",
+    "maps": "react-native-maps (lazily and defensively loaded; list view is the primary UX)",
+    "speech": "expo-speech for text-to-speech out; speech-to-text is NOT implemented in v0",
+    "nodeVersion": ">=20",
+    "packageManager": "npm"
+  },
+  "commands": {
+    "install": "npm install",
+    "start": "npm start",
+    "android": "npm run android",
+    "ios": "npm run ios",
+    "web": "npm run web",
+    "typecheck": "npm run typecheck",
+    "lint": "npm run lint",
+    "format": "npm run format",
+    "i18nCoverage": "npm run i18n:check",
+    "verifyEverything": "npm run verify",
+    "productionBundleCheck": "npx expo export --platform android",
+    "startSession": "bash .agents/checkpoint.sh resume",
+    "saveCheckpoint": "bash .agents/checkpoint.sh save --agent <name> --task <desc> --verified 'fact=proof' --next <desc>",
+    "verifyAndRecord": "bash .agents/checkpoint.sh verify <agent-name>",
+    "checkpointHistory": "bash .agents/checkpoint.sh list"
+  },
+  "structure": {
+    "app/": "expo-router routes. File path = URL path. Screens only — no business logic here.",
+    "app/(tabs)/": "The five bottom tabs: home, schemes, calculator, partners, profile.",
+    "app/onboarding/": "Language selection (first screen anyone sees) and the intro carousel.",
+    "app/recommend/": "Smart Scheme Recommender wizard (index) and its results screen.",
+    "app/scheme/[id].tsx": "Scheme detail.",
+    "app/partner/[id].tsx": "Channel Partner detail.",
+    "app/assistant.tsx": "Multilingual AI chat.",
+    "src/api/contracts/": "⚠️ SHARED CONTRACT. Zod schemas that both frontend and backend must satisfy. Changing these is a cross-team change.",
+    "src/api/services/": "The ONLY way screens reach data. Each service picks mock vs real backend.",
+    "src/api/mock/": "In-memory mock backend + seed fixtures. Never imported by a screen directly.",
+    "src/features/calculator/emi.ts": "Pure EMI math. No React, no network. Verified against textbook values.",
+    "src/features/recommender/ruleEngine.ts": "Deterministic on-device scheme matching. Offline fallback + explainability baseline.",
+    "src/components/ui/": "Generic design-system primitives. No domain knowledge.",
+    "src/components/domain/": "Components that know about schemes/partners.",
+    "src/hooks/": "React Query hooks and device-capability hooks.",
+    "src/i18n/": "i18n setup and locale JSON. en.json is the source of truth.",
+    "src/store/": "zustand persisted store (language, profile, saved schemes).",
+    "src/theme/": "Design tokens. Never hardcode a colour or spacing value in a component.",
+    "src/utils/": "Pure helpers (Indian number formatting, geo distance).",
+    "context/": "Machine-readable project context for AI agents (this directory).",
+    "docs/": "Human-readable documentation.",
+    ".agents/": "Cross-AI working protocol (PROTOCOL.md), the checkpoint CLI (checkpoint.sh) and project skills (skills/).",
+    ".checkpoints/": "Session-by-session agent state. Committed to git — this is project history, not scratch. _latest.json points at the most recent."
+  },
+  "conventions": {
+    "imports": "Always use the '@/' alias for src (e.g. '@/components/ui'). Metro resolves it from tsconfig paths — there is deliberately no babel.config.js.",
+    "dataFlow": "screen → hook (src/hooks) → service (src/api/services) → mock OR real HTTP. A screen must never import from src/api/mock or call fetch.",
+    "styling": "StyleSheet.create at the bottom of the file, values from '@/theme' only.",
+    "text": "Use the Text component from '@/components/ui', never react-native's Text — it carries the Indic-script line heights.",
+    "strings": "No user-visible string may be hardcoded. Add it to src/i18n/locales/en.json and use t('key').",
+    "money": "Whole rupees as integers. Format via '@/utils/format' so grouping is lakh/crore, not thousands.",
+    "touchTargets": "Minimum 48dp. Body text minimum 16px. Status is never conveyed by colour alone.",
+    "unverifiedData": "Any scheme figure not confirmed against an official circular must carry verified:false, which makes the UI show a warning chip. Never silently present seed data as authoritative."
+  },
+  "dataHonesty": {
+    "warning": "Mixed, and the distinction is the point. SCHEMES: five of eight are verified against nsfdc.nic.in/scheme (2026-09-07) and carry verified:true with citations; three carry verified:false and are shown with a warning. PARTNERS: the five agency names and their SCA role are verified; no phone numbers and no NPA or fund-utilisation figures are carried at all, because NSFDC does not publish per-partner figures — every partner is status UNKNOWN. ASSISTANT: keyword matching, not a model. Nothing here is invented; what is not known is marked as not known.",
+    "files": [
+      "src/api/mock/fixtures/schemes.ts",
+      "src/api/mock/fixtures/partners.ts",
+      "src/api/mock/fixtures/assistant.ts"
+    ],
+    "beforePublicDemo": "Verify the three remaining schemes (MSY, LVY, GBS) and flip verified:true only as each is confirmed from nsfdc.nic.in. Obtain the partner master and a fund-health feed before any partner shows a status other than UNKNOWN. Get mr/bn/ta/te reviewed by native speakers. Do not remove a warning to make the demo look cleaner — ADR-009.",
+    "assistantIsNotAI": "src/api/mock/fixtures/assistant.ts is keyword matching, not a model. It exists so the chat UI can be built before the RAG pipeline lands."
+  },
+  "privacy": {
+    "principle": "Collect the minimum needed to recommend a scheme.",
+    "collected": [
+      "project type",
+      "estimated project cost",
+      "annual family income",
+      "education status",
+      "gender (optional)"
+    ],
+    "notCollected": [
+      "name",
+      "Aadhaar",
+      "PAN",
+      "caste certificate number",
+      "phone number",
+      "any government ID"
+    ],
+    "storage": "Everything stays on-device in AsyncStorage. The profile is sent to the backend only as a request body, never persisted server-side in v0.",
+    "location": "Requested only when the user taps 'Use my location', never on app start."
+  },
+  "requirementCoverage": {
+    "smartSchemeRecommender": {
+      "status": "implemented (rule engine) + wired for AI",
+      "frontend": "app/recommend/, src/features/recommender/ruleEngine.ts",
+      "backendNeeded": "POST /v1/recommendations for AI/RAG-grounded reasoning and citations"
+    },
+    "financialCalculator": {
+      "status": "complete",
+      "frontend": "app/(tabs)/calculator.tsx, src/features/calculator/emi.ts",
+      "backendNeeded": "none — fully offline by design",
+      "covers": [
+        "EMI",
+        "scheme loan ceilings",
+        "interest rates",
+        "moratorium 3–12 months",
+        "full amortisation schedule"
+      ]
+    },
+    "geoSpatialPartnerLocator": {
+      "status": "implemented; agency names verified, per-partner fund data does not exist publicly",
+      "frontend": "app/(tabs)/partners.tsx, app/partner/[id].tsx, src/components/domain/PartnerMap.tsx, src/components/domain/PartnerNorms.tsx, src/features/partners/eligibilityNorms.ts",
+      "backendNeeded": "POST /v1/partners/search with the real partner master and a fund-health feed. The norms are already encoded per partner type; requiredInputsFor(type) returns the exact fields NSFDC would have to supply. Until then every partner is UNKNOWN.",
+      "keyRule": "onlyAccepting defaults to true — never route an applicant to a partner that cannot disburse"
+    },
+    "multilingual": {
+      "status": "6 languages, all complete (319 keys); mr/bn/ta/te AI-translated pending native review",
+      "frontend": "src/i18n/, app/onboarding/language.tsx, app/assistant.tsx, app/voice.tsx, src/features/voice/ (speech-to-text providers, TTS, BCP-47 speech locales)",
+      "backendNeeded": "the AI must answer in the language passed as responseLanguage. Optionally POST /v1/assistant/transcribe, which would enable voice input on native."
+    }
+  },
+  "knownGaps": [
+    "Speech-to-text (voice input) is not implemented — needs a dev build or the backend transcribe endpoint.",
+    "mr/bn/ta/te locales are ~20% translated; missing keys fall back to English by design.",
+    "No automated test suite yet; EMI math and the rule engine were verified by script during development.",
+    "react-native-maps needs a development build for full functionality; the app degrades to a list view.",
+    "No authentication — v0 is deliberately anonymous."
+  ],
+  "pointers": {
+    "humanReadableAgentRules": "CLAUDE.md",
+    "crossToolAgentRules": "AGENTS.md",
+    "workingProtocol": ".agents/PROTOCOL.md",
+    "projectSkills": ".agents/skills/",
+    "architecture": "docs/ARCHITECTURE.md",
+    "apiContract": "docs/API_CONTRACT.md",
+    "backendHandoff": "docs/BACKEND_HANDOFF.md",
+    "i18nGuide": "docs/I18N.md",
+    "designSystem": "docs/DESIGN_SYSTEM.md",
+    "roadmap": "docs/ROADMAP.md",
+    "problemStatement": "context/problem-statement.json",
+    "domainGlossary": "context/domain.json",
+    "decisionLog": "context/decisions.json",
+    "liveBuildState": "context/state.json",
+    "sessionCheckpoints": ".checkpoints/ (latest named by .checkpoints/_latest.json)",
+    "checkpointCli": ".agents/checkpoint.sh",
+    "cursorRules": ".cursor/rules/"
+  },
+  "agentMemory": {
+    "principle": "Chat history is not project state. A new session must be able to resume from files alone.",
+    "twoLayers": {
+      "durable": {
+        "path": "context/*.json",
+        "changes": "slowly",
+        "holds": "What the project IS — identity, ownership, domain rules, decisions, current milestone"
+      },
+      "session": {
+        "path": ".checkpoints/*.json",
+        "changes": "every session",
+        "holds": "What happened this session — task, progress, verified facts, exactly what to do next",
+        "pointer": ".checkpoints/_latest.json names the most recent checkpoint and which agent wrote it"
+      }
+    },
+    "cli": ".agents/checkpoint.sh — resume | save | verify | list | show | diff | prune",
+    "startOfSession": "bash .agents/checkpoint.sh resume",
+    "cadence": "Checkpoint every ~15 minutes and before anything destructive. Promote milestones into context/state.json.",
+    "proofRule": "Every verified fact must carry the command that proves it. A claim without a proof forces the next agent to re-derive it.",
+    "reconciliation": "A checkpoint records the git commit it was written against. `resume` and `diff` compare it to reality and report SAME COMMIT / uncommitted changes / DIVERGED. Never resume off a checkpoint that disagrees with git."
+  },
+  "updatedAt": "2026-09-08",
+  "updatedBy": "claude-code"
+}

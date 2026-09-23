@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T201009_claude-code_91b9b3",
+  "created_at": "2026-09-06T20:10:09Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Build out the skill library with progressive disclosure",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "4 skills with trigger-rich frontmatter",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "31 reference rules, each with a wrong/right pair",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "New scheme-domain skill mapping channel-finance rules to implementing files",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "references/_template.md in every skill",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": ".agents/skills/README.md explaining how to extend",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Wired into PROTOCOL, CLAUDE.md, AGENTS.md, both Cursor rules",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "CI guard for frontmatter and reference links",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "ADR-013",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "All skills well-formed",
+      "proof": "4/4 SKILL.md have name+description frontmatter, every references/ link resolves, run as the CI 'Skills are well-formed' step",
+      "verified_at": "2026-09-06T20:10:09Z"
+    },
+    {
+      "fact": "npm run verify passes",
+      "proof": "typecheck + lint + format + i18n clean",
+      "verified_at": "2026-09-06T20:10:09Z"
+    },
+    {
+      "fact": "All handoff JSON valid",
+      "proof": "context/ and .checkpoints/ parsed with the CI loop",
+      "verified_at": "2026-09-06T20:10:09Z"
+    },
+    {
+      "fact": "Commits authored correctly",
+      "proof": "git log -1 shows parthp-4 <parthporwal4@gmail.com>",
+      "verified_at": "2026-09-06T20:10:09Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "71f959e4f13f42e4b49ef44c29642c1b861df481",
+    "git_commit_message": "feat(agents): skill library with progressive disclosure",
+    "files_changed": [],
+    "has_uncommitted": false,
+    "diff_summary": ""
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Push to GitHub as parthp-4. Blocked: gh holds a stale account (ipuorhit, invalid token) and login is interactive. User must run 'gh auth logout -h github.com -u ipuorhit' then 'gh auth login', then 'gh repo create sahaay-setu --private --source=. --remote=origin --push'",
+    "target_file": "README.md",
+    "context": ""
+  },
+  "context_notes": "Repo is complete: 160 tracked files, 6 commits, clean tree, no remote yet. Agent layer is two-layer memory (context/ + .checkpoints/) plus 4 skills with 31 rules. Still blocking a real demo, both owned by the backend/data teammate: scheme figures unverified against NSFDC circulars (N2), all 10 Channel Partner records synthetic (N3)."
+}

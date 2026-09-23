@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260907T103058_claude-code_96b973",
+  "created_at": "2026-09-07T10:30:58Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Apply research discrepancies; encode partner norms per type; record field evidence",
+    "plan": [],
+    "status": "in_progress"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Corrected the flattened net-NPA claim in 11 files",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Encoded NSFDC norms per partner type with provenance",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Added PartnerNorms UI in 6 languages",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Recorded 2020 MoSJE field evidence",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Appended ADR-018 and a correction pointer on ADR-017",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "PartnerNorms renders on the partner detail screen in both en and bn, showing only the SCA norm plus the two common ones and naming the 3 missing fields",
+      "proof": "browser get_page_text on localhost:8081/partner/sca-mh-mpbcdc",
+      "verified_at": "2026-09-07T10:30:58Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "f8b910005621656e3bb56a7110eaf089ac353d7c",
+    "git_commit_message": "docs: rewrite the README for the verified state",
+    "files_changed": [
+      ".agents/PROTOCOL.md",
+      ".agents/skills/api-contract-change/SKILL.md",
+      ".agents/skills/api-contract-change/references/mock-parity.md",
+      ".agents/skills/sahaay-frontend/references/honesty-unverified-data.md",
+      ".agents/skills/scheme-domain/references/data-honesty.md",
+      ".agents/skills/scheme-domain/references/rule-partner-routing.md",
+      ".checkpoints/_latest.json",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "README.md",
+      "app/partner/[id].tsx",
+      "context/context.json",
+      "context/decisions.json",
+      "context/domain.json",
+      "context/problem-statement.json",
+      "context/state.json",
+      "docs/BACKEND_HANDOFF.md",
+      "docs/ROADMAP.md",
+      "src/api/contracts/partner.ts",
+      "src/api/mock/fixtures/partners.ts",
+      "src/components/domain/index.ts",
+      "src/i18n/locales/bn.json",
+      "src/i18n/locales/en.json",
+      "src/i18n/locales/hi.json",
+      "src/i18n/locales/mr.json",
+      "src/i18n/locales/ta.json",
+      "src/i18n/locales/te.json",
+      ".checkpoints/sahaay-setu_20260907T093959_claude-code.json",
+      "src/components/domain/PartnerNorms.tsx",
+      "src/features/partners/"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " .agents/PROTOCOL.md                                |  8 ++-\n .agents/skills/api-contract-change/SKILL.md        |  5 +-\n .../api-contract-change/references/mock-parity.md  |  7 +-\n .../references/honesty-unverified-data.md          | 17 +++--\n .../scheme-domain/references/data-honesty.md       | 19 ++++--\n .../references/rule-partner-routing.md             | 44 ++++++++++---\n .checkpoints/_latest.json                          |  4 +-\n AGENTS.md                                          | 21 ++++--\n CLAUDE.md                                          |  9 ++-\n README.md                                          | 61 ++++++++++++++---\n app/partner/[id].tsx                               |  4 +-\n context/context.json                               |  8 ++-\n context/decisions.json                             | 17 ++++-\n context/domain.json                                | 43 ++++++++++--\n context/problem-statement.json                     | 77 ++++++++++++++++++++--\n context/state.json                                 | 11 ++--\n docs/BACKEND_HANDOFF.md                            | 45 +++++++++----\n docs/ROADMAP.md                                    |  7 +-\n src/api/contracts/partner.ts                       |  7 +-\n src/api/mock/fixtures/partners.ts                  | 16 +++--\n src/components/domain/index.ts                     |  1 +\n src/i18n/locales/bn.json                           | 40 +++++++++++\n src/i18n/locales/en.json                           | 40 +++++++++++\n src/i18n/locales/hi.json                           | 40 +++++++++++\n src/i18n/locales/mr.json                           | 40 +++++++++++\n src/i18n/locales/ta.json                           | 40 +++++++++++\n src/i18n/locales/te.json                           | 40 +++++++++++\n 27 files changed, 579 insertions(+), 92 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Optional: native-speaker review of the 34 new norm strings in mr/bn/ta/te (N4 already covers this)",
+    "target_file": "src/i18n/locales/mr.json",
+    "context": ""
+  },
+  "context_notes": "NSFDC restructured its site: /scheme serves 200 but every /en/* path 404s, so the norms come from search-index snapshots and are stored at confidence 0.6 with retrievedVia SEARCH_INDEX_SNAPSHOT. E8 in problem-statement.json records the CORRECT reading of the 2020 evaluation's utilisation finding, because the teammate's note misread it."
+}

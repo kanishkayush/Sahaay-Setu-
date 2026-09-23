@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sahaay Setu · UI rebuilt on the Apple design system</title>
+<style>
+  /* Apple design-system tokens — pasted verbatim from tokens.css. */
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f5f7;
+    --surface-warm: #fbfbfd;
+    --fg: #1d1d1f;
+    --fg-2: #424245;
+    --muted: #6e6e73;
+    --meta: #86868b;
+    --border: #d2d2d7;
+    --border-soft: #e8e8ed;
+    --accent: #0071e3;
+    --accent-on: #ffffff;
+    --accent-hover: #0077ed;
+    --accent-active: #0066cc;
+    --success: #16a34a;
+    --warn:    #eab308;
+    --danger:  #dc2626;
+    --font-display: "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body:    "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono:    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+    --text-xs:   12px;
+    --text-sm:   14px;
+    --text-base: 17px;
+    --text-lg:   21px;
+    --text-xl:   28px;
+    --text-2xl:  40px;
+    --text-3xl:  56px;
+    --text-4xl:  80px;
+    --leading-body:  1.47;
+    --leading-tight: 1.05;
+    --tracking-display: -0.015em;
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-12: 48px;
+    --section-y-desktop: 100px;
+    --section-y-tablet:  64px;
+    --section-y-phone:   40px;
+    --radius-sm:   8px;
+    --radius-md:   12px;
+    --radius-lg:   18px;
+    --radius-pill: 980px;
+    --elev-flat:   none;
+    --elev-ring:   0 0 0 1px var(--border);
+    --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
+    --focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
+    --motion-fast:   150ms;
+    --motion-base:   220ms;
+    --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+    --container-max:            1024px;
+    --container-gutter-desktop: 22px;
+    --container-gutter-tablet:  18px;
+    --container-gutter-phone:   16px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+    letter-spacing: -0.022em;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3 { margin: 0; font-family: var(--font-display); text-wrap: balance; }
+  p { margin: 0; text-wrap: pretty; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+  .container { max-width: var(--container-max); margin-inline: auto; padding-inline: var(--container-gutter-desktop); }
+  .section { padding-block: var(--section-y-desktop); }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--meta);
+  }
+  .lead { font-size: var(--text-lg); line-height: 1.42; color: var(--muted); max-width: 54ch; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in oklab, var(--bg), transparent 20%);
+    backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: inset 0 -1px 0 var(--border-soft);
+  }
+  .topnav .container { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); height: 52px; }
+  .topnav strong { font-family: var(--font-display); font-size: var(--text-base); font-weight: 600; }
+  .topnav nav { display: flex; gap: var(--space-6); }
+  .topnav nav a { font-size: var(--text-sm); color: var(--muted); }
+  .topnav nav a:hover { color: var(--fg); }
+
+  .hero { padding-block: 88px var(--space-12); }
+  .hero h1 {
+    font-size: clamp(40px, 5.4vw, var(--text-3xl));
+    font-weight: 600; line-height: 1.06; letter-spacing: var(--tracking-display);
+    max-width: 23ch;
+  }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+    min-height: 48px; padding: 0 var(--space-6);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-base); font-weight: 600; letter-spacing: -0.01em;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-on); }
+  .btn-primary:hover { background: var(--accent-hover); color: var(--accent-on); }
+  .btn-primary:active { background: var(--accent-active); color: var(--accent-on); }
+  .btn-secondary { background: var(--bg); color: var(--fg); box-shadow: var(--elev-ring); }
+  .btn-secondary:hover { background: color-mix(in oklab, var(--bg), var(--fg) 6%); }
+
+  .band { background: var(--surface); }
+  .band-dark { background: var(--fg); color: var(--bg); }
+  .band-dark .lead, .band-dark .eyebrow { color: color-mix(in oklab, var(--bg), var(--fg) 34%); }
+
+  /* Device rail. */
+  .rail {
+    display: flex; gap: var(--space-8);
+    overflow-x: auto;
+    padding: var(--space-6) var(--container-gutter-desktop) var(--space-8);
+    scroll-snap-type: x proximity;
+  }
+  .rail::-webkit-scrollbar { height: 8px; }
+  .rail::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-pill); }
+  .rail::-webkit-scrollbar-track { background: transparent; }
+  .device-cell { flex: none; width: 414px; scroll-snap-align: center; }
+  .device-cell.android { width: 436px; }
+  .device-cell iframe { border: 0; display: block; margin-inline: auto; }
+  .device-cap { padding: var(--space-5) var(--space-2) 0; max-width: 380px; margin-inline: auto; }
+  .device-cap h3 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.012em; }
+  .device-cap p { margin-top: 6px; font-size: var(--text-sm); color: var(--muted); }
+  .device-cap a {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: var(--space-3); min-height: 32px;
+    font-size: var(--text-sm); font-weight: 600; color: var(--fg-2);
+  }
+  .device-cap a:hover { color: var(--fg); }
+  .device-cap a::after { content: '→'; transition: transform var(--motion-fast) var(--ease-standard); }
+  .device-cap a:hover::after { transform: translateX(3px); }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-12); align-items: start; }
+
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-3); }
+  .sw { border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--elev-ring); }
+  .sw i { display: block; height: 68px; }
+  .sw span { display: block; padding: 9px 10px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+  th, td { text-align: left; padding: 13px 14px; box-shadow: inset 0 -1px 0 var(--border-soft); vertical-align: top; }
+  th { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600;
+       letter-spacing: 0.05em; text-transform: uppercase; color: var(--meta); }
+  td code { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--fg-2); }
+  td:first-child { color: var(--muted); width: 22%; }
+
+  .pagefoot { padding-block: var(--space-12); box-shadow: inset 0 1px 0 var(--border-soft); color: var(--muted); font-size: var(--text-sm); }
+  .pagefoot .container { display: flex; justify-content: space-between; gap: var(--space-6); flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .grid-3, .grid-2, .swatches { grid-template-columns: 1fr; }
+    .swatches { grid-template-columns: repeat(3, 1fr); }
+    .section { padding-block: var(--section-y-tablet); }
+    .topnav nav { display: none; }
+  }
+  @media (max-width: 560px) {
+    .section { padding-block: var(--section-y-phone); }
+    .device-cell { width: 340px; }
+    .device-cell iframe { transform: scale(0.8); transform-origin: top center; }
+    .device-cell.android { width: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topnav" data-od-id="launcher-topnav">
+  <div class="container">
+    <strong>Sahaay Setu</strong>
+    <nav>
+      <a href="#ios">iOS</a>
+      <a href="#android">Android</a>
+      <a href="#system">Design system</a>
+      <a href="#changes">What changed</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="section hero" data-od-id="launcher-hero">
+    <div class="container">
+      <p class="eyebrow">Sahaay Setu · SIH PS 26092 · MoSJE</p>
+      <h1 style="margin-top:var(--space-4)">The scheme-matching app, rebuilt on the Apple design system.</h1>
+      <p class="lead" style="margin-top:var(--space-5)">
+        Ten screens across iOS and Android. Same product, same content, same offline EMI engine —
+        a restrained neutral ladder, SF Pro, and a single blue accent in place of the v0 institutional palette.
+      </p>
+      <div style="margin-top:var(--space-8);display:flex;gap:var(--space-3);flex-wrap:wrap">
+        <a class="btn btn-primary" href="screens/ios-home.html">Open the iOS home screen</a>
+        <a class="btn btn-secondary" href="#system">See the token bindings</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="ios" data-od-id="launcher-ios">
+    <div class="section" style="padding-bottom:var(--space-6)">
+      <div class="container">
+        <p class="eyebrow">iPhone 15 Pro · 390 × 844</p>
+        <h2 style="margin-top:var(--space-3);font-size:var(--text-xl);font-weight:600;letter-spacing:-0.02em">iOS</h2>
+        <p class="lead" style="margin-top:var(--space-3);font-size:var(--text-base)">
+          Grouped inset lists, a collapsing large title, translucent navigation and tab bars, 44pt targets.
+          Scroll the rail sideways; every screen is live and interactive.
+        </p>
+      </div>
+    </div>
+    <div class="rail" data-od-id="launcher-ios-rail">
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-home.html" width="414" height="880" loading="lazy" title="iOS home screen"></iframe>
+        <div class="device-cap">
+          <h3>Home</h3>
+          <p>One dark chapter carries the primary action. The four emoji tiles become a grouped list with monoline icons.</p>
+          <a href="screens/ios-home.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-recommend.html" width="414" height="880" loading="lazy" title="iOS find-my-scheme wizard"></iframe>
+        <div class="device-cap">
+          <h3>Find my scheme</h3>
+          <p>Five steps, one question each. Amount steps read back in lakh so the figure means something. Fully navigable.</p>
+          <a href="screens/ios-recommend.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-results.html" width="414" height="880" loading="lazy" title="iOS results screen"></iframe>
+        <div class="device-cap">
+          <h3>Results</h3>
+          <p>Ranked matches with the eligible amount, rate and tenure as tabular figures. Near-misses state what blocked you.</p>
+          <a href="screens/ios-results.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-calculator.html" width="414" height="880" loading="lazy" title="iOS EMI calculator"></iframe>
+        <div class="device-cap">
+          <h3>EMI calculator</h3>
+          <p>Live figures off the app's real amortisation engine, including moratorium capitalisation and the full schedule sheet.</p>
+          <a href="screens/ios-calculator.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-partners.html" width="414" height="880" loading="lazy" title="iOS partners screen"></iframe>
+        <div class="device-cap">
+          <h3>Channel Partners</h3>
+          <p>Type filters and the fund-health switch actually filter. Status colour is always paired with a label.</p>
+          <a href="screens/ios-partners.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell">
+        <iframe data-frame="/frames/iphone-15-pro.html" data-screen="screens/ios-assistant.html" width="414" height="880" loading="lazy" title="iOS assistant screen"></iframe>
+        <div class="device-cap">
+          <h3>Ask Sahaay</h3>
+          <p>Keyword-matched answers from the offline bank, with sources, follow-ups, read-aloud and the ungrounded warning.</p>
+          <a href="screens/ios-assistant.html">Open</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="android" data-od-id="launcher-android">
+    <div class="section" style="padding-bottom:var(--space-6)">
+      <div class="container">
+        <p class="eyebrow">Pixel · 412 × 900</p>
+        <h2 style="margin-top:var(--space-3);font-size:var(--text-xl);font-weight:600;letter-spacing:-0.02em">Android</h2>
+        <p class="lead" style="margin-top:var(--space-3);font-size:var(--text-base)">
+          Not the iOS layout squeezed sideways. Material top app bar, bottom navigation with an active pill indicator,
+          an extended FAB, outlined text fields, full-screen dialogs, 48dp targets — on the same token contract.
+        </p>
+      </div>
+    </div>
+    <div class="rail" data-od-id="launcher-android-rail">
+
+      <div class="device-cell android">
+        <iframe data-frame="/frames/android-pixel.html" data-screen="screens/android-home.html" width="436" height="936" loading="lazy" title="Android home screen"></iframe>
+        <div class="device-cap">
+          <h3>Home</h3>
+          <p>The primary action moves into an extended FAB, so the dark card carries facts instead of a second CTA.</p>
+          <a href="screens/android-home.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell android">
+        <iframe data-frame="/frames/android-pixel.html" data-screen="screens/android-results.html" width="436" height="936" loading="lazy" title="Android results screen"></iframe>
+        <div class="device-cap">
+          <h3>Results</h3>
+          <p>Material filter chips narrow the ranking by category; the reason list opens with a text button, not a chevron row.</p>
+          <a href="screens/android-results.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell android">
+        <iframe data-frame="/frames/android-pixel.html" data-screen="screens/android-calculator.html" width="436" height="936" loading="lazy" title="Android EMI calculator"></iframe>
+        <div class="device-cap">
+          <h3>EMI calculator</h3>
+          <p>Adds a typed amount field bound to the slider, Material track geometry, and a full-screen schedule dialog.</p>
+          <a href="screens/android-calculator.html">Open</a>
+        </div>
+      </div>
+
+      <div class="device-cell android">
+        <iframe data-frame="/frames/android-pixel.html" data-screen="screens/android-partners.html" width="436" height="936" loading="lazy" title="Android partners screen"></iframe>
+        <div class="device-cap">
+          <h3>Channel Partners</h3>
+          <p>Outlined PIN field with a floating label, circular type marks, and the same working fund-health filter.</p>
+          <a href="screens/android-partners.html">Open</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section band" id="system" data-od-id="launcher-tokens">
+    <div class="container">
+      <p class="eyebrow">Token bindings</p>
+      <h2 style="margin-top:var(--space-3);font-size:var(--text-xl);font-weight:600;letter-spacing:-0.02em">
+        Six roles do all the work.
+      </h2>
+      <p class="lead" style="margin-top:var(--space-3);font-size:var(--text-base)">
+        Every colour in all ten screens is one of these or a <code style="font-family:var(--font-mono);font-size:0.85em">color-mix()</code>
+        of them. No raw hex exists outside the <code style="font-family:var(--font-mono);font-size:0.85em">:root</code> block in
+        <code style="font-family:var(--font-mono);font-size:0.85em">screens/app.css</code>.
+      </p>
+
+      <div class="swatches" style="margin-top:var(--space-8)">
+        <div class="sw"><i style="background:var(--bg)"></i><span>--bg</span></div>
+        <div class="sw"><i style="background:var(--surface)"></i><span>--surface</span></div>
+        <div class="sw"><i style="background:var(--fg)"></i><span>--fg</span></div>
+        <div class="sw"><i style="background:var(--muted)"></i><span>--muted</span></div>
+        <div class="sw"><i style="background:var(--border)"></i><span>--border</span></div>
+        <div class="sw"><i style="background:var(--accent)"></i><span>--accent</span></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:var(--space-12)">
+        <div>
+          <h3 style="font-size:var(--text-lg);font-weight:600">Where the roles land</h3>
+          <table style="margin-top:var(--space-4)">
+            <tbody>
+              <tr><td>Canvas</td><td><code>--surface</code> #f5f5f7 — the iOS grouped-background field every card lifts off.</td></tr>
+              <tr><td>Cards</td><td><code>--bg</code> #ffffff at <code>--radius-lg</code> 18px.</td></tr>
+              <tr><td>Dark chapter</td><td><code>--fg</code> #1d1d1f, one per screen, carrying the EMI figure or the primary action.</td></tr>
+              <tr><td>Accent</td><td><code>--accent</code> #0071e3, at most twice per screen: one filled action plus the active tab tint.</td></tr>
+              <tr><td>Status</td><td><code>--success</code> / <code>--warn</code> / <code>--danger</code> mixed into the surface, always beside a text label.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3 style="font-size:var(--text-lg);font-weight:600">Type</h3>
+          <table style="margin-top:var(--space-4)">
+            <tbody>
+              <tr><td>Display</td><td>SF Pro Display, 600, tracking −0.015em — titles and figures only.</td></tr>
+              <tr><td>Body</td><td>SF Pro Text at 17px, Apple's reading baseline, leading 1.47.</td></tr>
+              <tr><td>Numerics</td><td>SF Mono, tabular, on every rupee amount, rate, tenure and distance.</td></tr>
+              <tr><td>Indic scripts</td><td>Generous leading retained from v0 — Devanagari, Bengali, Tamil and Telugu need the vertical room.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="changes" data-od-id="launcher-changes">
+    <div class="container">
+      <p class="eyebrow">Before / after</p>
+      <h2 style="margin-top:var(--space-3);font-size:var(--text-xl);font-weight:600;letter-spacing:-0.02em">
+        What actually changed.
+      </h2>
+      <table style="margin-top:var(--space-8)">
+        <thead><tr><th>Area</th><th>v0 Expo app</th><th>Rebuilt</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Palette</td>
+            <td>Institutional blue #0B4F6C on hero cards, step markers and tabs, plus an orange #C25E00 accent surface.</td>
+            <td>Neutral ladder carries hierarchy; a single blue accent, capped at two uses per screen.</td>
+          </tr>
+          <tr>
+            <td>Icons</td>
+            <td>Emoji as functional icons — 🏠 📋 🧮 📍 👤 in the tab bar, 💬 🧮 📍 in the tiles.</td>
+            <td>A 24-unit monoline SVG set, one stroke weight, sized 17 / 22 / 26.</td>
+          </tr>
+          <tr>
+            <td>Type</td>
+            <td>Platform default sans at a 16px baseline.</td>
+            <td>SF Pro Display / Text at 17px, with SF Mono reserved for figures.</td>
+          </tr>
+          <tr>
+            <td>Numbers</td>
+            <td>Proportional digits — amounts shift width as a slider moves.</td>
+            <td>Tabular mono throughout, so the EMI figure stays put while you drag.</td>
+          </tr>
+          <tr>
+            <td>Android</td>
+            <td>One React Native layout rendered on both platforms.</td>
+            <td>Separate files with Material chrome: app bar, nav pill indicator, FAB, outlined fields, full-screen dialogs.</td>
+          </tr>
+          <tr>
+            <td>Unchanged</td>
+            <td colspan="2">Copy, scheme figures, partner records, rule outcomes, the amortisation engine, and the prototype-data disclosures — all carried over as-is.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section band-dark" data-od-id="launcher-caveats">
+    <div class="container">
+      <p class="eyebrow">Known limitations</p>
+      <div class="grid-3" style="margin-top:var(--space-6)">
+        <div>
+          <h3 style="font-size:var(--text-base);font-weight:600">Scheme figures</h3>
+          <p class="lead" style="font-size:var(--text-sm);margin-top:8px">
+            Loan limits, rates and moratorium windows come from the v0 seed catalogue and are not yet verified against
+            NSFDC circulars. Every screen keeps the notice.
+          </p>
+        </div>
+        <div>
+          <h3 style="font-size:var(--text-base);font-weight:600">Partner directory</h3>
+          <p class="lead" style="font-size:var(--text-sm);margin-top:8px">
+            Branch names, phone numbers, NPA percentages and fund figures are synthetic. Institution logos are deliberately
+            absent — a real bank mark on a fabricated branch would mislead.
+          </p>
+        </div>
+        <div>
+          <h3 style="font-size:var(--text-base);font-weight:600">Map</h3>
+          <p class="lead" style="font-size:var(--text-sm);margin-top:8px">
+            The locator draws a schematic street view, labelled as such. No survey map tiles are bundled; distances are
+            computed from the fixture coordinates against Pune 411001.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pagefoot" data-od-id="launcher-footer">
+  <div class="container">
+    <span>Sahaay Setu · सहाय सेतु — your bridge to the right loan.</span>
+    <span style="font-family:var(--font-mono);font-size:var(--text-xs)">
+      Design system: Apple · 10 screens · iOS + Android
+    </span>
+  </div>
+</footer>
+
+
+<script>
+  /* Point every device frame at a fully-qualified screen URL. The frames' own
+     loader falls back to document.referrer for relative paths, which is empty
+     in screenshot renderers and some embed hosts. */
+  (function () {
+    var frames = document.querySelectorAll('iframe[data-frame]');
+    for (var i = 0; i < frames.length; i++) {
+      var f = frames[i];
+      var abs = new URL(f.getAttribute('data-screen'), location.href).href;
+      f.src = f.getAttribute('data-frame') + '?screen=' + encodeURIComponent(abs);
+    }
+  })();
+</script>
+
+</body>
+</html>

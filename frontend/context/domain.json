@@ -1,0 +1,161 @@
+{
+  "contextVersion": "1.0.0",
+  "purpose": "Domain vocabulary and business rules. An agent unfamiliar with Indian channel finance should read this before writing scheme or partner logic.",
+  "glossary": {
+    "SC": "Scheduled Caste — the beneficiary group this platform serves.",
+    "MoSJE": "Ministry of Social Justice and Empowerment — the sponsoring ministry.",
+    "NSFDC": "National Scheduled Castes Finance and Development Corporation — apex body whose concessional credit products this app surfaces.",
+    "Channel Finance System": "The routing model: beneficiaries cannot apply to NSFDC directly. Funds flow through 100+ Channel Partners.",
+    "Channel Partner": "An authorised intermediary that receives and processes loan applications. Four types: SCA, PSB, RRB, NBFC-MFI.",
+    "SCA": "State Channelizing Agency — the state-level corporation, usually the widest scheme coverage.",
+    "PSB": "Public Sector Bank — typically handles larger term loans and education loans.",
+    "RRB": "Regional Rural Bank — rural reach, agriculture and micro-credit.",
+    "NBFC-MFI": "Non-Banking Financial Company / Micro Finance Institution — small-ticket micro-credit.",
+    "NPA": "Non-Performing Asset — a loan in default. A partner with high NPAs is a bad routing target because disbursement stalls.",
+    "Moratorium": "Repayment holiday after disbursement (3–12 months here) before the first EMI falls due. Interest still accrues.",
+    "Margin money": "The beneficiary's own contribution — project cost minus the sanctioned loan.",
+    "Funding share": "Proportion of project cost the scheme funds. 90% is standard for these products.",
+    "EMI": "Equated Monthly Instalment.",
+    "Concessional rate": "Below-market interest rate, the core benefit of these schemes."
+  },
+  "coreRules": [
+    {
+      "id": "D1",
+      "rule": "Annual family income must not exceed ₹5,00,000.",
+      "effect": "Hard eligibility gate. Fails → no scheme is recommended, with the reason shown.",
+      "codeLocation": "src/features/recommender/ruleEngine.ts (scoreScheme, hard gate 1)"
+    },
+    {
+      "id": "D2",
+      "rule": "Schemes fund up to 90% of project cost, capped by the scheme's own ceiling.",
+      "effect": "eligibleLoanAmount = min(projectCost × fundingSharePct, scheme.maxLoanAmount)",
+      "codeLocation": "src/features/calculator/emi.ts (eligibleLoanAmount)"
+    },
+    {
+      "id": "D3",
+      "rule": "Ticket size selects the product family: Micro Finance up to a ₹1.40 lakh unit cost (max loan ₹1.25 lakh), Term Loan above ₹1.25 lakh up to a ₹50 lakh project (max loan ₹45 lakh).",
+      "effect": "Drives which schemes score highest for a given project cost. Verified against nsfdc.nic.in/scheme on 2026-09-07.",
+      "codeLocation": "src/api/mock/fixtures/schemes.ts (min/maxLoanAmount)"
+    },
+    {
+      "id": "D4",
+      "rule": "Education loans are only for education; business loans are only for business.",
+      "effect": "Hard gate both ways — an applicant asking about course fees must not be shown a term loan and vice versa.",
+      "codeLocation": "src/features/recommender/ruleEngine.ts (hard gate 3)"
+    },
+    {
+      "id": "D5",
+      "rule": "Several schemes reserve eligibility for women, and several offer women a lower rate.",
+      "effect": "womenInterestRatePct is preferred when the applicant is female.",
+      "codeLocation": "src/features/recommender/ruleEngine.ts (applicableRate)"
+    },
+    {
+      "id": "D6",
+      "rule": "Never route to a Channel Partner that cannot disburse. NSFDC's conditions are partner-type-specific and must not be flattened into one threshold — see partnerEligibilityNorms.",
+      "effect": "PartnerSearchRequest.onlyAccepting defaults to true. No norm can currently be evaluated, because NSFDC publishes the rules and not the per-partner figures, so every partner is UNKNOWN and is still shown — we cannot assert unavailability either. The UI lists the norms for that partner type and names the missing data.",
+      "codeLocation": "src/features/partners/eligibilityNorms.ts (the norms); src/components/domain/PartnerNorms.tsx (the UI); src/api/mock/server.ts (mockSearchPartners); the real assessment belongs on the server",
+      "verified": "Corrected 2026-09-07. The previous text said 'net NPA below 10% ... or a 5-year average below 10%' as if it were the general rule. That is the Stand-up India condition for RRBs. The general allocation norm for an RRB is net NPA below 15% in at least 3 of the last 6 years. An NBFC-MFI must be below 0.5%. One threshold was wrong for every partner type."
+    },
+    {
+      "id": "D7",
+      "rule": "Not every partner type processes every scheme category.",
+      "effect": "Scheme.channelPartnerTypes and ChannelPartner.supportedSchemeCategories must both be respected when routing.",
+      "codeLocation": "src/api/contracts/scheme.ts, src/api/contracts/partner.ts"
+    }
+  ],
+  "schemeCategories": {
+    "MICRO_FINANCE": "Small ticket, petty trade and vending. Typically up to ₹1.40 lakh.",
+    "TERM_LOAN": "Larger self-employment projects. Up to ₹50 lakh.",
+    "EDUCATION_LOAN": "Professional/technical course fees, India or abroad.",
+    "WOMEN_SPECIFIC": "Reserved for women beneficiaries, lowest concessional rates.",
+    "ARTISAN": "Traditional craft and artisan activity.",
+    "AGRICULTURE": "Land-based and allied activity.",
+    "GREEN_MOBILITY": "Clean-energy livelihood assets such as e-rickshaws and solar units."
+  },
+  "dataVerificationStatus": {
+    "state": "PARTIALLY VERIFIED",
+    "checkedOn": "2026-09-07",
+    "verified": [
+      "Annual family income ceiling ₹5.00 lakh, effective 07.01.2026 — confirmed by NSFDC and by socialjustice.gov.in/schemes/34",
+      "Micro Finance Scheme — unit cost ₹1.40L, loan ₹1.25L (90%), 6.5% to beneficiary, 3 years, 3-month moratorium",
+      "Term Loan — project cost to ₹50L, loan ₹45L (90%), 8%, 7 years, 6-month moratorium (12 for plantation/construction)",
+      "Educational Loan Scheme — ₹40L or 90% of course fee, 6.5%, up to 12 years",
+      "Aajeevika Micro-Finance Yojana — ₹1.40L unit / ₹1.25L loan, 15%, 3 years, 3-month moratorium",
+      "Udyam Nidhi Yojana — ₹5L project / ₹4.50L loan, 13% cooperative or 15% small finance bank, 5 years"
+    ],
+    "stillUnverified": [
+      "Mahila Samriddhi Yojana — listed by NSFDC, figures not retrievable from an official page",
+      "Laghu Vyavsay Yojana — same",
+      "Green Business Scheme — same"
+    ],
+    "removed": [
+      "Mahila Kisan Yojana and Shilpi Samridhi Yojana — one source reports both closed from 01.04.2020 for lack of demand, another still lists them as active. Unresolved, so not offered: recommending a discontinued scheme sends someone to a branch for a product that may not exist."
+    ],
+    "sourceRule": "Only nsfdc.nic.in counts as verification. Third-party aggregators disagree with NSFDC and with each other — one lists Term Loan at 9–10% where NSFDC says 8%, and Micro Finance at ₹60,000 where NSFDC says ₹1.25 lakh. They appear to quote pre-01.10.2023 figures.",
+    "noWomensRate": "No women-specific concessional interest rate could be found on any official page. The earlier seed data invented one; it has been removed. Mahila Samriddhi Yojana is genuinely women-only, which is a separate thing from a discounted rate.",
+    "owner": "backend/data teammate — finish the three unverified schemes from their nsfdc.nic.in pages"
+  },
+  "partnerDataStatus": {
+    "checkedOn": "2026-09-07",
+    "networkSize": "37 State/UT Channelizing Agencies plus 55 further Channelizing Agencies",
+    "verified": [
+      "Agency names and SCA role for MPBCDC, LIDCOM (Maharashtra), DSFDC (Delhi), TAHDCO (Tamil Nadu), WB SC/ST/OBC Dev & Fin Corp (West Bengal)",
+      "Eligibility norms are partner-type-specific and are recorded in partnerEligibilityNorms, not as a single threshold"
+    ],
+    "notAvailable": "Per-partner NPA, profit history, overdue and utilisation figures are not published anywhere public. Requirement R3 cannot be fully satisfied from open data — it needs a feed from NSFDC. Every partner is therefore status UNKNOWN. requiredInputsFor() in src/features/partners/eligibilityNorms.ts derives the exact field list per partner type; that list is the ask for NSFDC.",
+    "removed": "The entire v0 seed directory. It invented agencies that do not exist (there is no 'Maharashtra SC Finance & Development Corporation'), two fictional NBFC-MFIs, ten fabricated phone numbers, and NPA percentages attributed to named organisations — the last being a defamatory claim about real institutions, and a fake phone number in a Call button dials a real stranger.",
+    "owner": "backend/data teammate — obtain the partner master and a fund-health feed from NSFDC"
+  },
+  "partnerEligibilityNorms": {
+    "checkedOn": "2026-09-07",
+    "codeLocation": "src/features/partners/eligibilityNorms.ts",
+    "provenance": "NSFDC restructured its site: nsfdc.nic.in/scheme serves 200, but every /en/* path now returns 404 — including allocation-of-funds, stand-up-india and the NBFC-MFI criteria page. Every norm was then read VERBATIM from a Wayback Machine capture of the original NSFDC page (allocation-of-funds 2025-03-17, stand-up-india 2024-10-04, NBFC-MFI 2025-02-15). Those are primary documents at permanent URLs, so these are real citations, held at confidence 0.9 rather than 1 only because the captures are 1-2 years old and the live pages are gone, so a later revision would be invisible to us.",
+    "common": [
+      "No amount overdue to NSFDC older than one year at the end of the preceding financial year.",
+      "At least 80% cumulative utilisation of funds already disbursed (measured at the end of the preceding month up to February; at the end of the preceding day during March)."
+    ],
+    "byType": {
+      "SCA": ["Adequate State Government or bank guarantee in place."],
+      "RRB": [
+        "Net NPA below 15% in at least 3 of the last 6 years preceding disbursement.",
+        "Net profit in at least 3 of the last 6 financial years.",
+        "Under Stand-up India only, a tighter test: net NPA below 10% for the preceding financial year, or a 5-year average below 10% with net NPA below 10% in at least 3 individual years; profit in the last financial year or in at least 3 of the last 5; not a defaulter of any regulatory body."
+      ],
+      "PSB": [
+        "A Memorandum of Agreement with NSFDC in force.",
+        "A utilisation certificate filed for the interest-rate switchover from Bank rate to NSFDC rate on earlier refinance.",
+        "No overdues payable to NSFDC at the time of disbursement."
+      ],
+      "NBFC_MFI": [
+        "Registered with the RBI as an NBFC-MFI and following RBI micro-finance norms.",
+        "Gross NPA below 2% and net NPA below 0.5% per the preceding financial year's annual accounts.",
+        "Three continuous years of profit.",
+        "Minimum capacity assessment rating of mfr5 (CRISIL or equivalent).",
+        "Member of a credit bureau.",
+        "No default on outside borrowings in the last three years and no corporate debt restructuring."
+      ]
+    },
+    "whyThisMatters": "The spread is the point: an RRB may carry a net NPA up to 15% and stay eligible while an NBFC-MFI must stay below 0.5% — a thirtyfold difference inside the same network. Any single 'NPA below X%' rule is wrong for at least three of the four partner types.",
+    "allocationTargetsNotEligibility": {
+      "warning": "These are targets NSFDC sets for how SCAs should distribute their lending. They are NOT applicant eligibility criteria and must not be turned into a recommender score — being a woman does not make a scheme more suitable, it makes the SCA more motivated. Recorded for pitch context and for a future partner-level view only.",
+      "socialPriorities": {
+        "educatedUnemployedOrUnderemployed": "50%",
+        "women": "40%",
+        "others": "10%"
+      },
+      "sectoralPriorities": {
+        "agricultureAndAllied": "50%",
+        "service": "40%",
+        "industry": "10%"
+      },
+      "termLoanUnitCostBands": {
+        "upto_0.50_lakh": "30% of national allocation",
+        "0.50_to_1.40_lakh": "30%",
+        "1.40_to_10.00_lakh": "30%",
+        "10.00_to_50.00_lakh": "10%"
+      },
+      "security": "SCAs provide a Government or Bank Guarantee to NSFDC, preferably as a block guarantee.",
+      "source": "NSFDC — Allocation of Funds, 2025-03-17 archive capture"
+    }
+  }
+}

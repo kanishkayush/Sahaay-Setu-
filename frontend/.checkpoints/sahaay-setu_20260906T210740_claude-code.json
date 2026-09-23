@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260906T210740_claude-code_48792a",
+  "created_at": "2026-09-06T21:07:40Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Run the app and fix what running it exposed",
+    "plan": [],
+    "status": "completed"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Enabled web target for browser testing",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed totalPayable understating capitalised moratorium interest",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed doubled percent on the women's-rate chip",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Converted 3 calculator deep-links to typed-route object form",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Removed react-dom override conflicting with the direct dep",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Removed unused recommender.atRate key",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Updated math-emi skill reference",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "EMI suite passes",
+      "proof": "36 assertions over 6 scenarios",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "totalPayable ",
+      "proof": "== sum of instalments in every case",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "textbook 8791.59 exact",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "Live app correct",
+      "proof": "126000 @5%/48mo +3mo moratorium shows EMI 2938 and total 141024 = 48 x 2938",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "Full flow works",
+      "proof": "walked language switch, onboarding, 5-step recommender (woman+artisan -> Shilpi Samridhi 82% @5%), calculator deep-link with Devanagari scheme name",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "Clean clone installs on npm 10",
+      "proof": "git clone + npx npm@10 ci + npm run verify all pass",
+      "verified_at": "2026-09-06T21:07:40Z"
+    },
+    {
+      "fact": "CI green",
+      "proof": "both jobs success on c4e2b5d",
+      "verified_at": "2026-09-06T21:07:40Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "c4e2b5d62bb0b5ebddde065ea15df64b738328a3",
+    "git_commit_message": "fix(ci): remove react-dom override that conflicted with the direct dependency",
+    "files_changed": [],
+    "has_uncommitted": false,
+    "diff_summary": ""
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Fill in mr/bn/ta/te translations (N4), or begin backend integration per docs/BACKEND_HANDOFF.md",
+    "target_file": "src/i18n/locales/mr.json",
+    "context": ""
+  },
+  "context_notes": "Dev server runs on :8081. Phone: exp://192.168.29.66:8081 in Expo Go. Browser: http://localhost:8081. Three bugs found by running the app that reading it did not surface — the EMI total one was material (understated repayment by the capitalised moratorium interest)."
+}

@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "id": "chk_20260907T192429_claude-code_2bd2b9",
+  "created_at": "2026-09-07T19:24:29Z",
+  "agent": "claude-code",
+  "project": "sahaay-setu",
+  "task": {
+    "description": "Documentation staleness sweep after the voice work",
+    "plan": [],
+    "status": "in_progress"
+  },
+  "progress": {
+    "completed": [
+      {
+        "step": "Fixed ARCHITECTURE (4 false limitations, diagram, offline table)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed DESIGN_SYSTEM (emoji-icons claim, 7 missing components, wrong Chip prop)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed I18N (key count, added the speech-locale section)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed ROADMAP (voice was future work, icon item retired)",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Fixed flow-degradation skill reference",
+        "verified": false,
+        "proof": ""
+      },
+      {
+        "step": "Updated requirementCoverage in context.json and R3/R4 in problem-statement.json",
+        "verified": false,
+        "proof": ""
+      }
+    ],
+    "in_progress": [],
+    "pending": []
+  },
+  "verified_facts": [
+    {
+      "fact": "verify, format:check and the Android bundle pass",
+      "proof": "npm run verify",
+      "verified_at": "2026-09-07T19:24:29Z"
+    },
+    {
+      "fact": "npm run format:check",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T19:24:29Z"
+    },
+    {
+      "fact": "npx expo export exit 0",
+      "proof": "NO PROOF GIVEN — see PROTOCOL.md §3",
+      "verified_at": "2026-09-07T19:24:29Z"
+    }
+  ],
+  "workspace": {
+    "git_branch": "main",
+    "git_commit": "e22ac6291e440a25cdd772b4fabc7ca85d85ae8f",
+    "git_commit_message": "docs(readme): document the voice pipeline; close two handover gaps",
+    "files_changed": [
+      ".agents/skills/sahaay-frontend/references/flow-degradation.md",
+      "context/context.json",
+      "context/problem-statement.json",
+      "context/state.json",
+      "docs/ARCHITECTURE.md",
+      "docs/DESIGN_SYSTEM.md",
+      "docs/I18N.md",
+      "docs/ROADMAP.md"
+    ],
+    "has_uncommitted": true,
+    "diff_summary": " .../sahaay-frontend/references/flow-degradation.md | 12 ++++--\n context/context.json                               | 14 +++----\n context/problem-statement.json                     | 16 ++++++--\n context/state.json                                 |  8 +++-\n docs/ARCHITECTURE.md                               | 48 ++++++++++++++++++----\n docs/DESIGN_SYSTEM.md                              | 47 +++++++++++++++------\n docs/I18N.md                                       | 30 +++++++++++++-\n docs/ROADMAP.md                                    | 19 ++++++---\n 8 files changed, 149 insertions(+), 45 deletions(-)"
+  },
+  "tool_results": [],
+  "next_action": {
+    "description": "Human to speak into the mic on both screens, then hand to the backend teammate",
+    "target_file": "app/voice.tsx",
+    "context": ""
+  },
+  "context_notes": "ARCHITECTURE.md and DESIGN_SYSTEM.md had not been touched since the initial commit, so both had drifted badly - DESIGN_SYSTEM still claimed icons were emoji after the 29-icon SVG port, and ARCHITECTURE's Known limitations contained four statements the verification passes had already disproved."
+}

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask Sahaay · Sahaay Setu (iOS)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="ios.css" />
+<style>
+  .thread { display: flex; flex-direction: column; gap: var(--space-3);
+            padding: var(--space-4) var(--container-gutter-phone) var(--space-6); }
+  .cites { margin-top: 10px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--border-soft); }
+  .typing { display: inline-flex; gap: 4px; align-items: center; height: 14px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--meta);
+              animation: bob 1.1s var(--ease-standard) infinite; }
+  .typing i:nth-child(2) { animation-delay: 0.15s; }
+  .typing i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bob { 0%,60%,100% { opacity: 0.28; transform: translateY(0); }
+                   30% { opacity: 1; transform: translateY(-3px); } }
+  .followup {
+    display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--space-3);
+    border-radius: var(--radius-pill); background: var(--bg); color: var(--fg-2);
+    box-shadow: var(--elev-ring); font-size: var(--text-sm); text-align: left;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .followup:hover { background: color-mix(in oklab, var(--bg), var(--fg) 7%); color: var(--fg); }
+  .followup:active { background: color-mix(in oklab, var(--bg), var(--fg) 13%); }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="ios-assistant">
+
+  <header class="navbar is-stuck" data-od-id="ios-assistant-navbar">
+    <button class="nav-btn leading neutral" onclick="location.href='ios-home.html'">
+      <i data-icon="left" data-ic="ic-sm"></i><span>Home</span>
+    </button>
+    <span class="nav-title" style="opacity:1;transform:none">Ask Sahaay</span>
+    <button class="nav-btn trailing neutral" id="langBtn" aria-label="Answer language: English">EN</button>
+  </header>
+
+  <div class="scroll" id="scroll">
+    <div class="thread" id="thread">
+
+      <div style="padding:var(--space-6) 0 var(--space-2);text-align:center">
+        <span class="ic-slot" style="width:52px;height:52px;margin:0 auto var(--space-3);border-radius:var(--radius-lg);background:var(--fg);color:var(--bg)">
+          <i data-icon="chat" data-ic="ic-lg"></i>
+        </span>
+        <h1 class="t-title">How can I help?</h1>
+        <p class="t-sm muted" style="margin-top:6px;max-width:30ch;margin-inline:auto">
+          Ask about schemes, interest rates, documents or where to apply — in English, हिन्दी, मराठी, বাংলা, தமிழ் or తెలుగు.
+        </p>
+      </div>
+
+      <p class="eyebrow" style="margin-top:var(--space-4)">Try asking</p>
+      <div class="stack" style="gap:var(--space-2);align-items:flex-start" id="starters">
+        <button class="followup" data-q="Which scheme suits my small shop?">Which scheme suits my small shop?</button>
+        <button class="followup" data-q="What interest rate will I pay?">What interest rate will I pay?</button>
+        <button class="followup" data-q="What documents do I need?">What documents do I need?</button>
+        <button class="followup" data-q="Where do I apply for a loan?">Where do I apply for a loan?</button>
+        <button class="followup" data-q="What is a moratorium period?">What is a moratorium period?</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="composer" data-od-id="ios-assistant-composer">
+    <button class="icon-btn" id="mic" aria-label="Speak your question"><i data-icon="mic" data-ic="ic-sm"></i></button>
+    <input class="input" id="q" placeholder="Type your question…" aria-label="Type your question" autocomplete="off" />
+    <button class="icon-btn icon-btn-accent" id="send" aria-label="Send"><i data-icon="send" data-ic="ic-sm"></i></button>
+  </div>
+</div>
+
+<script src="icons.js"></script>
+<script>
+(function () {
+  /* Mirrors src/api/mock/fixtures/assistant.ts — a keyword-matched offline
+     answer bank standing in for the RAG pipeline, ungrounded answers included. */
+  var CITE = 'Sahaay Setu v0 seed catalogue — indicative figures, not yet verified against official NSFDC circulars.';
+
+  var INTENTS = [
+    { k: ['which scheme', 'which loan', 'योजना', 'eligible', 'suitable', 'shop', 'small shop'],
+      a: 'The right scheme depends on four things: what you want to do, how much it costs, your family income, and your education. ' +
+         'For a small project up to about ₹1.4 lakh the Micro Credit Finance Scheme usually fits. For a shop or light trading between ' +
+         '₹1.10 and ₹5.60 lakh, Laghu Vyavsay Yojana fits better. Answer four quick questions and I will match you exactly.',
+      cite: true, follow: ['What is the maximum I can borrow?', 'What documents will I need?'],
+      action: { label: 'Find my scheme', href: 'ios-recommend.html' } },
+
+    { k: ['interest', 'rate', 'byaj', 'ब्याज'],
+      a: 'These are concessional loans, so rates sit far below market. Micro-credit products are around 5–6% a year and larger term loans ' +
+         'around 6.5–8%. Women beneficiaries generally get the lowest rate available under a scheme. You also get a moratorium of 3 to 12 ' +
+         'months before your first EMI is due.',
+      cite: true, follow: ['What is a moratorium?', 'How is my EMI calculated?'],
+      action: { label: 'Calculate my EMI', href: 'ios-calculator.html?p=225000&r=6.5&t=72&m=6' } },
+
+    { k: ['moratorium', 'holiday', 'grace', 'छूट'],
+      a: 'A moratorium is a repayment holiday right after your loan is disbursed — typically 3 to 12 months. You pay no EMI during this time, ' +
+         'which lets your business or studies get going first. Interest still accrues, and it is usually added to your principal, so the EMI ' +
+         'afterwards is slightly higher.',
+      cite: true, follow: ['Can I pay interest during the moratorium?'],
+      action: { label: 'See the effect on my EMI', href: 'ios-calculator.html?p=225000&r=6&t=72&m=6' } },
+
+    { k: ['document', 'paper', 'kagaz', 'दस्तावेज', 'certificate'],
+      a: 'You will generally need: a caste certificate, an income certificate showing family income under ₹5 lakh a year, Aadhaar and PAN, ' +
+         'a bank passbook, passport-size photographs, and a note describing your project. Education loans additionally need the admission ' +
+         'letter and the fee structure from your institute.',
+      cite: true, follow: ['Where do I get an income certificate?', 'Find a partner near me'], action: null },
+
+    { k: ['where', 'apply', 'bank', 'partner', 'nearest', 'कहाँ'],
+      a: 'You cannot apply to NSFDC directly. Applications go through Channel Partners — your State Channelizing Agency, a public sector bank, ' +
+         'a regional rural bank, or an NBFC-MFI. Not every partner handles every scheme, and some cannot take new applications right now ' +
+         'because of their fund position. I can show you the nearest one that can actually process your case.',
+      cite: true, follow: ['What is a Channel Partner?', 'Why is a partner marked unavailable?'],
+      action: { label: 'Find partners near me', href: 'ios-partners.html' } },
+
+    { k: ['education', 'study', 'college', 'course', 'शिक्षा'],
+      a: 'The Educational Loan Scheme covers professional and technical courses — up to ₹30 lakh for studies in India and ₹40 lakh for studies ' +
+         'abroad, funding up to 90% of your costs at about 6% a year, with a lower rate for women. Repayment starts after your course plus the ' +
+         'moratorium period.',
+      cite: true, follow: ['Do I need a guarantor?', 'What if I study abroad?'], action: null }
+  ];
+
+  var FALLBACK = {
+    a: "I don't have a verified answer for that yet. This prototype answers from a small offline knowledge base — the full assistant is still " +
+       'being connected. For anything specific to your case, please confirm with a Channel Partner.',
+    cite: false, grounded: false,
+    follow: ['Which scheme suits me?', 'What documents do I need?'],
+    action: { label: 'Find my scheme', href: 'ios-recommend.html' }
+  };
+
+  var thread = document.getElementById('thread'),
+      scroll = document.getElementById('scroll'),
+      input = document.getElementById('q');
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function toBottom() { scroll.scrollTop = scroll.scrollHeight; }
+
+  function match(q) {
+    var lq = q.toLowerCase();
+    for (var i = 0; i < INTENTS.length; i++) {
+      for (var j = 0; j < INTENTS[i].k.length; j++) {
+        if (lq.indexOf(INTENTS[i].k[j]) > -1) return INTENTS[i];
+      }
+    }
+    return FALLBACK;
+  }
+
+  function ask(q) {
+    var starters = document.getElementById('starters');
+    if (starters) {
+      starters.previousElementSibling.remove();
+      starters.remove();
+      thread.firstElementChild.remove();
+    }
+
+    thread.insertAdjacentHTML('beforeend',
+      '<div class="msg msg-me">' + esc(q) + '</div>');
+
+    var wait = document.createElement('div');
+    wait.className = 'msg msg-them';
+    wait.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+    thread.appendChild(wait);
+    toBottom();
+
+    setTimeout(function () {
+      var r = match(q);
+      var grounded = r.grounded !== false;
+      wait.innerHTML =
+        '<p>' + esc(r.a) + '</p>' +
+        (grounded ? '' :
+          '<p class="t-sm" style="margin-top:10px;color:color-mix(in oklab, var(--warn), var(--fg) 50%)">' +
+          'I\'m not fully sure about this. Please confirm with a Channel Partner.</p>') +
+        (r.cite ?
+          '<div class="cites"><p class="eyebrow">Source</p>' +
+          '<p class="t-xs muted" style="margin-top:4px">' + CITE + '</p></div>' : '') +
+        '<div class="inline" style="margin-top:12px;gap:8px">' +
+          '<button class="icon-btn" style="width:36px;height:36px" aria-label="Read aloud" data-tts="1">' +
+            '<i data-icon="speaker" data-ic="ic-sm"></i></button>' +
+          (r.action ? '<a class="btn btn-sm btn-secondary" href="' + r.action.href + '">' +
+            esc(r.action.label) + '</a>' : '') +
+        '</div>';
+
+      if (r.follow && r.follow.length) {
+        var fu = document.createElement('div');
+        fu.className = 'stack';
+        fu.style.cssText = 'gap:8px;align-items:flex-start';
+        fu.innerHTML = '<p class="eyebrow">You could also ask</p>' +
+          r.follow.map(function (f) {
+            return '<button class="followup" data-q="' + esc(f) + '">' + esc(f) + '</button>';
+          }).join('');
+        thread.appendChild(fu);
+      }
+      window.paintIcons();
+      toBottom();
+    }, 620);
+  }
+
+  function submit() {
+    var v = input.value.trim();
+    if (!v) return;
+    input.value = '';
+    ask(v);
+  }
+
+  document.getElementById('send').addEventListener('click', submit);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+
+  thread.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-q]');
+    if (b) { ask(b.getAttribute('data-q')); return; }
+    var tts = e.target.closest('[data-tts]');
+    if (tts) {
+      var on = tts.classList.toggle('icon-btn-accent');
+      tts.setAttribute('aria-label', on ? 'Stop reading' : 'Read aloud');
+    }
+  });
+
+  var mic = document.getElementById('mic');
+  mic.addEventListener('click', function () {
+    var on = mic.classList.toggle('icon-btn-accent');
+    input.placeholder = on ? 'Listening…' : 'Type your question…';
+    mic.setAttribute('aria-label', on ? 'Stop listening' : 'Speak your question');
+  });
+
+  var LANGS = ['EN', 'हि', 'मर', 'বা', 'த', 'తె'];
+  var li = 0, lb = document.getElementById('langBtn');
+  lb.addEventListener('click', function () {
+    li = (li + 1) % LANGS.length;
+    lb.textContent = LANGS[li];
+  });
+})();
+</script>
+</body>
+</html>

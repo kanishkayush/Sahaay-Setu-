@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Your best matches · Sahaay Setu (Android)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="android.css" />
+<style>
+  .disclose { max-height: 0; overflow: hidden; transition: max-height var(--motion-base) var(--ease-standard); }
+  .disclose.open { max-height: 460px; }
+  .reason { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; }
+  .reason .ic { color: var(--fg-2); margin-top: 3px; }
+  .text-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 48px; padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm); font-weight: 600; color: var(--fg);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .text-btn:hover { background: color-mix(in oklab, var(--bg), var(--fg) 7%); }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="android-results">
+
+  <header class="appbar" id="appbar" data-od-id="android-results-appbar">
+    <button class="m-icon-btn appbar-lead" onclick="location.href='android-home.html'" aria-label="Go back"
+     >
+      <i data-icon="left"></i>
+    </button>
+    <h1>Your best matches</h1>
+    <button class="m-icon-btn" aria-label="Filter">
+      <i data-icon="filter"></i>
+    </button>
+  </header>
+
+  <div class="scroll" id="scroll">
+
+    <section class="gutter" data-od-id="android-results-answers" style="padding-top:var(--space-2)">
+      <a class="m-card m-row" href="android-home.html" style="border-radius:var(--radius-lg)">
+        <span class="row-fill stack" style="gap:3px">
+          <span class="eyebrow">Based on</span>
+          <span class="t-sm">Shop or small trade · <span class="num">₹2,50,000</span> project ·
+            <span class="num">₹2,40,000</span> income · Class 10 · Woman</span>
+        </span>
+        <i data-icon="edit" data-ic="ic-sm" class="chev"></i>
+      </a>
+      <p class="t-sm muted" style="margin-top:var(--space-3)">3 of 9 schemes matched your details.</p>
+    </section>
+
+    <div class="chip-scroll" style="margin-top:var(--space-3)" id="catFilter">
+      <button class="chip" aria-pressed="true"  data-c="ALL">All</button>
+      <button class="chip" aria-pressed="false" data-c="MICRO_FINANCE">Micro finance</button>
+      <button class="chip" aria-pressed="false" data-c="TERM_LOAN">Term loan</button>
+      <button class="chip" aria-pressed="false" data-c="WOMEN_SPECIFIC">For women</button>
+    </div>
+
+    <div id="matches"></div>
+
+    <p class="group-head" style="padding-left:var(--container-gutter-phone)">Close, but not eligible</p>
+    <section class="gutter" data-od-id="android-results-nearmiss">
+      <div class="m-card" id="misses"></div>
+      <p class="t-xs muted" style="margin-top:var(--space-3)">
+        What blocked you is often more useful than the match itself — fix the blocker and the scheme opens up.
+      </p>
+    </section>
+
+    <section class="gutter" data-od-id="android-results-notice" style="margin-top:var(--space-6)">
+      <div class="notice">
+        <i data-icon="alert" data-ic="ic-sm" style="margin-top:2px"></i>
+        <span>Prototype data. Confirm figures with a Channel Partner before applying.</span>
+      </div>
+    </section>
+
+    <div style="height:var(--space-8)"></div>
+  </div>
+
+  <nav class="navbar-m3" data-od-id="android-results-nav">
+    <a href="android-home.html"><span class="ind"><i data-icon="home"></i></span><span>Home</span></a>
+    <a href="android-results.html" aria-current="page"><span class="ind"><i data-icon="list"></i></span><span>Schemes</span></a>
+    <a href="android-calculator.html"><span class="ind"><i data-icon="calc"></i></span><span>EMI</span></a>
+    <a href="android-partners.html"><span class="ind"><i data-icon="pin"></i></span><span>Partners</span></a>
+  </nav>
+</div>
+
+<script src="icons.js"></script>
+<script src="emi.js"></script>
+<script>
+(function () {
+  var MATCHES = [
+    { code: 'NSFDC-LVY', cat: 'TERM_LOAN', name: 'Laghu Vyavsay Yojana',
+      blurb: 'Mid-sized small business loans — shops, service outlets, light trading.',
+      score: 94, loan: 225000, rate: 6, tenure: 72, moratorium: 6,
+      reasons: [
+        'Your shop or small trade is exactly what this scheme funds.',
+        'A ₹2,50,000 project sits inside the ₹1.10–5.60 lakh band.',
+        'Family income ₹2,40,000 is under the ₹5,00,000 ceiling.',
+        'Funds 90% of project cost — you arrange the remaining ₹25,000.'
+      ] },
+    { code: 'NSFDC-MSY', cat: 'WOMEN_SPECIFIC', name: 'Mahila Samriddhi Yojana',
+      blurb: 'Micro-credit for SC women entrepreneurs at the lowest concessional rate.',
+      score: 88, loan: 140000, rate: 5, tenure: 48, moratorium: 3,
+      reasons: [
+        'Reserved for women — you qualify, and at 5% it is the cheapest money here.',
+        'Family income ₹2,40,000 is under the ₹5,00,000 ceiling.',
+        'Capped at ₹1,40,000, so it covers part of your project, not all of it.'
+      ] },
+    { code: 'NSFDC-TL', cat: 'TERM_LOAN', name: 'Term Loan Scheme',
+      blurb: 'For larger self-employment projects — manufacturing, transport, service ventures.',
+      score: 81, loan: 225000, rate: 6.5, tenure: 120, moratorium: 6,
+      reasons: [
+        'Your project is above the ₹1.55 lakh floor this scheme starts at.',
+        'Longest tenure on offer — up to 120 months.',
+        'Costs more than Laghu Vyavsay at the same amount.'
+      ] }
+  ];
+
+  var MISSES = [
+    { name: 'Micro Credit Finance Scheme', why: 'Project cost must stay under ₹1.55 lakh. Yours is ₹2.50 lakh.' },
+    { name: 'Educational Loan Scheme (India)', why: 'Needs admission to a recognised professional or technical course.' },
+    { name: 'Green Business Scheme', why: 'Funds clean-energy assets only — e-rickshaws, solar units.' }
+  ];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var cat = 'ALL';
+
+  function render() {
+    var rows = MATCHES.filter(function (m) { return cat === 'ALL' || m.cat === cat; });
+    document.getElementById('matches').innerHTML = rows.length ? rows.map(function (m, idx) {
+      var primary = idx === 0;
+      return '' +
+      '<section class="gutter" data-od-id="scheme-card-' + m.code.toLowerCase() + '" style="margin-bottom:var(--space-3)">' +
+        '<article class="m-card m-card-pad">' +
+          '<div class="between" style="align-items:flex-start">' +
+            '<div class="inline" style="gap:10px;min-width:0">' +
+              '<span class="badge-rank">' + (idx + 1) + '</span>' +
+              '<div class="stack" style="min-width:0">' +
+                '<h3 class="t-title">' + esc(m.name) + '</h3>' +
+                '<span class="eyebrow" style="margin-top:3px">' + m.code + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<span class="badge badge-plain num">' + m.score + '% match</span>' +
+          '</div>' +
+          '<p class="t-sm muted" style="margin-top:var(--space-3)">' + esc(m.blurb) + '</p>' +
+          '<div style="margin-top:var(--space-4);padding:var(--space-3) 0;box-shadow:inset 0 1px 0 var(--border-soft),inset 0 -1px 0 var(--border-soft);display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:var(--space-2)">' +
+            '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + EMI.compactInr(m.loan) + '</span><span class="lbl">you could get</span></div>' +
+            '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + m.rate + '<span style="font-size:0.6em">%</span></span><span class="lbl">a year</span></div>' +
+            '<div class="figure"><span class="val" style="font-size:var(--text-lg)">' + m.tenure + '</span><span class="lbl">months max</span></div>' +
+          '</div>' +
+          '<button class="text-btn" data-toggle="' + idx + '" aria-expanded="false" aria-controls="why-' + idx + '">' +
+            'Why this scheme?<i data-icon="down" data-ic="ic-sm" data-caret="' + idx + '" style="transition:transform var(--motion-base) var(--ease-standard)"></i>' +
+          '</button>' +
+          '<div class="disclose" id="why-' + idx + '"><div style="padding-bottom:var(--space-2)">' +
+            m.reasons.map(function (r) {
+              return '<div class="reason"><i data-icon="check" data-ic="ic-sm"></i><span class="t-sm">' + esc(r) + '</span></div>';
+            }).join('') +
+          '</div></div>' +
+          '<div class="inline" style="margin-top:var(--space-3);gap:var(--space-2)">' +
+            '<a class="btn btn-sm ' + (primary ? 'btn-tonal' : 'btn-secondary') + '" style="flex:1 1 0"' +
+              ' href="android-calculator.html?p=' + m.loan + '&r=' + m.rate + '&t=' + m.tenure +
+              '&m=' + m.moratorium + '&s=' + encodeURIComponent(m.name) + '">Calculate EMI</a>' +
+            '<a class="btn btn-sm btn-secondary" style="flex:1 1 0" href="android-partners.html">Find a partner</a>' +
+          '</div>' +
+        '</article>' +
+      '</section>';
+    }).join('') :
+      '<section class="gutter" data-od-id="results-empty"><div class="m-card m-card-pad stack" style="gap:6px">' +
+      '<span class="t-body-em">Nothing in this category matched.</span>' +
+      '<span class="t-sm muted">Tap “All” to see every eligible scheme again.</span></div></section>';
+
+    window.paintIcons();
+
+    document.querySelectorAll('[data-toggle]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = b.getAttribute('data-toggle');
+        var panel = document.getElementById('why-' + i);
+        var open = panel.classList.toggle('open');
+        b.setAttribute('aria-expanded', String(open));
+        var caret = document.querySelector('[data-caret="' + i + '"]');
+        if (caret) caret.style.transform = open ? 'rotate(180deg)' : '';
+      });
+    });
+    var first = document.querySelector('[data-toggle="0"]');
+    if (first) first.click();
+  }
+
+  document.getElementById('misses').innerHTML = MISSES.map(function (m) {
+    return '<div class="m-row" style="align-items:flex-start">' +
+      '<i data-icon="close" data-ic="ic-sm" style="color:color-mix(in oklab, var(--danger), var(--fg) 15%);margin-top:3px"></i>' +
+      '<span class="row-fill stack" style="gap:2px">' +
+        '<span class="t-body">' + esc(m.name) + '</span>' +
+        '<span class="t-sm muted">' + esc(m.why) + '</span>' +
+      '</span></div>';
+  }).join('');
+
+  document.getElementById('catFilter').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    cat = b.getAttribute('data-c');
+    this.querySelectorAll('.chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', String(c === b));
+    });
+    render();
+  });
+
+  var sc = document.getElementById('scroll'), ab = document.getElementById('appbar');
+  sc.addEventListener('scroll', function () {
+    ab.classList.toggle('is-stuck', sc.scrollTop > 8);
+  }, { passive: true });
+
+  render();
+})();
+</script>
+</body>
+</html>

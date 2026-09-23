@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Typecheck · Lint · i18n
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: i18n coverage
+        run: npm run i18n:check
+
+      - name: Validate agent context and checkpoints
+        # These files are how a fresh AI session or teammate rebuilds context.
+        # A malformed one is a silent handoff failure, so gate it in CI.
+        run: |
+          for f in context/*.json context/schema/*.json .checkpoints/*.json; do
+            [ -e "$f" ] || continue
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" \
+              || { echo "Invalid JSON: $f"; exit 1; }
+            echo "  ok  $f"
+          done
+
+      - name: Checkpoint CLI is syntactically valid
+        run: bash -n .agents/checkpoint.sh
+
+      - name: Skills are well-formed
+        # Every SKILL.md needs frontmatter, and every references/ link it makes
+        # must resolve — a broken link is a rule an agent silently never reads.
+        run: |
+          fail=0
+          for f in .agents/skills/*/SKILL.md; do
+            head -1 "$f" | grep -q '^---$' || { echo "no frontmatter: $f"; fail=1; }
+            grep -q '^name:' "$f" || { echo "no name: $f"; fail=1; }
+            grep -q '^description:' "$f" || { echo "no description: $f"; fail=1; }
+            dir=$(dirname "$f")
+            for ref in $(grep -oh 'references/[a-z0-9_-]*\.md' "$f" | sort -u); do
+              [ -f "$dir/$ref" ] || { echo "broken link in $f -> $ref"; fail=1; }
+            done
+            echo "  ok  $f"
+          done
+          exit $fail
+
+  bundle:
+    name: Production bundle
+    runs-on: ubuntu-latest
+    # The only check that catches a broken module graph — imports, navigation,
+    # native module resolution. Slower, so it runs alongside rather than before.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bundle for Android
+        run: npx expo export --platform android --output-dir /tmp/export

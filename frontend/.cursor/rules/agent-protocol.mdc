@@ -1,0 +1,83 @@
+---
+description: Checkpoint persistence and dual-AI coordination protocol
+alwaysApply: true
+---
+
+# Agent protocol — Cursor
+
+`.agents/PROTOCOL.md` is the full shared protocol. This rule is the Cursor-shaped summary.
+
+## On session start
+
+Run in the terminal:
+
+```bash
+bash .agents/checkpoint.sh resume
+```
+
+It prints the latest checkpoint, actual git state, a reconciliation verdict, and the current
+`next` list from `context/state.json`.
+
+Then reconcile before doing anything:
+
+- **Same commit, clean tree** → resume from `next_action`
+- **Same commit, uncommitted changes** → another agent or the human edited files after the
+  checkpoint. Inspect them; if they conflict with `next_action`, flag it
+- **Commits diverged** → read the new commits, mark those steps done, resume from there
+- **Behind or rewritten** → stop and flag it to the user
+
+Announce: *"Resuming from {id}. Last: {task}. Next: {next_action}."*
+
+If no checkpoint exists, bootstrap by reading `context/context.json`, `context/state.json`,
+`context/problem-statement.json`, `context/domain.json`, `context/decisions.json`.
+
+## During work
+
+Save after each completed step, after any successful build, and before anything destructive:
+
+```bash
+bash .agents/checkpoint.sh save --agent cursor \
+  --task "what you're doing" \
+  --done "step one;step two" \
+  --verified "fact=the command you ran and what it printed" \
+  --next "exactly what to do next" --next-file "path/to/file.tsx"
+```
+
+`--verified` takes `fact=proof` pairs. A fact without a proof is worthless to the next
+session — the script writes `NO PROOF GIVEN` if you omit it.
+
+To run the checks and record the result in one step:
+
+```bash
+bash .agents/checkpoint.sh verify cursor
+```
+
+## Before ending a session
+
+1. Save a final checkpoint with an accurate `next_action` — always.
+2. If a milestone landed, promote it into `context/state.json` (`done` / `next` / `verified`),
+   set `updatedBy` to `cursor`, and append an ADR to `context/decisions.json` if you made an
+   architectural choice.
+
+Checkpoint every ~15 minutes. Update `context/` when a milestone lands.
+
+## Dual-AI coordination
+
+Claude Code works in this repo too.
+
+- Check `.checkpoints/_latest.json` first. If `by` is `claude-code`, read their checkpoint
+  rather than re-deriving what happened.
+- Always set `agent: "cursor"` on your checkpoints and `updatedBy: "cursor"` in
+  `context/state.json`.
+- If a checkpoint marks work `in_progress`, do not overwrite those files without flagging it.
+- No locks — the human is the arbiter. If both tools are active, work in different directories.
+- End commit messages with a `Co-Authored-By:` trailer.
+
+## Verify before claiming
+
+```bash
+npm run verify                        # typecheck + lint + i18n
+npx expo export --platform android    # real bundle — catches a broken module graph
+```
+
+Never write "should work" into a checkpoint or into `state.json`.

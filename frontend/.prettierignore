@@ -1,0 +1,9 @@
+node_modules
+.expo
+dist
+android
+ios
+package-lock.json
+
+# Mirrored from Open Design — formatted by that tool, not ours
+design

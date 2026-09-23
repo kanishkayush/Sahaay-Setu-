@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EMI calculator · Sahaay Setu (Android)</title>
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="android.css" />
+<style>
+  .ctl + .ctl { margin-top: var(--space-5); padding-top: var(--space-5);
+                box-shadow: inset 0 1px 0 var(--border-soft); }
+  .ctl-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+  .ctl-head .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+                 font-size: var(--text-base); font-weight: 600; letter-spacing: -0.015em; }
+</style>
+</head>
+<body>
+<div class="app" id="app" style="position:relative" data-od-id="android-calculator">
+
+  <header class="appbar" id="appbar" data-od-id="android-calc-appbar">
+    <button class="m-icon-btn appbar-lead" onclick="history.length>1?history.back():location.href='android-home.html'" aria-label="Go back"
+     >
+      <i data-icon="left"></i>
+    </button>
+    <h1>EMI calculator</h1>
+  </header>
+
+  <div class="scroll" id="scroll">
+
+    <div class="headline" data-od-id="android-calc-headline" style="padding-bottom:var(--space-3)">
+      <p class="t-body muted">See exactly what you'll repay each month. Works with no internet.</p>
+      <div id="preset" style="display:none;margin-top:var(--space-3)">
+        <span class="badge badge-plain"><i data-icon="sparkle" data-ic="ic-sm" style="width:13px;height:13px"></i>
+          <span id="presetName"></span></span>
+      </div>
+    </div>
+
+    <section class="gutter" data-od-id="android-calc-readout">
+      <div class="card-dark">
+        <p class="eyebrow" style="color:color-mix(in oklab, var(--bg), var(--fg) 42%)">Your monthly EMI</p>
+        <p class="num" id="emi" style="font-size:var(--text-2xl);font-weight:600;letter-spacing:-0.035em;line-height:1.04;margin-top:var(--space-2)">—</p>
+        <p class="t-sm" id="emiWhen" style="margin-top:4px;color:color-mix(in oklab, var(--bg), var(--fg) 30%)"></p>
+        <div style="margin-top:var(--space-4);padding-top:var(--space-4);box-shadow:inset 0 1px 0 color-mix(in oklab, var(--bg), var(--fg) 78%);display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="figure">
+            <span class="val" id="totalPay" style="font-size:var(--text-lg)">—</span>
+            <span class="lbl" style="color:color-mix(in oklab, var(--bg), var(--fg) 40%)">total you'll repay</span>
+          </div>
+          <div class="figure">
+            <span class="val" id="totalMonths" style="font-size:var(--text-lg)">—</span>
+            <span class="lbl" style="color:color-mix(in oklab, var(--bg), var(--fg) 40%)">start to finish</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="group-head" style="padding-left:var(--container-gutter-phone)">Your loan</p>
+    <section class="gutter" data-od-id="android-calc-controls">
+      <div class="m-card m-card-pad m-slider">
+
+        <div class="m-field" style="margin-bottom:var(--space-5)">
+          <input id="pText" inputmode="numeric" aria-label="Loan amount in rupees" />
+          <span>Loan amount (₹)</span>
+        </div>
+
+        <div class="ctl" style="margin-top:0;padding-top:0;box-shadow:none">
+          <div class="ctl-head"><label for="p" class="t-sm muted">Loan amount</label><span class="v" id="pV"></span></div>
+          <input id="p" type="range" min="10000" max="5000000" step="5000" value="225000" />
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-head"><label for="r" class="t-sm muted">Interest rate</label><span class="v" id="rV"></span></div>
+          <input id="r" type="range" min="5" max="8" step="0.5" value="6" />
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-head"><label for="t" class="t-sm muted">Repayment period</label><span class="v" id="tV"></span></div>
+          <input id="t" type="range" min="12" max="120" step="6" value="72" />
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-head"><label for="m" class="t-sm muted">Repayment holiday</label><span class="v" id="mV"></span></div>
+          <input id="m" type="range" min="0" max="12" step="1" value="6" />
+          <p class="t-xs muted" style="margin-top:6px">Months before your first EMI is due. Interest still adds up.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <p class="group-head" style="padding-left:var(--container-gutter-phone)">During the holiday</p>
+    <section class="gutter" data-od-id="android-calc-treatment">
+      <div class="m-card m-card-pad">
+        <div class="segment" role="tablist" id="treat">
+          <button role="tab" aria-selected="true"  data-v="CAPITALISE">Add to loan</button>
+          <button role="tab" aria-selected="false" data-v="SERVICE_MONTHLY">Pay monthly</button>
+        </div>
+        <p class="t-sm muted" id="treatHelp" style="margin-top:var(--space-3)"></p>
+      </div>
+    </section>
+
+    <p class="group-head" style="padding-left:var(--container-gutter-phone)">Breakdown</p>
+    <section class="gutter" data-od-id="android-calc-breakdown">
+      <div class="m-card m-card-pad">
+        <dl style="margin:0">
+          <div class="kv"><dt>Loan amount</dt><dd id="bPrincipal">—</dd></div>
+          <div class="kv"><dt>Interest during holiday</dt><dd id="bMorInt">—</dd></div>
+          <div class="kv"><dt>Interest on instalments</dt><dd id="bInt">—</dd></div>
+          <div class="kv"><dt>Total you'll repay</dt><dd id="bTotal">—</dd></div>
+        </dl>
+        <button class="btn btn-tonal btn-block btn-sm" id="openDialog" style="margin-top:var(--space-4)">
+          View repayment schedule
+        </button>
+      </div>
+    </section>
+
+    <section class="gutter" data-od-id="android-calc-note" style="margin-top:var(--space-6)">
+      <p class="t-xs muted">This is an estimate. Your Channel Partner will confirm the final terms.</p>
+    </section>
+
+    <div style="height:var(--space-8)"></div>
+  </div>
+
+  <nav class="navbar-m3" data-od-id="android-calc-nav">
+    <a href="android-home.html"><span class="ind"><i data-icon="home"></i></span><span>Home</span></a>
+    <a href="android-results.html"><span class="ind"><i data-icon="list"></i></span><span>Schemes</span></a>
+    <a href="android-calculator.html" aria-current="page"><span class="ind"><i data-icon="calc"></i></span><span>EMI</span></a>
+    <a href="android-partners.html"><span class="ind"><i data-icon="pin"></i></span><span>Partners</span></a>
+  </nav>
+
+  <!-- Material full-screen dialog, not a bottom sheet. -->
+  <div class="m-dialog" role="dialog" aria-modal="true" aria-label="Repayment schedule" data-od-id="android-calc-dialog">
+    <header class="appbar" style="background:var(--surface)">
+      <button class="m-icon-btn appbar-lead" id="closeDialog" aria-label="Close schedule"
+       >
+        <i data-icon="close"></i>
+      </button>
+      <h1>Repayment schedule</h1>
+    </header>
+    <div class="gutter" style="padding-bottom:var(--space-3)">
+      <p class="t-xs muted" id="schedMeta"></p>
+    </div>
+    <div class="scroll gutter" style="padding-bottom:var(--space-6)">
+      <div class="m-card">
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>Mo</th><th>EMI ₹</th><th>Int ₹</th><th>Princ ₹</th><th>Bal ₹</th></tr></thead>
+          <tbody id="schedBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="icons.js"></script>
+<script src="emi.js"></script>
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var $ = function (id) { return document.getElementById(id); };
+  var P = $('p'), R = $('r'), T = $('t'), M = $('m'), PT = $('pText');
+
+  if (qs.get('p')) P.value = qs.get('p');
+  if (qs.get('r')) R.value = qs.get('r');
+  if (qs.get('t')) T.value = qs.get('t');
+  if (qs.get('m')) M.value = qs.get('m');
+  if (qs.get('s')) {
+    $('preset').style.display = '';
+    $('presetName').textContent = 'Pre-filled from ' + qs.get('s');
+  }
+
+  var treatment = 'CAPITALISE';
+
+  function fill(el) {
+    var pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty('--fill', pct.toFixed(2) + '%');
+  }
+
+  function render(fromText) {
+    [P, R, T, M].forEach(fill);
+
+    var principal = Number(P.value), rate = Number(R.value),
+        tenure = Number(T.value), mor = Number(M.value);
+
+    if (!fromText) PT.value = principal.toLocaleString('en-IN');
+    $('pV').textContent = EMI.inr(principal);
+    $('rV').textContent = rate.toFixed(rate % 1 ? 1 : 0) + '% a year';
+    $('tV').textContent = tenure + ' months';
+    $('mV').textContent = mor === 0 ? 'None' : mor + ' months';
+
+    var res = EMI.calculateEmi({
+      principal: principal, annualRatePct: rate, tenureMonths: tenure,
+      moratoriumMonths: mor, moratoriumTreatment: treatment
+    });
+
+    $('emi').textContent = EMI.inr(res.emi);
+    $('emiWhen').textContent = mor === 0 ? 'Starts next month' : 'Starts after ' + mor + ' months';
+    $('totalPay').textContent = EMI.compactInr(res.totalPayable);
+    $('totalMonths').textContent = EMI.duration(res.totalMonths);
+
+    $('bPrincipal').textContent = EMI.inr(principal);
+    $('bMorInt').textContent = mor === 0 ? '—' : EMI.inr(res.moratoriumInterest);
+    $('bInt').textContent = EMI.inr(res.totalInterest);
+    $('bTotal').textContent = EMI.inr(res.totalPayable);
+
+    $('treatHelp').textContent = treatment === 'CAPITALISE'
+      ? 'Interest accrues and is added to your loan. You pay nothing for ' + (mor || 0) +
+        ' months, then a slightly larger EMI.'
+      : 'You pay only the interest each month during the holiday — ' +
+        EMI.inr(mor ? res.moratoriumInterest / mor : 0) + ' a month — so the loan does not grow.';
+
+    $('schedMeta').textContent = EMI.inr(principal) + ' · ' + rate + '% · ' +
+      EMI.duration(res.totalMonths) + ' · ' + res.schedule.length + ' rows';
+
+    $('schedBody').innerHTML = res.schedule.map(function (row) {
+      return '<tr class="' + (row.holiday ? 'hol' : '') + '">' +
+        '<td>' + row.month + (row.holiday ? ' <span style="font-size:9px;letter-spacing:.04em">HOL</span>' : '') + '</td>' +
+        '<td>' + EMI.plain(row.emi) + '</td>' +
+        '<td>' + EMI.plain(row.interest) + '</td>' +
+        '<td>' + (row.principal ? EMI.plain(row.principal) : '—') + '</td>' +
+        '<td>' + EMI.plain(row.closing) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  [P, R, T, M].forEach(function (el) { el.addEventListener('input', function () { render(false); }); });
+
+  PT.addEventListener('input', function () {
+    var n = Number(PT.value.replace(/[^0-9]/g, ''));
+    if (!n) return;
+    P.value = Math.min(Math.max(n, Number(P.min)), Number(P.max));
+    render(true);
+  });
+  PT.addEventListener('blur', function () { render(false); });
+
+  $('treat').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-v]'); if (!b) return;
+    treatment = b.getAttribute('data-v');
+    Array.prototype.forEach.call($('treat').children, function (c) {
+      c.setAttribute('aria-selected', String(c === b));
+    });
+    render(false);
+  });
+
+  var app = $('app');
+  $('openDialog').addEventListener('click', function () { app.classList.add('dialog-open'); });
+  $('closeDialog').addEventListener('click', function () { app.classList.remove('dialog-open'); });
+
+  var sc = $('scroll'), ab = $('appbar');
+  sc.addEventListener('scroll', function () {
+    ab.classList.toggle('is-stuck', sc.scrollTop > 8);
+  }, { passive: true });
+
+  render(false);
+})();
+</script>
+</body>
+</html>
