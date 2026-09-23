@@ -1,5 +1,24 @@
 import type { GeoPoint } from '@/api/contracts';
 
+/** 
+ * Safely validates a coordinate payload. 
+ * Rejects 0,0, NaN, Infinity, and out-of-bounds inputs. 
+ */
+export function isValidCoordinate(loc: any): loc is GeoPoint {
+  if (!loc || typeof loc !== 'object') return false;
+  const { latitude, longitude } = loc;
+  
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') return false;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+  
+  if (latitude < -90 || latitude > 90) return false;
+  if (longitude < -180 || longitude > 180) return false;
+  
+  // Exclude 0,0 which is commonly used as a default/null island.
+  if (latitude === 0 && longitude === 0) return false;
+  
+  return true;
+}
 const EARTH_RADIUS_KM = 6371;
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;

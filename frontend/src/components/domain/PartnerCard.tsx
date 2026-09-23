@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { ChannelPartner, LanguageCode } from '@/api/contracts';
 import { Button, Card, Chip, Icon, Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/theme';
-import { formatDistance } from '@/utils/geo';
+import { formatDistance, isValidCoordinate } from '@/utils/geo';
 import { formatPercent } from '@/utils/format';
 
 /**
@@ -53,20 +53,20 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
     if (partner.phone) Linking.openURL(`tel:${partner.phone}`).catch(() => {});
   };
 
-  const hasLocation = partner.location?.latitude != null && partner.location?.longitude != null;
+  const hasLocation = isValidCoordinate(partner.location);
 
   const directions = () => {
     const loc = partner.location;
-    if (!loc) return;
+    if (!isValidCoordinate(loc)) return;
     const { latitude, longitude } = loc;
-    const label = encodeURIComponent(name);
-    Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`).catch(
-      () => {
-        Linking.openURL(
-          `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-        ).catch(() => {});
-      },
-    );
+    console.log(`[PARTNER DIRECTIONS] ID=${partner.id} RAW_LOC=${JSON.stringify(loc)} NORMALIZED=${latitude},${longitude}`);
+    
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+    console.log(`[PARTNER DIRECTIONS] URL=${url}`);
+    
+    Linking.openURL(url).catch((e) => {
+      console.error('[PARTNER DIRECTIONS] Failed to open URL', e);
+    });
   };
 
   return (
@@ -93,13 +93,13 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
             ) : null}
           </View>
 
-          {partner.distanceKm !== undefined ? (
+          {partner.distanceKm !== undefined && partner.distanceKm !== null ? (
             <Text variant="label" color={colors.textMuted}>
               {formatDistance(partner.distanceKm)}
             </Text>
           ) : (
             <Text variant="label" color={colors.textMuted}>
-              Distance unavailable
+              {t('partners.distanceUnavailable')}
             </Text>
           )}
         </View>
@@ -147,7 +147,7 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
           />
         ) : null}
         <Button
-          title={hasLocation ? t('partners.directions') : t('partners.locationUnavailable', { defaultValue: 'Location unavailable' })}
+          title={hasLocation ? t('partners.directions') : t('partners.locationUnavailable')}
           variant="outline"
           size="sm"
           disabled={!hasLocation}
@@ -158,7 +158,7 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
         />
         {onSelect ? (
           <Button
-            title={isSelected ? '\u2713 Selected' : 'Select Partner'}
+            title={isSelected ? `\u2713 ${t('common.selected', 'Selected')}` : t('partners.selectPartner')}
             variant={isSelected ? ('primary' as const) : ('outline' as const)}
             size="sm"
             fullWidth={false}

@@ -4,6 +4,7 @@ import type { ChannelPartner, GeoPoint } from '@/api/contracts';
 import { Icon, Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/theme';
 import { useTranslation } from 'react-i18next';
+import { isValidCoordinate } from '@/utils/geo';
 
 /**
  * Map view for the partner locator.
@@ -59,7 +60,22 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
   const MapView = maps.default;
   const Marker = maps.Marker;
 
-  const validPartners = partners.filter((p) => p.location?.latitude != null && p.location?.longitude != null);
+  const validPartners = partners.filter((p) => isValidCoordinate(p.location));
+  console.log(`[PARTNER MAP] total partners=${partners.length}`);
+  console.log(`[PARTNER MAP] valid coordinate partners=${validPartners.length}`);
+  console.log(`[PARTNER MAP] invalid coordinate partners=${partners.length - validPartners.length}`);
+  
+  if (validPartners.length === 0) {
+    return (
+      <View style={styles.placeholder}>
+        <Icon name="pin" size={28} color={colors.textMuted} />
+        <Text variant="caption" color={colors.textMuted} center>
+          {t('partners.noVerifiedMapPartners')}
+        </Text>
+      </View>
+    );
+  }
+
   const origin = center ?? validPartners[0]?.location ?? { latitude: 20.5937, longitude: 78.9629 };
 
   const mapRef = React.useRef<any>(null);
@@ -114,6 +130,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
       </View>
     );
   } catch (err) {
+    console.error(`[PARTNER MAP] map initialization error:`, err);
     return (
       <View style={styles.placeholder}>
         <Icon name="pin" size={28} color={colors.textMuted} />

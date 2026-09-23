@@ -310,7 +310,19 @@
         "borrowingDefaultHistory": "অন্য ঋণে খেলাপ",
         "rbiRegistration": "RBI নথিভুক্তির অবস্থা"
       }
-    }
+    },
+    "distanceUnavailable": "Distance unavailable",
+    "locationUnavailable": "Location unavailable",
+    "selectPartner": "Select Partner",
+    "getDirections": "Get Directions",
+    "viewOnMap": "View on Map",
+    "locationInfoUnavailable": "Location information unavailable",
+    "tryAgain": "Try again",
+    "distanceLabel": "Distance",
+    "nameLabel": "Name",
+    "noPartnersFound": "No partners found",
+    "enableLocation": "Enable location",
+    "noVerifiedMapPartners": "No verified partner locations are available on the map."
   },
   "assistant": {
     "title": "সহায়কে জিজ্ঞাসা করুন",

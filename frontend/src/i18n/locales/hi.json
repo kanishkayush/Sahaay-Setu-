@@ -305,7 +305,19 @@
     "countNearby": "{{count}} साझेदार पास में",
     "countNearby_other": "{{count}} साझेदार पास में",
     "typeLabel": "प्रकार",
-    "npa": "एनपीए"
+    "npa": "एनपीए",
+    "distanceUnavailable": "दूरी अनुपलब्ध",
+    "locationUnavailable": "स्थान अनुपलब्ध",
+    "selectPartner": "साझेदार चुनें",
+    "getDirections": "दिशा-निर्देश प्राप्त करें",
+    "viewOnMap": "मानचित्र पर देखें",
+    "locationInfoUnavailable": "स्थान की जानकारी अनुपलब्ध है",
+    "tryAgain": "पुनः प्रयास करें",
+    "distanceLabel": "दूरी",
+    "nameLabel": "नाम",
+    "noPartnersFound": "कोई साझेदार नहीं मिला",
+    "enableLocation": "स्थान सक्षम करें",
+    "noVerifiedMapPartners": "मानचित्र पर कोई सत्यापित साझेदार स्थान उपलब्ध नहीं है।"
   },
   "assistant": {
     "title": "सहाय से पूछें",

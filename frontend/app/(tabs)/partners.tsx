@@ -176,7 +176,13 @@ export default function PartnersScreen() {
           {availableSortOptions.map((opt) => (
             <Chip
               key={opt}
-              label={opt.charAt(0).toUpperCase() + opt.slice(1)}
+              label={
+                opt === 'distance'
+                  ? t('partners.distanceLabel')
+                  : opt === 'name'
+                    ? t('partners.nameLabel')
+                    : t('partners.typeLabel')
+              }
               tone="primary"
               selected={sortOption === opt}
               onPress={() => setSortOption(opt as SortOption)}
