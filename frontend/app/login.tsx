@@ -6,24 +6,42 @@ import { Button, Text, Card } from '@/components/ui';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@/theme';
 import { useAppStore } from '@/store/useAppStore';
+import { sendOtp, verifyOtp } from '@/api/services/auth.service';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const setAuthStatus = useAppStore((s) => s.setAuthStatus);
   const [inputValue, setInputValue] = useState('');
+  const [otpValue, setOtpValue] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const finishLogin = () => {
-    setAuthStatus('authenticated');
-    router.replace('/(tabs)/home');
+  const handleRequestOtp = async () => {
+    setErrorMsg('');
+    setIsSubmitting(true);
+    try {
+      await sendOtp(inputValue);
+      setStep('otp');
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Error sending OTP');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleContinue = () => {
+  const handleVerifyOtp = async () => {
+    setErrorMsg('');
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const res = await verifyOtp(inputValue, otpValue);
+      setAuthStatus('authenticated', res.token);
+      router.replace('/(tabs)/home');
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Invalid OTP');
+    } finally {
       setIsSubmitting(false);
-      finishLogin();
-    }, 600);
+    }
   };
 
   return (
@@ -46,26 +64,56 @@ export default function LoginScreen() {
         </View>
 
         <Card variant="glass" padded={false} style={styles.formContainer}>
-          <Text variant="bodyStrong" style={styles.label}>
-            {t('login.loginOrRegister')}
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('login.placeholder')}
-            placeholderTextColor={colors.textSecondary}
-            value={inputValue}
-            onChangeText={setInputValue}
-            keyboardType="default"
-            autoCapitalize="none"
-            autoComplete="off"
-          />
-          
-          <Button 
-            title={isSubmitting ? t('login.pleaseWait') : t('common.continue')}
-            onPress={handleContinue}
-            disabled={inputValue.trim().length < 4 || isSubmitting}
-            style={styles.button}
-          />
+          {step === 'phone' ? (
+            <>
+              <Text variant="bodyStrong" style={styles.label}>
+                {t('login.loginOrRegister', 'Login or Register')}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t('login.placeholder', 'Mobile number (e.g. 9999999999)')}
+                placeholderTextColor={colors.textSecondary}
+                value={inputValue}
+                onChangeText={setInputValue}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoComplete="tel"
+              />
+              
+              {errorMsg ? <Text variant="caption" color={colors.danger} style={{marginBottom: spacing.md}}>{errorMsg}</Text> : null}
+              
+              <Button 
+                title={isSubmitting ? t('login.pleaseWait', 'Please wait...') : t('common.continue', 'Continue')}
+                onPress={handleRequestOtp}
+                disabled={inputValue.trim().length < 10 || isSubmitting}
+                style={styles.button}
+              />
+            </>
+          ) : (
+            <>
+              <Text variant="bodyStrong" style={styles.label}>
+                Enter OTP sent to {inputValue}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="6-digit OTP (use 123456)"
+                placeholderTextColor={colors.textSecondary}
+                value={otpValue}
+                onChangeText={setOtpValue}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              
+              {errorMsg ? <Text variant="caption" color={colors.danger} style={{marginBottom: spacing.md}}>{errorMsg}</Text> : null}
+              
+              <Button 
+                title={isSubmitting ? 'Verifying...' : 'Verify OTP'}
+                onPress={handleVerifyOtp}
+                disabled={otpValue.trim().length < 6 || isSubmitting}
+                style={styles.button}
+              />
+            </>
+          )}
           
           <Text variant="caption" color={colors.textSecondary} center style={styles.disclaimer}>
             {t('login.disclaimer')}

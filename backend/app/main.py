@@ -29,6 +29,7 @@ from app.api.router import router
 from app.api.assistant import assistant_router
 from app.api.chat import router as chat_router
 from app.api.profile import profile_router
+from app.api.auth import auth_router
 
 # ---------------------------------------------------------------------------
 # Production safety guard
@@ -86,3 +87,4 @@ app.include_router(router)
 app.include_router(assistant_router)
 app.include_router(chat_router)
 app.include_router(profile_router)
+app.include_router(auth_router)

@@ -33,6 +33,7 @@ export type AppState = {
   language: LanguageCode;
   hasCompletedOnboarding: boolean;
   authStatus: 'authenticated' | 'signed_out';
+  authToken: string | null;
   profile: ApplicantProfile | null;
   savedSchemeIds: string[];
   /** Persistent loan journey context shared across all screens. */
@@ -40,7 +41,7 @@ export type AppState = {
 
   setLanguage: (code: LanguageCode) => Promise<void>;
   completeOnboarding: () => void;
-  setAuthStatus: (status: 'authenticated' | 'signed_out') => void;
+  setAuthStatus: (status: 'authenticated' | 'signed_out', token?: string) => void;
   setProfile: (profile: ApplicantProfile) => void;
   clearProfile: () => void;
   toggleSavedScheme: (schemeId: string) => void;
@@ -56,6 +57,7 @@ const initialState = {
   language: 'en' as LanguageCode,
   hasCompletedOnboarding: false,
   authStatus: 'signed_out' as const,
+  authToken: null as string | null,
   profile: null,
   savedSchemeIds: [] as string[],
   loanJourney: DEFAULT_LOAN_JOURNEY,
@@ -73,7 +75,10 @@ export const useAppStore = create<AppState>()(
 
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
-      setAuthStatus: (status) => set({ authStatus: status }),
+      setAuthStatus: (status, token) => set({ 
+        authStatus: status, 
+        authToken: status === 'authenticated' ? (token || get().authToken) : null 
+      }),
 
       setProfile: (profile) => set({ profile }),
 
@@ -111,6 +116,8 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         language: state.language,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
+        authStatus: state.authStatus,
+        authToken: state.authToken,
         profile: state.profile,
         savedSchemeIds: state.savedSchemeIds,
         loanJourney: state.loanJourney,

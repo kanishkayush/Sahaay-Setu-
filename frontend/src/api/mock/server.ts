@@ -12,6 +12,7 @@ import type {
 import { MOCK_LATENCY_MS } from '@/api/config';
 import { MOCK_PARTNERS } from './fixtures/partners';
 import { MOCK_SCHEMES, SCHEME_DATA_DISCLAIMER } from './fixtures/schemes';
+import type { SendOtpResponse, AuthResponse } from '@/api/services/auth.service';
 import { answerFromKnowledgeBase } from './fixtures/assistant';
 import { recommendSchemes } from '@/features/recommender/ruleEngine';
 import { haversineKm } from '@/utils/geo';
@@ -107,4 +108,25 @@ export async function mockAssistantQuery(
 ): Promise<AssistantQueryResponse> {
   await delay(900); // the RAG round trip will not be instant either
   return answerFromKnowledgeBase(req);
+}
+
+// ---------------------------------------------------------------------------
+// AUTHENTICATION
+// ---------------------------------------------------------------------------
+
+export async function mockSendOtp(phoneNumber: string): Promise<SendOtpResponse> {
+  await delay();
+  return { status: 'success', message: 'OTP sent successfully.' };
+}
+
+export async function mockVerifyOtp(phoneNumber: string, otp: string): Promise<AuthResponse> {
+  await delay();
+  if (otp !== '123456') {
+    throw new Error('Invalid OTP');
+  }
+  return {
+    token: 'mock-jwt-token-12345',
+    userId: 'mock-user-id',
+    phoneNumber,
+  };
 }

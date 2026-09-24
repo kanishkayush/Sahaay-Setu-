@@ -2,182 +2,91 @@
   {
     "id": "sca-mh-mpbcdc",
     "name": "Mahatma Phule Backward Class Development Corporation (MPBCDC)",
-    "localizedNames": {
-      "mr": "महात्मा फुले मागासवर्ग विकास महामंडळ"
-    },
+    "localizedNames": {"mr": "महात्मा फुले मागासवर्ग विकास महामंडळ"},
     "type": "SCA",
     "address": "Mumbai",
     "district": "Mumbai",
     "stateCode": "MH",
     "pincode": "400051",
-    "location": {
-      "latitude": 19.076,
-      "longitude": 72.8777
-    },
-    "supportedSchemeCategories": [
-      "MICRO_FINANCE",
-      "TERM_LOAN",
-      "EDUCATION_LOAN",
-      "WOMEN_SPECIFIC",
-      "AGRICULTURE",
-      "GREEN_MOBILITY"
-    ],
+    "location": {"latitude": 19.076, "longitude": 72.8777},
+    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","AGRICULTURE","GREEN_MOBILITY"],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {
-      "status": "UNKNOWN",
-      "reasonKey": "partners.eligibility.unknown",
-      "lastAssessedAt": "2026-09-07T00:00:00.000Z"
-    },
-    "languagesSpoken": [
-      "mr",
-      "hi",
-      "en"
-    ],
+    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
+    "languagesSpoken": ["mr","hi","en"],
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
   },
   {
     "id": "sca-mh-lidcom",
     "name": "Sant Rohidas Leather Industries & Charmakar Development Corporation (LIDCOM)",
-    "localizedNames": {
-      "mr": "संत रोहिदास चर्मोद्योग व चर्मकार विकास महामंडळ"
-    },
+    "localizedNames": {"mr": "संत रोहिदास चर्मोद्योग व चर्मकार विकास महामंडळ"},
     "type": "SCA",
     "address": "Mumbai",
     "district": "Mumbai",
     "stateCode": "MH",
     "pincode": "400051",
-    "location": {
-      "latitude": 19.076,
-      "longitude": 72.8777
-    },
-    "supportedSchemeCategories": [
-      "MICRO_FINANCE",
-      "TERM_LOAN",
-      "ARTISAN"
-    ],
+    "location": {"latitude": 19.076, "longitude": 72.8777},
+    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","ARTISAN"],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {
-      "status": "UNKNOWN",
-      "reasonKey": "partners.eligibility.unknown",
-      "lastAssessedAt": "2026-09-07T00:00:00.000Z"
-    },
-    "languagesSpoken": [
-      "mr",
-      "hi",
-      "en"
-    ],
+    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
+    "languagesSpoken": ["mr","hi","en"],
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
   },
   {
     "id": "sca-dl-dsfdc",
     "name": "Delhi SC/ST/OBC/Minorities & Handicapped Finance & Development Corporation (DSFDC)",
-    "localizedNames": {
-      "hi": "दिल्ली अनुसूचित जाति/जनजाति वित्त एवं विकास निगम"
-    },
+    "localizedNames": {"hi": "दिल्ली अनुसूचित जाति/जनजाति वित्त एवं विकास निगम"},
     "type": "SCA",
     "address": "New Delhi",
     "district": "New Delhi",
     "stateCode": "DL",
     "pincode": "110002",
-    "location": {
-      "latitude": 28.6139,
-      "longitude": 77.209
-    },
-    "supportedSchemeCategories": [
-      "MICRO_FINANCE",
-      "TERM_LOAN",
-      "EDUCATION_LOAN",
-      "WOMEN_SPECIFIC",
-      "GREEN_MOBILITY"
-    ],
+    "location": {"latitude": 28.6139, "longitude": 77.209},
+    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","GREEN_MOBILITY"],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {
-      "status": "UNKNOWN",
-      "reasonKey": "partners.eligibility.unknown",
-      "lastAssessedAt": "2026-09-07T00:00:00.000Z"
-    },
-    "languagesSpoken": [
-      "hi",
-      "en"
-    ],
+    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
+    "languagesSpoken": ["hi","en"],
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
   },
   {
     "id": "sca-tn-tahdco",
     "name": "Tamil Nadu Adi Dravidar Housing and Development Corporation (TAHDCO)",
-    "localizedNames": {
-      "ta": "தமிழ்நாடு ஆதிதிராவிடர் வீட்டுவசதி மற்றும் மேம்பாட்டுக் கழகம்"
-    },
+    "localizedNames": {"ta": "தமிழ்நாடு ஆதிதிராவிடர் வீட்டுவசதி மற்றும் மேம்பாட்டுக் கழகம்"},
     "type": "SCA",
     "address": "Chennai",
     "district": "Chennai",
     "stateCode": "TN",
     "pincode": "600035",
-    "location": {
-      "latitude": 13.0827,
-      "longitude": 80.2707
-    },
-    "supportedSchemeCategories": [
-      "MICRO_FINANCE",
-      "TERM_LOAN",
-      "EDUCATION_LOAN",
-      "WOMEN_SPECIFIC",
-      "ARTISAN"
-    ],
+    "location": {"latitude": 13.0827, "longitude": 80.2707},
+    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","ARTISAN"],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {
-      "status": "UNKNOWN",
-      "reasonKey": "partners.eligibility.unknown",
-      "lastAssessedAt": "2026-09-07T00:00:00.000Z"
-    },
-    "languagesSpoken": [
-      "ta",
-      "en"
-    ],
+    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
+    "languagesSpoken": ["ta","en"],
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
   },
   {
     "id": "sca-wb-wbscstobc",
     "name": "West Bengal SC, ST & OBC Development & Finance Corporation",
-    "localizedNames": {
-      "bn": "পশ্চিমবঙ্গ তফসিলি জাতি, উপজাতি ও ওবিসি উন্নয়ন ও অর্থ নিগম"
-    },
+    "localizedNames": {"bn": "পশ্চিমবঙ্গ তফসিলি জাতি, উপজাতি ও ওবিসি উন্নয়ন ও অর্থ নিগম"},
     "type": "SCA",
     "address": "Kolkata",
     "district": "Kolkata",
     "stateCode": "WB",
     "pincode": "700091",
-    "location": {
-      "latitude": 22.5726,
-      "longitude": 88.3639
-    },
-    "supportedSchemeCategories": [
-      "MICRO_FINANCE",
-      "TERM_LOAN",
-      "WOMEN_SPECIFIC",
-      "AGRICULTURE"
-    ],
+    "location": {"latitude": 22.5726, "longitude": 88.3639},
+    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","WOMEN_SPECIFIC","AGRICULTURE"],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {
-      "status": "UNKNOWN",
-      "reasonKey": "partners.eligibility.unknown",
-      "lastAssessedAt": "2026-09-07T00:00:00.000Z"
-    },
-    "languagesSpoken": [
-      "bn",
-      "hi",
-      "en"
-    ],
+    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
+    "languagesSpoken": ["bn","hi","en"],
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
   }
 ]

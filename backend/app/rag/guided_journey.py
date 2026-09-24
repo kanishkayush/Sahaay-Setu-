@@ -169,7 +169,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     # Check what is missing
     missing_fields = []
     if profile.pinCode is None and (profile.stateCode is None or profile.districtCode is None):
-        missing_fields.append("State and District or PIN Code")
+        missing_fields.append("PIN Code")
     elif profile.existingBusiness is None:
         missing_fields.append("Is this a new business or an existing business?")
     elif profile.estimatedProjectCost is None:
@@ -187,32 +187,32 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     lang = request.language or "en"
     questions_map = {
         "en": {
-            "State and District or PIN Code": "Please enter your PIN code.",
+            "PIN Code": "I need your 6-digit PIN code to find accurate schemes and partners. Please update your PIN in your Profile.",
             "Is this a new business or an existing business?": "Is this a new business or an existing business?",
             "Estimated Project Cost": "What is the estimated total project cost?"
         },
         "hi": {
-            "State and District or PIN Code": "कृपया अपना 6 अंकों का पिन कोड बताएं।",
+            "PIN Code": "सटीक योजनाएं और भागीदार खोजने के लिए मुझे आपके 6 अंकों के पिन कोड की आवश्यकता है। कृपया अपने प्रोफाइल में अपना पिन अपडेट करें।",
             "Is this a new business or an existing business?": "क्या यह नया व्यवसाय है या आपका पहले से चल रहा व्यवसाय है?",
             "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?"
         },
         "mr": {
-            "State and District or PIN Code": "कृपया तुमचे राज्य, जिल्हा किंवा पिन कोड सांगा.",
+            "PIN Code": "अचूक योजना आणि भागीदार शोधण्यासाठी मला तुमचा 6-अंकी पिन कोड आवश्यक आहे. कृपया तुमच्या प्रोफाइलमध्ये तुमचा पिन अपडेट करा.",
             "Is this a new business or an existing business?": "हा नवीन व्यवसाय आहे की जुना?",
             "Estimated Project Cost": "अंदाजित प्रकल्प खर्च किती आहे?"
         },
         "bn": {
-            "State and District or PIN Code": "দয়া করে আপনার রাজ্য, জেলা বা পিন কোড শেয়ার করুন।",
+            "PIN Code": "সঠিক স্কিম এবং পার্টনার খুঁজে পেতে আমার আপনার ৬-সংখ্যার পিন কোড দরকার। অনুগ্রহ করে আপনার প্রোফাইলে পিন আপডেট করুন।",
             "Is this a new business or an existing business?": "এটি কি একটি নতুন ব্যবসা না বিদ্যমান ব্যবসা?",
             "Estimated Project Cost": "আনুমানিক প্রকল্প ব্যয় কত?"
         },
         "ta": {
-            "State and District or PIN Code": "உங்கள் மாநிலம், மாவட்டம் அல்லது பின் குறியீட்டைப் பகிரவும்.",
+            "PIN Code": "சரியான திட்டங்கள் மற்றும் கூட்டாளர்களைக் கண்டறிய உங்கள் 6 இலக்க பின் குறியீடு எனக்குத் தேவை. தயவுசெய்து உங்கள் சுயவிவரத்தில் உங்கள் பின்னைப் புதுப்பிக்கவும்.",
             "Is this a new business or an existing business?": "இது புதிய தொழிலா அல்லது ஏற்கனவே உள்ள தொழிலா?",
             "Estimated Project Cost": "மதிப்பிடப்பட்ட திட்ட செலவு என்ன?"
         },
         "te": {
-            "State and District or PIN Code": "దయచేసి మీ రాష్ట్రం, జిల్లా లేదా పిన్ కోడ్‌ను పంచుకోండి.",
+            "PIN Code": "ఖచ్చితమైన పథకాలు మరియు భాగస్వాములను కనుగొనడానికి నాకు మీ 6-అంకెల పిన్ కోడ్ కావాలి. దయచేసి మీ ప్రొఫైల్‌లో మీ పిన్‌ను అప్‌డేట్ చేయండి.",
             "Is this a new business or an existing business?": "ఇది కొత్త వ్యాపారమా లేదా ఉన్న వ్యాపారమా?",
             "Estimated Project Cost": "అంచనా ప్రాజెక్ట్ వ్యయం ఎంత?"
         }
@@ -242,7 +242,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
 
     # Derive expectedField for the frontend so it can choose the right input mode
     FIELD_MAP = {
-        "State and District or PIN Code": "pinCode",
+        "PIN Code": "none", # Redirects user to profile
         "Is this a new business or an existing business?": "existingBusiness",
         "Estimated Project Cost": "estimatedProjectCost",
     }
@@ -687,12 +687,12 @@ def _handle_partner_search(request: ChatRequest, profile: ChatProfile, session_i
     
     # Missing PIN Code maps
     pin_map = {
-        "en": "Please provide your 6-digit PIN code so I can find a verified channel partner near you.",
-        "hi": "कृपया मुझे अपना 6 अंकों का पिन कोड बताएं ताकि मैं आपके आस-पास एक सत्यापित चैनल पार्टनर खोज सकूं।",
-        "mr": "कृपया मला तुमचा 6-अंकी पिन कोड सांगा जेणेकरून मी तुमच्या जवळपास एखादा सत्यापित चॅनेल भागीदार शोधू शकेन.",
-        "bn": "অনুগ্রহ করে আপনার ৬-সংখ্যার পিন কোড প্রদান করুন যাতে আমি আপনার কাছাকাছি একটি যাচাইকৃত চ্যানেল পার্টনার খুঁজে পেতে পারি।",
-        "ta": "தயவுசெய்து உங்கள் 6-இலக்க பின் குறியீட்டை வழங்கவும், இதன் மூலம் உங்களுக்கு அருகிலுள்ள சரிபார்க்கப்பட்ட சேனல் பார்ட்னரைக் கண்டறிய முடியும்.",
-        "te": "దయచేసి మీ 6-అంకెల పిన్ కోడ్‌ను అందించండి, తద్వారా నేను మీ సమీపంలో ధృవీకరించబడిన ఛానెల్ భాగస్వామిని కనుగొనగలను."
+        "en": "I need your 6-digit PIN code to find a channel partner near you. Please update it in your Profile first.",
+        "hi": "मुझे आपके आस-पास एक चैनल पार्टनर खोजने के लिए आपका 6 अंकों का पिन कोड चाहिए। कृपया पहले इसे अपने प्रोफाइल में अपडेट करें।",
+        "mr": "मला तुमच्या जवळपास एक चॅनेल भागीदार शोधण्यासाठी तुमचा 6-अंकी पिन कोड आवश्यक आहे. कृपया प्रथम ते तुमच्या प्रोफाइलमध्ये अपडेट करा.",
+        "bn": "আপনার কাছাকাছি একটি চ্যানেল পার্টনার খুঁজে পেতে আমার আপনার ৬-সংখ্যার পিন কোড দরকার। অনুগ্রহ করে প্রথমে এটি আপনার প্রোফাইলে আপডেট করুন।",
+        "ta": "உங்களுக்கு அருகிலுள்ள ஒரு சேனல் கூட்டாளரைக் கண்டறிய உங்கள் 6 இலக்க பின் குறியீடு எனக்குத் தேவை. தயவுசெய்து முதலில் அதை உங்கள் சுயவிவரத்தில் புதுப்பிக்கவும்.",
+        "te": "మీకు సమీపంలోని ఛానెల్ భాగస్వామిని కనుగొనడానికి నాకు మీ 6-అంకెల పిన్ కోడ్ కావాలి. దయచేసి ముందుగా దాన్ని మీ ప్రొఫైల్‌లో అప్‌డేట్ చేయండి."
     }
     
     # Found partner maps

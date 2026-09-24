@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import { API_BASE_URL, API_TIMEOUT_MS } from './config';
 import { ApiErrorSchema, type ApiError } from './contracts/common';
+import { useAppStore } from '@/store/useAppStore';
 
 /**
  * Thin typed fetch wrapper. Every response is validated against its Zod schema
@@ -92,6 +93,13 @@ export async function apiRequest<TSchema extends z.ZodTypeAny>(
       Accept: 'application/json',
       ...headers,
     };
+    
+    // Inject Bearer token if available
+    const token = useAppStore.getState().authToken;
+    if (token && !requestHeaders['Authorization']) {
+      requestHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     if (!isFormData && !requestHeaders['Content-Type']) {
       requestHeaders['Content-Type'] = 'application/json';
     }

@@ -17,7 +17,8 @@ from __future__ import annotations
 import base64
 from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Header, HTTPException, status, UploadFile, File, Form, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -29,22 +30,33 @@ from app.schemas.profile import (
     PersistentUserProfile,
 )
 from app.services.storage import get_document_storage, get_profile_store
+from app.api.auth import verify_token
 
 profile_router = APIRouter(prefix="/v1", tags=["profile"])
+security = HTTPBearer()
 
 # ---------------------------------------------------------------------------
 # Helper to extract user_id from headers
 # ---------------------------------------------------------------------------
 
-def _require_user_id(x_user_id: Optional[str] = Header(None)) -> str:
+def _require_user_id(
+    x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> str:
     """
-    In development, the frontend sends a device-generated UUID as X-User-Id.
-    In production, replace with: return auth_token.sub (from JWT middleware).
+    Validates the Bearer token to get the user ID.
+    If no token is provided, it falls back to X-User-Id for backward compatibility during transition.
     """
+    if auth and auth.credentials:
+        try:
+            return verify_token(auth.credentials)
+        except HTTPException:
+            pass # Fall back to x_user_id if token is invalid during transition
+            
     if not x_user_id or len(x_user_id.strip()) == 0:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="X-User-Id header is required. Generate a stable UUID on the device and send it with every request.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Provide a valid Bearer token.",
         )
     return x_user_id.strip()
 
@@ -54,8 +66,11 @@ def _require_user_id(x_user_id: Optional[str] = Header(None)) -> str:
 # ---------------------------------------------------------------------------
 
 @profile_router.get("/profile")
-def get_profile(x_user_id: Optional[str] = Header(None)) -> dict[str, Any]:
-    user_id = _require_user_id(x_user_id)
+def get_profile(
+    x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> dict[str, Any]:
+    user_id = _require_user_id(x_user_id, auth)
     store = get_profile_store()
     profile = store.get(user_id)
     if profile is None:
@@ -71,8 +86,9 @@ def get_profile(x_user_id: Optional[str] = Header(None)) -> dict[str, Any]:
 def update_profile(
     request: ProfileUpdateRequest,
     x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> dict[str, Any]:
-    user_id = _require_user_id(x_user_id)
+    user_id = _require_user_id(x_user_id, auth)
     store = get_profile_store()
 
     # Only write non-None fields to avoid overwriting existing data.
@@ -95,8 +111,11 @@ class DocumentUploadRequest(BaseModel):
 
 
 @profile_router.get("/profile/documents")
-def list_documents(x_user_id: Optional[str] = Header(None)) -> dict[str, Any]:
-    user_id = _require_user_id(x_user_id)
+def list_documents(
+    x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> dict[str, Any]:
+    user_id = _require_user_id(x_user_id, auth)
     storage = get_document_storage()
     docs = storage.list(user_id)
     return {
@@ -124,9 +143,10 @@ def upload_document(
     category: str = Form(...),
     expiryDate: Optional[str] = Form(None),
     x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> dict[str, Any]:
     from fastapi import UploadFile, File, Form
-    user_id = _require_user_id(x_user_id)
+    user_id = _require_user_id(x_user_id, auth)
 
     # Validate category
     if category not in ALLOWED_DOCUMENT_CATEGORIES:
@@ -188,8 +208,9 @@ def upload_document(
 def delete_document(
     document_id: str,
     x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> None:
-    user_id = _require_user_id(x_user_id)
+    user_id = _require_user_id(x_user_id, auth)
     storage = get_document_storage()
     deleted = storage.delete(user_id, document_id)
     if not deleted:
@@ -203,13 +224,14 @@ def delete_document(
 def download_document(
     document_id: str,
     x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Response:
     """
     Authenticated download. The raw file is served from the backend, never
     via a public static URL. In production, this endpoint would validate a
     JWT and confirm ownership before serving.
     """
-    user_id = _require_user_id(x_user_id)
+    user_id = _require_user_id(x_user_id, auth)
     storage = get_document_storage()
 
     result = storage.read(user_id, document_id)
@@ -230,11 +252,14 @@ def download_document(
     )
 
 @profile_router.delete("/profile/clear", status_code=status.HTTP_204_NO_CONTENT)
-def clear_profile(x_user_id: Optional[str] = Header(None)) -> None:
+def clear_profile(
+    x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> None:
     """
     Clears all persistent profile data, documents, and memory for the session.
     """
-    user_id = _require_user_id(x_user_id)
+    user_id = _require_user_id(x_user_id, auth)
     
     # 1. Delete all documents
     storage = get_document_storage()

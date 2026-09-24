@@ -322,6 +322,20 @@ export default function ProfileScreen() {
                   }
                 />
                 <ProfileField
+                  label={t('profile.educationLevel', 'Education Level')}
+                  value={persistentProfile.educationLevel ?? ''}
+                  onSave={(v) =>
+                    updateProfileMutation.mutate({ educationLevel: v || undefined })
+                  }
+                />
+                <ProfileField
+                  label={t('profile.occupation', 'Occupation')}
+                  value={persistentProfile.occupation ?? ''}
+                  onSave={(v) =>
+                    updateProfileMutation.mutate({ occupation: v || undefined })
+                  }
+                />
+                <ProfileField
                   label={t('profile.annualFamilyIncome')}
                   value={
                     persistentProfile.eligibility?.annualFamilyIncome?.toString() ?? ''

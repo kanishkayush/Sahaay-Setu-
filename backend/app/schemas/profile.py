@@ -72,6 +72,11 @@ class PersistentUserProfile(BaseModel):
     # Location
     address: ProfileAddress = Field(default_factory=ProfileAddress)
 
+    # Background
+    educationLevel: Optional[str] = None
+    occupation: Optional[str] = None
+    savedSchemes: list[str] = Field(default_factory=list)
+
     # Eligibility
     eligibility: ProfileEligibility = Field(default_factory=ProfileEligibility)
 
@@ -93,6 +98,9 @@ class ProfileUpdateRequest(BaseModel):
     email: Optional[str] = None
     dateOfBirth: Optional[str] = None
     address: Optional[ProfileAddress] = None
+    educationLevel: Optional[str] = None
+    occupation: Optional[str] = None
+    savedSchemes: Optional[list[str]] = None
     eligibility: Optional[ProfileEligibility] = None
     business: Optional[ProfileBusiness] = None
     preferences: Optional[ProfilePreferences] = None
