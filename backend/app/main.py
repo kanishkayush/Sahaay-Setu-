@@ -77,6 +77,7 @@ if "https://sahaay-setu.vercel.app" not in allow_origins and "*" not in allow_or
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
+    allow_origin_regex=r"^https://sahaay-setu.*\.vercel\.app$",
     allow_methods=["*"],
     allow_headers=["*"],
 )
