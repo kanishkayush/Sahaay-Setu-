@@ -30,7 +30,7 @@ const ENV = {
 
 const nonEmpty = (value: string | undefined) => (value && value.length > 0 ? value : undefined);
 
-export const API_BASE_URL = nonEmpty(ENV.apiBaseUrl) ?? extra.apiBaseUrl ?? 'http://localhost:8000';
+export const API_BASE_URL = nonEmpty(ENV.apiBaseUrl) ?? extra.apiBaseUrl ?? 'https://sahaay-setu.onrender.com';
 
 /**
  * Defaults to TRUE so the app is fully demoable with zero backend running.
