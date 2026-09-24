@@ -128,7 +128,11 @@ class LocalDocumentStorage(DocumentStorageService):
 
     def __init__(self, base_dir: Optional[Path] = None) -> None:
         if base_dir is None:
-            base_dir = Path(__file__).parent.parent.parent / "data" / "secure_uploads"
+            env_dir = os.environ.get("PERSISTENT_DATA_DIR")
+            if env_dir:
+                base_dir = Path(env_dir) / "secure_uploads"
+            else:
+                base_dir = Path(__file__).parent.parent.parent / "data" / "secure_uploads"
         self._base = base_dir
         self._base.mkdir(parents=True, exist_ok=True)
 
@@ -238,7 +242,11 @@ class ProfileStore:
 
     def __init__(self, base_dir: Optional[Path] = None) -> None:
         if base_dir is None:
-            base_dir = Path(__file__).parent.parent.parent / "data" / "profiles"
+            env_dir = os.environ.get("PERSISTENT_DATA_DIR")
+            if env_dir:
+                base_dir = Path(env_dir) / "profiles"
+            else:
+                base_dir = Path(__file__).parent.parent.parent / "data" / "profiles"
         self._base = base_dir
         self._base.mkdir(parents=True, exist_ok=True)
 

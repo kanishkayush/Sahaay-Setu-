@@ -1,0 +1,68 @@
+{
+  "scheme_id": "nsfdc-uny",
+  "api": {
+    "id": "nsfdc-uny",
+    "code": "NSFDC-UNY",
+    "name": {
+      "en": "Udyam Nidhi Yojana",
+      "hi": "उद्यम निधि योजना",
+      "mr": "उद्यम निधी योजना",
+      "bn": "উদ্যম নিধি যোজনা",
+      "ta": "உத்யம் நிதி யோஜனா",
+      "te": "ఉద్యమ్ నిధి యోజన"
+    },
+    "shortDescription": {
+      "en": "Mid-sized business loans through cooperative banks and small finance banks.",
+      "hi": "सहकारी बैंकों और लघु वित्त बैंकों के माध्यम से मध्यम आकार के व्यवसाय ऋण।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 50000,
+    "maxLoanAmount": 450000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 13,
+    "interestRateMaxPct": 15,
+    "maxTenureMonths": 60,
+    "moratoriumMinMonths": 3,
+    "moratoriumMaxMonths": 3,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "ANY",
+    "eligibilityRules": [
+      {
+        "field": "projectCost",
+        "operator": "lte",
+        "value": 500000,
+        "label": {
+          "en": "Project cost up to ₹5.00 lakh",
+          "hi": "परियोजना लागत ₹5.00 लाख तक"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Caste and income certificates",
+        "hi": "जाति और आय प्रमाण पत्र"
+      },
+      {
+        "en": "Business plan",
+        "hi": "व्यवसाय योजना"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "PSB"
+    ],
+    "citations": [
+      {
+        "id": "nsfdc-scheme-page-2026-09",
+        "title": "NSFDC — Schemes",
+        "locator": "nsfdc.nic.in/scheme, retrieved 2026-09-07",
+        "url": "https://nsfdc.nic.in/scheme",
+        "confidence": 1
+      }
+    ],
+    "verified": true,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

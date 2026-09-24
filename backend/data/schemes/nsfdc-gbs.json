@@ -1,0 +1,64 @@
+{
+  "scheme_id": "nsfdc-gbs",
+  "api": {
+    "id": "nsfdc-gbs",
+    "code": "NSFDC-GBS",
+    "name": {
+      "en": "Green Business Scheme",
+      "hi": "हरित व्यवसाय योजना",
+      "mr": "हरित व्यवसाय योजना",
+      "bn": "সবুজ ব্যবসা প্রকল্প",
+      "ta": "பசுமை வணிகத் திட்டம்",
+      "te": "హరిత వ్యాపార పథకం"
+    },
+    "shortDescription": {
+      "en": "E-rickshaws, solar units and other clean-energy livelihood assets. Figures not yet confirmed.",
+      "hi": "ई-रिक्शा, सौर इकाइयाँ और अन्य स्वच्छ ऊर्जा आजीविका संपत्तियाँ। आंकड़े अभी असत्यापित।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 50000,
+    "maxLoanAmount": 300000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 6,
+    "interestRateMaxPct": 8,
+    "maxTenureMonths": 60,
+    "moratoriumMinMonths": 3,
+    "moratoriumMaxMonths": 6,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "ANY",
+    "eligibilityRules": [
+      {
+        "field": "projectType",
+        "operator": "in",
+        "value": [
+          "TRANSPORT_VEHICLE",
+          "SERVICES"
+        ],
+        "label": {
+          "en": "Clean-energy transport or service asset",
+          "hi": "स्वच्छ ऊर्जा परिवहन या सेवा संपत्ति"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Vehicle quotation",
+        "hi": "वाहन कोटेशन"
+      },
+      {
+        "en": "Driving licence (for vehicles)",
+        "hi": "ड्राइविंग लाइसेंस (वाहन हेतु)"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "NBFC_MFI",
+      "RRB"
+    ],
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

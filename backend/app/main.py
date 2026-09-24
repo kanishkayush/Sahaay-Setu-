@@ -56,9 +56,19 @@ app = FastAPI(
 
 # Allow the Expo dev client (any localhost origin) during development.
 # Tighten this to the production domain before deployment.
+cors_origins_env = os.environ.get("CORS_ORIGINS")
+if cors_origins_env is not None:
+    allow_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+else:
+    # Default to localhost for development. Block wildcard in production unless explicitly requested.
+    if _env == "production":
+        allow_origins = []
+    else:
+        allow_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

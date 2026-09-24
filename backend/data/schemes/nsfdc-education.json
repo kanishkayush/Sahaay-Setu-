@@ -1,0 +1,84 @@
+{
+  "scheme_id": "nsfdc-education",
+  "api": {
+    "id": "nsfdc-education",
+    "code": "NSFDC-ELS",
+    "name": {
+      "en": "Educational Loan Scheme",
+      "hi": "शैक्षिक ऋण योजना",
+      "mr": "शैक्षणिक कर्ज योजना",
+      "bn": "শিক্ষা ঋণ প্রকল্প",
+      "ta": "கல்விக் கடன் திட்டம்",
+      "te": "విద్యా రుణ పథకం"
+    },
+    "shortDescription": {
+      "en": "Professional and technical courses, in India or abroad. Repayment starts after the course.",
+      "hi": "भारत या विदेश में व्यावसायिक एवं तकनीकी पाठ्यक्रम। पुनर्भुगतान पाठ्यक्रम के बाद।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 50000,
+    "maxLoanAmount": 4000000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 6.5,
+    "interestRateMaxPct": 6.5,
+    "maxTenureMonths": 144,
+    "moratoriumMinMonths": 6,
+    "moratoriumMaxMonths": 12,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "ANY",
+    "eligibilityRules": [
+      {
+        "field": "educationStatus",
+        "operator": "in",
+        "value": [
+          "HIGHER_SECONDARY",
+          "GRADUATE",
+          "POSTGRADUATE",
+          "VOCATIONAL"
+        ],
+        "label": {
+          "en": "Admitted to a recognised professional or technical course",
+          "hi": "मान्यता प्राप्त व्यावसायिक या तकनीकी पाठ्यक्रम में प्रवेश"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Admission letter",
+        "hi": "प्रवेश पत्र"
+      },
+      {
+        "en": "Fee structure from institute",
+        "hi": "संस्थान की शुल्क संरचना"
+      },
+      {
+        "en": "Caste and income certificates",
+        "hi": "जाति और आय प्रमाण पत्र"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "PSB"
+    ],
+    "citations": [
+      {
+        "id": "nsfdc-scheme-page-2026-09",
+        "title": "NSFDC — Schemes",
+        "locator": "nsfdc.nic.in/scheme, retrieved 2026-09-07",
+        "url": "https://nsfdc.nic.in/scheme",
+        "confidence": 1
+      },
+      {
+        "id": "mosje-nsfdc-2026-09",
+        "title": "Ministry of Social Justice and Empowerment — NSFDC",
+        "locator": "socialjustice.gov.in/schemes/34, retrieved 2026-09-07 — income ceiling ₹5.00 lakh",
+        "url": "https://socialjustice.gov.in/schemes/34",
+        "confidence": 1
+      }
+    ],
+    "verified": true,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

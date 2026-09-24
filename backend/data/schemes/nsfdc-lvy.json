@@ -1,0 +1,61 @@
+{
+  "scheme_id": "nsfdc-lvy",
+  "api": {
+    "id": "nsfdc-lvy",
+    "code": "NSFDC-LVY",
+    "name": {
+      "en": "Laghu Vyavsay Yojana",
+      "hi": "लघु व्यवसाय योजना",
+      "mr": "लघु व्यवसाय योजना",
+      "bn": "লঘু ব্যবসায় যোজনা",
+      "ta": "லகு வியாபார யோஜனா",
+      "te": "లఘు వ్యాపార యోజన"
+    },
+    "shortDescription": {
+      "en": "Small business loans — shops, service outlets, light trading. Figures not yet confirmed.",
+      "hi": "लघु व्यवसाय ऋण — दुकानें, सेवा केंद्र, हल्का व्यापार। आंकड़े अभी असत्यापित।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 100000,
+    "maxLoanAmount": 500000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 6,
+    "interestRateMaxPct": 8,
+    "maxTenureMonths": 72,
+    "moratoriumMinMonths": 3,
+    "moratoriumMaxMonths": 6,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "ANY",
+    "eligibilityRules": [
+      {
+        "field": "projectCost",
+        "operator": "lte",
+        "value": 500000,
+        "label": {
+          "en": "Project cost up to ₹5.00 lakh",
+          "hi": "परियोजना लागत ₹5.00 लाख तक"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Shop / trade licence if applicable",
+        "hi": "दुकान / व्यापार लाइसेंस (यदि लागू)"
+      },
+      {
+        "en": "Caste and income certificates",
+        "hi": "जाति और आय प्रमाण पत्र"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "PSB",
+      "RRB"
+    ],
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

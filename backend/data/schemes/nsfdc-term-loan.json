@@ -1,0 +1,96 @@
+{
+  "scheme_id": "nsfdc-term-loan",
+  "api": {
+    "id": "nsfdc-term-loan",
+    "code": "NSFDC-TL",
+    "name": {
+      "en": "Term Loan",
+      "hi": "सावधि ऋण",
+      "mr": "मुदत कर्ज",
+      "bn": "মেয়াদি ঋণ",
+      "ta": "கால கடன்",
+      "te": "కాల రుణం"
+    },
+    "shortDescription": {
+      "en": "For larger self-employment projects — manufacturing, transport, service ventures.",
+      "hi": "बड़ी स्वरोजगार परियोजनाओं के लिए — विनिर्माण, परिवहन और सेवा उद्यम।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 125001,
+    "maxLoanAmount": 4500000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 8,
+    "interestRateMaxPct": 8,
+    "maxTenureMonths": 84,
+    "moratoriumMinMonths": 6,
+    "moratoriumMaxMonths": 12,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "ANY",
+    "eligibilityRules": [
+      {
+        "field": "annualFamilyIncome",
+        "operator": "lte",
+        "value": 500000,
+        "label": {
+          "en": "Annual family income up to ₹5.00 lakh",
+          "hi": "वार्षिक पारिवारिक आय ₹5.00 लाख तक"
+        }
+      },
+      {
+        "field": "projectCost",
+        "operator": "between",
+        "value": [
+          140000,
+          5000000
+        ],
+        "label": {
+          "en": "Project cost above ₹1.25 lakh and up to ₹50 lakh",
+          "hi": "परियोजना लागत ₹1.25 लाख से अधिक और ₹50 लाख तक"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Caste certificate",
+        "hi": "जाति प्रमाण पत्र"
+      },
+      {
+        "en": "Income certificate",
+        "hi": "आय प्रमाण पत्र"
+      },
+      {
+        "en": "Detailed project report",
+        "hi": "विस्तृत परियोजना रिपोर्ट"
+      },
+      {
+        "en": "Quotations for machinery / vehicle",
+        "hi": "मशीनरी / वाहन के कोटेशन"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "PSB",
+      "RRB"
+    ],
+    "citations": [
+      {
+        "id": "nsfdc-scheme-page-2026-09",
+        "title": "NSFDC — Schemes",
+        "locator": "nsfdc.nic.in/scheme, retrieved 2026-09-07",
+        "url": "https://nsfdc.nic.in/scheme",
+        "confidence": 1
+      },
+      {
+        "id": "mosje-nsfdc-2026-09",
+        "title": "Ministry of Social Justice and Empowerment — NSFDC",
+        "locator": "socialjustice.gov.in/schemes/34, retrieved 2026-09-07 — income ceiling ₹5.00 lakh",
+        "url": "https://socialjustice.gov.in/schemes/34",
+        "confidence": 1
+      }
+    ],
+    "verified": true,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}

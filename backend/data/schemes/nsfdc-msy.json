@@ -1,0 +1,60 @@
+{
+  "scheme_id": "nsfdc-msy",
+  "api": {
+    "id": "nsfdc-msy",
+    "code": "NSFDC-MSY",
+    "name": {
+      "en": "Mahila Samriddhi Yojana",
+      "hi": "महिला समृद्धि योजना",
+      "mr": "महिला समृद्धी योजना",
+      "bn": "মহিলা সমৃদ্ধি যোজনা",
+      "ta": "மகிளா சம்ரித்தி யோஜனா",
+      "te": "మహిళా సమృద్ధి యోజన"
+    },
+    "shortDescription": {
+      "en": "Micro-credit for SC women entrepreneurs. Figures below are not yet confirmed.",
+      "hi": "अनुसूचित जाति महिला उद्यमियों के लिए सूक्ष्म ऋण। नीचे दिए आंकड़े अभी असत्यापित हैं।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": "RECOMMENDED",
+    "channelPartnerRequired": false,
+    "minLoanAmount": 10000,
+    "maxLoanAmount": 140000,
+    "fundingSharePct": 0.9,
+    "interestRateMinPct": 6.5,
+    "interestRateMaxPct": 8,
+    "maxTenureMonths": 48,
+    "moratoriumMinMonths": 3,
+    "moratoriumMaxMonths": 6,
+    "maxAnnualFamilyIncome": 500000,
+    "eligibleGender": "FEMALE",
+    "eligibilityRules": [
+      {
+        "field": "gender",
+        "operator": "eq",
+        "value": "FEMALE",
+        "label": {
+          "en": "Women beneficiaries only",
+          "hi": "केवल महिला लाभार्थी"
+        }
+      }
+    ],
+    "documentsRequired": [
+      {
+        "en": "Caste certificate",
+        "hi": "जाति प्रमाण पत्र"
+      },
+      {
+        "en": "Income certificate",
+        "hi": "आय प्रमाण पत्र"
+      }
+    ],
+    "channelPartnerTypes": [
+      "SCA",
+      "NBFC_MFI"
+    ],
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+  }
+}
