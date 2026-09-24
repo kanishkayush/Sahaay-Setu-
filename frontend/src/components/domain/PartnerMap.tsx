@@ -46,36 +46,8 @@ export type PartnerMapProps = {
 
 export function PartnerMap({ partners, center, onSelect, unavailableMessage, userLocationText }: PartnerMapProps) {
   const { t } = useTranslation();
-  if (!maps) {
-    return (
-      <View style={styles.placeholder}>
-        <Icon name="pin" size={28} color={colors.textMuted} />
-        <Text variant="caption" color={colors.textMuted} center>
-          {unavailableMessage}
-        </Text>
-      </View>
-    );
-  }
-
-  const MapView = maps.default;
-  const Marker = maps.Marker;
-
-  const validPartners = partners.filter((p) => isValidCoordinate(p.location));
-  console.log(`[PARTNER MAP] total partners=${partners.length}`);
-  console.log(`[PARTNER MAP] valid coordinate partners=${validPartners.length}`);
-  console.log(`[PARTNER MAP] invalid coordinate partners=${partners.length - validPartners.length}`);
   
-  if (validPartners.length === 0) {
-    return (
-      <View style={styles.placeholder}>
-        <Icon name="pin" size={28} color={colors.textMuted} />
-        <Text variant="caption" color={colors.textMuted} center>
-          {t('partners.noVerifiedMapPartners')}
-        </Text>
-      </View>
-    );
-  }
-
+  const validPartners = partners.filter((p) => isValidCoordinate(p.location));
   const origin = center ?? validPartners[0]?.location ?? { latitude: 20.5937, longitude: 78.9629 };
 
   const mapRef = React.useRef<any>(null);
@@ -94,7 +66,36 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
         }, 500);
       }
     }
-  }, [validPartners, center]);
+  }, [validPartners, center, maps]);
+
+  if (!maps) {
+    return (
+      <View style={styles.placeholder}>
+        <Icon name="pin" size={28} color={colors.textMuted} />
+        <Text variant="caption" color={colors.textMuted} center>
+          {unavailableMessage}
+        </Text>
+      </View>
+    );
+  }
+
+  const MapView = maps.default;
+  const Marker = maps.Marker;
+
+  console.log(`[PARTNER MAP] total partners=${partners.length}`);
+  console.log(`[PARTNER MAP] valid coordinate partners=${validPartners.length}`);
+  console.log(`[PARTNER MAP] invalid coordinate partners=${partners.length - validPartners.length}`);
+  
+  if (validPartners.length === 0) {
+    return (
+      <View style={styles.placeholder}>
+        <Icon name="pin" size={28} color={colors.textMuted} />
+        <Text variant="caption" color={colors.textMuted} center>
+          {t('partners.noVerifiedMapPartners')}
+        </Text>
+      </View>
+    );
+  }
 
   try {
     return (

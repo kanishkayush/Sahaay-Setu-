@@ -235,6 +235,9 @@ export const NORMS_BY_PARTNER_TYPE: Record<PartnerType, EligibilityNorm[]> = {
       sourceId: 'nbfcMfi',
     },
   ],
+  COOP_BANK: [],
+  SFB: [],
+  UNKNOWN: [],
 };
 
 /** Every norm that gates disbursement to a partner of this type. */

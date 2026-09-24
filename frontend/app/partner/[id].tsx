@@ -131,17 +131,20 @@ export default function PartnerDetailScreen() {
             style={{ flex: 1 }}
           />
         ) : null}
-        <Button
-          title={t('partners.directions')}
-          variant="outline"
-          style={{ flex: 1 }}
-          onPress={() => {
-            const { latitude, longitude } = partner.location;
-            Linking.openURL(
-              `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-            ).catch(() => {});
-          }}
-        />
+        {partner.location ? (
+          <Button
+            title={t('partners.directions')}
+            variant="outline"
+            style={{ flex: 1 }}
+            onPress={() => {
+              if (!partner.location) return;
+              const { latitude, longitude } = partner.location;
+              Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+              ).catch(() => {});
+            }}
+          />
+        ) : null}
         <Button
           title="Select Partner"
           variant="primary"

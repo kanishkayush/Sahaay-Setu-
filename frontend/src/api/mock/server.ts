@@ -56,7 +56,7 @@ export async function mockSearchPartners(
   const origin = req.location;
   let items: ChannelPartner[] = MOCK_PARTNERS.map((p) => ({
     ...p,
-    distanceKm: origin ? haversineKm(origin, p.location) : undefined,
+    distanceKm: origin && p.location ? haversineKm(origin, p.location) : undefined,
   }));
 
   if (req.pincode && !origin) {

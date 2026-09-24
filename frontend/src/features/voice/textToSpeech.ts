@@ -94,7 +94,7 @@ export function speak(text: string, language: LanguageCode, handlers: SpeakHandl
     // Select the best voice for the requested language (not just Hindi)
     const voices = await loadVoices();
     const targetLocale = speechLocaleFor(language);
-    const baseCode = targetLocale.split('-')[0];
+    const baseCode = targetLocale.split('-')[0] ?? '';
     const bestVoice =
       voices.find((v) => v.language === targetLocale) ??
       voices.find((v) => v.language.startsWith(baseCode));
