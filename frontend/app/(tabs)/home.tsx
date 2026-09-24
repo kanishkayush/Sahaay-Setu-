@@ -8,9 +8,27 @@ import { Screen, Text, Icon, Card } from '@/components/ui';
 import { USE_MOCK_API } from '@/api/config';
 import { useSchemes } from '@/hooks/useSchemes';
 import { colors, spacing, radius, typography } from '@/theme';
+import { useQuery } from '@tanstack/react-query';
+import { getProfile } from '@/api/services/profile.service';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+
+  const { data: persistentProfile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+  });
+
+  const name = persistentProfile?.personalDetails?.fullName?.trim() || '';
+  let initials = 'U';
+  if (name) {
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) {
+      initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    } else {
+      initials = parts[0].substring(0, 2).toUpperCase();
+    }
+  }
 
   return (
     <Screen>
@@ -21,7 +39,7 @@ export default function HomeScreen() {
             <Icon name="bell" size={24} color={colors.primary} />
           </Pressable>
           <Pressable style={styles.avatarBtn} onPress={() => router.push('/(tabs)/profile')}>
-            <Text style={styles.avatarText}>SP</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </Pressable>
         </View>
       </View>

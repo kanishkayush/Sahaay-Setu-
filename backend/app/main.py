@@ -58,13 +58,21 @@ app = FastAPI(
 # Tighten this to the production domain before deployment.
 cors_origins_env = os.environ.get("CORS_ORIGINS")
 if cors_origins_env is not None:
-    allow_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+    allow_origins = [
+        origin.strip().rstrip("/")
+        for origin in cors_origins_env.split(",")
+        if origin.strip()
+    ]
 else:
     # Default to localhost for development. Block wildcard in production unless explicitly requested.
     if _env == "production":
-        allow_origins = []
+        allow_origins = ["https://sahaay-setu.vercel.app"]
     else:
         allow_origins = ["*"]
+
+# Also ensure the actual frontend is in the list just in case
+if "https://sahaay-setu.vercel.app" not in allow_origins and "*" not in allow_origins:
+    allow_origins.append("https://sahaay-setu.vercel.app")
 
 app.add_middleware(
     CORSMiddleware,

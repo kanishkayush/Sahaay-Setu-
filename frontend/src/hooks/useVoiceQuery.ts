@@ -166,7 +166,7 @@ export function useVoiceQuery(language: LanguageCode) {
       } catch (e) {
         // Only update UI for the current generation.
         if (generation.current !== mine) return;
-        if (__DEV__) console.error('[VOICE] API Error:', e);
+        console.error('[VOICE] API Error:', e);
         setChatError('CHAT_FAILED');
         setBusyPhase('idle');
       }
