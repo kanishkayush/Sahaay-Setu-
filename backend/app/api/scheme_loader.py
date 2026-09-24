@@ -45,6 +45,15 @@ def _load_all() -> dict[str, dict[str, Any]]:
             # Normalize category
             if "category" in api_block:
                 api_block["category"] = normalize_category(api_block["category"])
+
+            # Frontend Zod contract expects recommendationCategory as array of strings.
+            # Legacy JSON files may store it as a bare string; coerce here so the
+            # ContractViolationError never fires in the client.
+            rc = api_block.get("recommendationCategory")
+            if isinstance(rc, str):
+                api_block["recommendationCategory"] = [rc] if rc else []
+            elif rc is None:
+                api_block["recommendationCategory"] = []
                 
             # Use api.id as the canonical key — this is what the frontend uses
             # for /schemes/{id} navigation. The top-level scheme_id is used by
@@ -57,6 +66,7 @@ def _load_all() -> dict[str, dict[str, Any]]:
     
     _INTERNAL_TO_API_ID = mapping
     return result
+
 
 
 def get_scheme_catalogue() -> dict[str, dict[str, Any]]:

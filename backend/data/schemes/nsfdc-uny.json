@@ -16,7 +16,9 @@
       "hi": "सहकारी बैंकों और लघु वित्त बैंकों के माध्यम से मध्यम आकार के व्यवसाय ऋण।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 50000,
     "maxLoanAmount": 450000,

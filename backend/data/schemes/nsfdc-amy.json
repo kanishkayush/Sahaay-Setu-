@@ -16,7 +16,9 @@
       "hi": "एनबीएफसी-एमएफआई के माध्यम से सूक्ष्म वित्त। जल्दी उपलब्ध, पर ब्याज दर काफी अधिक।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 10000,
     "maxLoanAmount": 125000,

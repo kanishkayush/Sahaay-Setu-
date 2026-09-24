@@ -157,6 +157,66 @@ class PartnerSearchRequest(BaseModel):
     language: Optional[str] = None
     allPartners: bool = False
 
+
+def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]:
+    """
+    Normalise a raw partner record from channel_partners.json / partner_repo
+    into the shape the frontend Zod ChannelPartnerSchema expects.
+    """
+    p_type = p.get("type", "SCA")
+    type_map = {"SCA": "SCA", "PSB": "PSB", "RRB": "RRB", "NBFC_MFI": "NBFC_MFI", "NBFC": "NBFC_MFI"}
+    mapped_type = type_map.get(p_type, "SCA")
+
+    raw_pincode = str(p.get("pincode", "")).strip()
+    if not raw_pincode or not raw_pincode[0].isdigit() or len(raw_pincode) != 6:
+        raw_pincode = "100000"  # placeholder to pass validation — frontend shows address anyway
+
+    mapped: dict[str, Any] = {
+        "id": p.get("id", p.get("partnerId", "")),
+        "name": p.get("name", ""),
+        "type": mapped_type,
+        "address": p.get("address", "Address unavailable"),
+        "district": p.get("district", "") or "Unknown",
+        "stateCode": p.get("stateCode", "") or "XX",
+        "pincode": raw_pincode,
+        "eligibility": {
+            "status": "UNKNOWN",
+            "reasonKey": "errors.generic",
+        },
+        # Always coerce to valid OfficialCategory enum values — raw JSON may have
+        # internal category codes (MICRO_FINANCE, TERM_LOAN…) that are not valid.
+        "supportedSchemeCategories": [],
+        "supportedSchemeIds": p.get("supported_schemes", p.get("supportedSchemeIds", [])),
+        "schemeMatch": p.get("schemeMatch", True),
+        "schemeMappingStatus": p.get("schemeMappingStatus", "VERIFIED_FOR_SELECTED_SCHEME"),
+        "languagesSpoken": p.get("languagesSpoken", []),
+        "lastUpdatedAt": p.get("lastUpdatedAt") or datetime.now(timezone.utc).isoformat(),
+    }
+
+    if dist is not None:
+        mapped["distanceKm"] = dist
+    elif p.get("distance_km") is not None:
+        mapped["distanceKm"] = p["distance_km"]
+
+    # Location — prefer nested object, fall back to top-level fields
+    loc = p.get("location")
+    if isinstance(loc, dict) and loc.get("latitude") is not None and loc.get("longitude") is not None:
+        mapped["location"] = {"latitude": loc["latitude"], "longitude": loc["longitude"]}
+    elif p.get("latitude") is not None and p.get("longitude") is not None:
+        mapped["location"] = {"latitude": p["latitude"], "longitude": p["longitude"]}
+
+    if p.get("phone"):
+        mapped["phone"] = p["phone"]
+    if p.get("email"):
+        mapped["email"] = p["email"]
+    if p.get("localizedNames"):
+        mapped["localizedNames"] = p["localizedNames"]
+    if p.get("branchName"):
+        mapped["branchName"] = p["branchName"]
+
+    return mapped
+
+
 @router.post("/partners/search")
 def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
     fallback_used = False
@@ -207,72 +267,15 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
             "radiusKm": req.radiusKm
         }
         
-    mapped_partners = []
-    for p in nearby_partners:
-        # Use the actual 'type' field from channel_partners.json
-        p_type = p.get("type", "SCA")
-        # Normalize type to contract enum values
-        type_map = {"SCA": "SCA", "PSB": "PSB", "RRB": "RRB", "NBFC_MFI": "NBFC_MFI", "NBFC": "NBFC_MFI"}
-        mapped_type = type_map.get(p_type, "SCA")
-        
-        # Use actual 'pincode' field (singular) from data
-        raw_pincode = str(p.get("pincode", "")).strip()
-        # Validate pincode format; use fallback if invalid
-        if not raw_pincode or not raw_pincode[0].isdigit() or len(raw_pincode) != 6:
-            raw_pincode = "100000"  # placeholder to pass validation — frontend shows address anyway
-        
-        mapped_partner = {
-            "id": p.get("id", p.get("partnerId", "")),
-            "name": p.get("name", ""),
-            "type": mapped_type,
-            "address": p.get("address", "Address unavailable"),
-            "district": p.get("district", "") or "Unknown",
-            "stateCode": p.get("stateCode", "") or "XX",
-            "pincode": raw_pincode,
-            "eligibility": {
-                "status": "UNKNOWN",
-                "reasonKey": "errors.generic"
-            },
-            "supportedSchemeIds": p.get("supported_schemes", []),
-            "supportedSchemeCategories": [],
-            "schemeMatch": p.get("schemeMatch", True),
-            "schemeMappingStatus": p.get("schemeMappingStatus", "VERIFIED_FOR_SELECTED_SCHEME"),
-            "languagesSpoken": [],
-            "lastUpdatedAt": datetime.now(timezone.utc).isoformat()
-        }
-        
-        # distanceKm — only include if computed, otherwise omit
-        dist = p.get("distance_km")
-        if dist is not None:
-            mapped_partner["distanceKm"] = dist
-        
-        # Location from the nested 'location' object in channel_partners.json
-        loc = p.get("location")
-        if isinstance(loc, dict) and loc.get("latitude") is not None and loc.get("longitude") is not None:
-            mapped_partner["location"] = {
-                "latitude": loc["latitude"],
-                "longitude": loc["longitude"]
-            }
-        elif p.get("latitude") is not None and p.get("longitude") is not None:
-            # Fallback: top-level lat/lon (from search_nearby which copies them)
-            mapped_partner["location"] = {
-                "latitude": p["latitude"],
-                "longitude": p["longitude"]
-            }
-        
-        if p.get("phone"):
-            mapped_partner["phone"] = p.get("phone")
-        if p.get("email"):
-            mapped_partner["email"] = p.get("email")
-            
-        mapped_partners.append(mapped_partner)
-    
     return {
-        "items": mapped_partners,
+        "items": [_map_partner(p) for p in nearby_partners],
         "fallbackUsed": fallback_used,
         "radiusKm": req.radiusKm
     }
 
+
+# NOTE: Static/prefixed routes MUST appear before the parameterized /{partner_id}
+# route or FastAPI will capture e.g. /debug/stats as partner_id="debug".
 @router.get("/partners/debug/stats")
 def debug_partner_stats() -> dict[str, Any]:
     repo = get_partner_repo()
@@ -294,6 +297,7 @@ def debug_partner_stats() -> dict[str, Any]:
         "samplePinCodes": list(sample_pins)[:10]
     }
 
+
 @router.get("/partners/debug/pincode/{pincode}")
 def debug_partner_pincode(pincode: str) -> list[dict[str, Any]]:
     from app.rag.partner_repo import normalize_pincode
@@ -307,6 +311,16 @@ def debug_partner_pincode(pincode: str) -> list[dict[str, Any]]:
             results.append(p)
             
     return results
+
+
+@router.get("/partners/{partner_id}")
+def get_partner_by_id(partner_id: str) -> dict[str, Any]:
+    """Return a single partner by ID. Used by the partner detail screen."""
+    repo = get_partner_repo()
+    for p in repo.partners:
+        if p.get("id") == partner_id or p.get("partnerId") == partner_id:
+            return _map_partner(p)
+    raise HTTPException(status_code=404, detail=f"Partner '{partner_id}' not found.")
 
 @router.post("/recommendations")
 def create_recommendations(request: RecommendationRequest) -> dict[str, Any]:

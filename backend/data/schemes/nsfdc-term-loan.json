@@ -16,7 +16,9 @@
       "hi": "बड़ी स्वरोजगार परियोजनाओं के लिए — विनिर्माण, परिवहन और सेवा उद्यम।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 125001,
     "maxLoanAmount": 4500000,

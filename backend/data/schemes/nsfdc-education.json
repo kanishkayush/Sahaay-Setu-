@@ -16,7 +16,9 @@
       "hi": "भारत या विदेश में व्यावसायिक एवं तकनीकी पाठ्यक्रम। पुनर्भुगतान पाठ्यक्रम के बाद।"
     },
     "officialCategory": "EDUCATION",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 50000,
     "maxLoanAmount": 4000000,

@@ -16,7 +16,9 @@
       "hi": "छोटे व्यापार, फेरी और अति लघु स्वरोजगार इकाइयों के लिए छोटे ऋण।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 10000,
     "maxLoanAmount": 125000,

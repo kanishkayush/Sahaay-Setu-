@@ -16,7 +16,9 @@
       "hi": "अनुसूचित जाति महिला उद्यमियों के लिए सूक्ष्म ऋण। नीचे दिए आंकड़े अभी असत्यापित हैं।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 10000,
     "maxLoanAmount": 140000,

@@ -16,7 +16,9 @@
       "hi": "ई-रिक्शा, सौर इकाइयाँ और अन्य स्वच्छ ऊर्जा आजीविका संपत्तियाँ। आंकड़े अभी असत्यापित।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 50000,
     "maxLoanAmount": 300000,

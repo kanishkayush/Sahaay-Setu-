@@ -16,7 +16,9 @@
       "hi": "लघु व्यवसाय ऋण — दुकानें, सेवा केंद्र, हल्का व्यापार। आंकड़े अभी असत्यापित।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
-    "recommendationCategory": "RECOMMENDED",
+    "recommendationCategory": [
+      "RECOMMENDED"
+    ],
     "channelPartnerRequired": false,
     "minLoanAmount": 100000,
     "maxLoanAmount": 500000,
