@@ -56,7 +56,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/check-i18n.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run i18n:check"
+    "verify": "npm run typecheck && npm run lint && npm run i18n:check",
+    "build": "npx expo export -p web",
+    "vercel-build": "npx expo export -p web"
   },
   "private": true,
   "description": "Multilingual mobile app that matches SC entrepreneurs & students to the right concessional credit scheme and the nearest eligible Channel Partner. SIH 2025 PS 26092 (MoSJE)."
