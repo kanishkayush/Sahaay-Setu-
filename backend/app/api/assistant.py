@@ -122,9 +122,10 @@ def create_explanation(request: ExplanationRequest) -> ExplanationResponse:
 
     return explanation
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status, Depends
 import uuid
 import logging
+from app.api.auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
 from app.api.chat import process_chat_request
@@ -134,7 +135,7 @@ from app.schemas.assistant import AssistantQueryRequest, AssistantQueryResponse
 @assistant_router.post("/assistant/query", response_model=AssistantQueryResponse)
 def assistant_query_adapter(
     request: AssistantQueryRequest,
-    x_user_id: str | None = Header(None)
+    user_id: str = Depends(get_current_user_id)
 ) -> AssistantQueryResponse:
     """
     Adapter for the frontend's Assistant API contract.
@@ -154,7 +155,7 @@ def assistant_query_adapter(
         language=request.responseLanguage,
         profile=profile,
         conversation_id=request.sessionId,
-        user_id=x_user_id,
+        user_id=user_id,
         guideMe=request.guideMe
     )
 

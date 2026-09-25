@@ -105,3 +105,31 @@ def verify_token(token: str) -> str:
         _sessions.pop(token, None)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     return session["user_id"]
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Header, Depends
+import os
+
+security = HTTPBearer(auto_error=False)
+
+def get_current_user_id(
+    x_user_id: Optional[str] = Header(None),
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> str:
+    """
+    Extracts user_id from Bearer token.
+    In development, allows fallback to x-user-id header.
+    In production, strictly requires a valid Bearer token.
+    """
+    env = os.getenv("ENVIRONMENT", "development")
+    
+    if auth and auth.credentials:
+        return verify_token(auth.credentials)
+        
+    if env != "production" and x_user_id and x_user_id.strip():
+        return x_user_id.strip()
+        
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required. Provide a valid Bearer token.",
+    )
