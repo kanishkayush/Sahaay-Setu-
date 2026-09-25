@@ -24,12 +24,11 @@ export async function askAssistant(
 ): Promise<AssistantQueryResponse> {
   if (USE_MOCK_API) return mockAssistantQuery(request);
 
-  const userId = await getDeviceUserId();
-
+  // Bearer token is injected automatically by apiRequest (client.ts).
+  // X-User-Id is no longer used in production — auth is token-based.
   return await apiRequest(ENDPOINTS.assistant.query, AssistantQueryResponseSchema, {
     method: 'POST',
     body: request,
-    headers: { 'X-User-Id': userId },
     timeoutMs: 60_000, // LLM round trips can take 30-60s
     signal,
   });

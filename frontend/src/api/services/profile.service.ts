@@ -60,8 +60,10 @@ export async function getDeviceUserId(): Promise<string> {
   return newId;
 }
 
-function userHeaders(userId: string): Record<string, string> {
-  return { 'X-User-Id': userId };
+function userHeaders(_userId: string): Record<string, string> {
+  // Bearer token is injected automatically by apiRequest (client.ts line 98-101).
+  // X-User-Id is no longer used in production.
+  return {};
 }
 
 // ---------------------------------------------------------------------------

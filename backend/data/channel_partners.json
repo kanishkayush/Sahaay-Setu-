@@ -1,92 +1,1932 @@
 [
   {
-    "id": "sca-mh-mpbcdc",
+    "id": "psb-indian-overseas-bank-0bd9f4",
+    "name": "Indian Overseas Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "763, Anna Salai, Chennai, Tamil Nadu – 600 002",
+    "district": "Unknown",
+    "stateCode": "TN",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 13.0524,
+      "longitude": 80.2493
+    }
+  },
+  {
+    "id": "psb-bank-of-baroda-218741",
+    "name": "Bank of Baroda",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Baroda Bhavan, 7th Floor, R.C. Dutt Road, Vadodara – 390 007, Gujarat",
+    "district": "Unknown",
+    "stateCode": "GJ",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.3092,
+      "longitude": 73.1926
+    }
+  },
+  {
+    "id": "psb-canara-bank-a307e4",
+    "name": "Canara Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Head Office, 112, J.C. Road, Bengaluru – 560 002",
+    "district": "Unknown",
+    "stateCode": "XX",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 12.9634,
+      "longitude": 77.5855
+    }
+  },
+  {
+    "id": "psb-punjab-national-bank-2b4ecc",
+    "name": "Punjab National Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Plot No.-4, Sector 10, Dwarka, New Delhi – 110 075",
+    "district": "Unknown",
+    "stateCode": "DL",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 28.5924,
+      "longitude": 77.0454
+    }
+  },
+  {
+    "id": "psb-punjab-sind-bank-52243d",
+    "name": "Punjab & Sind Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "5th Floor, 21 Rajendra Place, New Delhi – 110 008",
+    "district": "Unknown",
+    "stateCode": "DL",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 28.6417,
+      "longitude": 77.2066
+    }
+  },
+  {
+    "id": "psb-union-bank-of-india-1f9903",
+    "name": "Union Bank of India",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Central Office, Union Bank Bhavan, Nariman Point, Mumbai – 400 021",
+    "district": "Unknown",
+    "stateCode": "XX",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 18.9226,
+      "longitude": 72.8236
+    }
+  },
+  {
+    "id": "psb-indian-bank-6a3fc2",
+    "name": "Indian Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "No.254-260, Avvai Shanmugam Salai, Royapetta, Chennai – 600 014",
+    "district": "Unknown",
+    "stateCode": "XX",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 13.0524,
+      "longitude": 80.2493
+    }
+  },
+  {
+    "id": "psb-bank-of-maharashtra-8e28e8",
+    "name": "Bank of Maharashtra",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Head Office 'Lok Mangal', 1501, Shivajinagar, Pune – 411005, Maharashtra",
+    "district": "Pune",
+    "stateCode": "MH",
+    "pincode": "411005",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 18.5303,
+      "longitude": 73.8473
+    }
+  },
+  {
+    "id": "psb-bank-of-india-8aec0c",
+    "name": "Bank of India",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Bandra Kurla Complex, Bandra (East), Mumbai – 400051",
+    "district": "Mumbai",
+    "stateCode": "XX",
+    "pincode": "400051",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 18.9226,
+      "longitude": 72.8236
+    }
+  },
+  {
+    "id": "psb-central-bank-of-india-025434",
+    "name": "Central Bank of India",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "Chandermukhi Bldg., Nariman Point, Mumbai – 400 021",
+    "district": "Unknown",
+    "stateCode": "XX",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 19.061,
+      "longitude": 72.8652
+    }
+  },
+  {
+    "id": "psb-uco-bank-7922bc",
+    "name": "UCO Bank",
+    "localizedNames": {},
+    "type": "PSB",
+    "address": "No 3&4, DD Block, Sector-1, Bidhannagar, Kolkata – 700064, West Bengal",
+    "district": "Kolkata",
+    "stateCode": "WB",
+    "pincode": "700064",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100623_Ouo6ZT.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.5726,
+      "longitude": 88.3975
+    }
+  },
+  {
+    "id": "sfb-au-small-finance-bank-5752d4",
+    "name": "AU Small Finance Bank",
+    "localizedNames": {},
+    "type": "SFB",
+    "address": "Jaipur, Rajasthan",
+    "district": "Unknown",
+    "stateCode": "RJ",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100851_IyED2Z.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.9124,
+      "longitude": 75.7873
+    }
+  },
+  {
+    "id": "sfb-ujjivan-small-finance-bank-6343af",
+    "name": "Ujjivan Small Finance Bank",
+    "localizedNames": {},
+    "type": "SFB",
+    "address": "Bengaluru, Karnataka",
+    "district": "Unknown",
+    "stateCode": "KA",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_100851_IyED2Z.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 12.9716,
+      "longitude": 77.5946
+    }
+  },
+  {
+    "id": "other-north-eastern-development-fina-4a6082",
+    "name": "North Eastern Development Finance Corporation Ltd. (NEDFi)",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "Tea Auction Center, GS Rd, Sanket Vihar, Dispur, Guwahati, Assam – 781006",
+    "district": "Assam",
+    "stateCode": "AS",
+    "pincode": "781006",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_101214_I3NtKu.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.1445,
+      "longitude": 91.7362
+    }
+  },
+  {
+    "id": "other-jharkhand-silk-textile-handicr-edf5a8",
+    "name": "Jharkhand Silk Textile & Handicraft Development Corporation Ltd. (JHARCRAFT)",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "DIC Campus, Ratu Road, Ranchi, Jharkhand – 834001",
+    "district": "Jharkhand",
+    "stateCode": "JH",
+    "pincode": "834001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_101214_I3NtKu.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.3441,
+      "longitude": 85.3096
+    }
+  },
+  {
+    "id": "other-small-industries-development-b-491249",
+    "name": "Small Industries Development Bank of India (SIDBI)",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "SIDBI Tower, 15, Ashok Marg, Lucknow – 226001, Uttar Pradesh",
+    "district": "Lucknow",
+    "stateCode": "UP",
+    "pincode": "226001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_101214_I3NtKu.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 19.061,
+      "longitude": 72.8652
+    }
+  },
+  {
+    "id": "coop-streenidhi-telangana-0504cb",
+    "name": "Streenidhi – Telangana",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "401 & 402, 4th Floor, My Home Sarovar Plaza, Saifabad, Hyderabad, Telangana – 500004",
+    "district": "Telangana",
+    "stateCode": "TS",
+    "pincode": "500004",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_101711_8UbNTh.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "coop-streenidhi-andhra-pradesh-260c55",
+    "name": "Streenidhi – Andhra Pradesh",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "2nd Floor, NTR Secretariat Administrative Block, RTC Complex, Vijayawada – 520013, Andhra Pradesh",
+    "district": "Vijayawada",
+    "stateCode": "AP",
+    "pincode": "520013",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20260408_101711_8UbNTh.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "mfi-annapurna-finance-pvt-ltd-2c5a8a",
+    "name": "Annapurna Finance Pvt. Ltd.",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "R.O. K7/110, Ground Floor, Linga Vihar, P.S. Khandagiri, Bhubaneswar, Odisha – 751029",
+    "district": "Odisha",
+    "stateCode": "OD",
+    "pincode": "751029",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 20.2961,
+      "longitude": 85.8245
+    }
+  },
+  {
+    "id": "mfi-grameen-development-finance-pv-340d2d",
+    "name": "Grameen Development & Finance Pvt. Ltd.",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "'Sahyadri Building', Adjacent Ambajogai Road, Sai Naka, Latur – 413512, Maharashtra",
+    "district": "Latur",
+    "stateCode": "MH",
+    "pincode": "413512",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "mfi-asa-international-microfinance-d2c3ef",
+    "name": "ASA International Microfinance Ltd., Kolkata",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "Victoria Park, 4th Floor, GN-37/2, Sector-V, Salt Lake City, Kolkata – 700091, West Bengal",
+    "district": "Kolkata",
+    "stateCode": "WB",
+    "pincode": "700091",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.5726,
+      "longitude": 88.3639
+    }
+  },
+  {
+    "id": "mfi-midland-microfin-ltd-ludhiana-e569d9",
+    "name": "Midland Microfin Ltd., Ludhiana",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "The Axis, Plot No. 1, R.B. Badri Das Colony, BMC Chowk, G.T. Road, Jalandhar – 144001, Punjab",
+    "district": "Jalandhar",
+    "stateCode": "PB",
+    "pincode": "144001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 31.485,
+      "longitude": 75.9014
+    }
+  },
+  {
+    "id": "mfi-satya-microcapital-network-ltd-c38966",
+    "name": "Satya MicroCapital Network Ltd., Gurugram",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "Plot No. 492, Udyog Vihar, Phase-III, Gurugram, Haryana – 122016",
+    "district": "Haryana",
+    "stateCode": "HR",
+    "pincode": "122016",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 28.4845,
+      "longitude": 77.0563
+    }
+  },
+  {
+    "id": "mfi-pahal-financial-services-pvt-l-8a8249",
+    "name": "Pahal Financial Services Pvt. Ltd., Ahmedabad",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "7th Floor, Binori B Square-2, Near Iskon Road, Ahmedabad – 380054, Gujarat",
+    "district": "Ahmedabad",
+    "stateCode": "GJ",
+    "pincode": "380054",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.0225,
+      "longitude": 72.5714
+    }
+  },
+  {
+    "id": "mfi-vector-finance-pvt-ltd-dd058f",
+    "name": "Vector Finance Pvt. Ltd.",
+    "localizedNames": {},
+    "type": "NBFC_MFI",
+    "address": "R.O. K7/110, Ground Floor, Linga Vihar, Khandagiri, Bhubaneswar, Odisha – 751029",
+    "district": "Odisha",
+    "stateCode": "OD",
+    "pincode": "751029",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101231_PIlyin.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 20.2961,
+      "longitude": 85.8245
+    }
+  },
+  {
+    "id": "coop-shri-mahila-sewa-sahakari-bank-db06ca",
+    "name": "Shri Mahila Sewa Sahakari Bank Ltd.",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "109, Sakar – II, Near Town Hall, Ellis Bridge, Ahmedabad – 380006",
+    "district": "Ahmedabad",
+    "stateCode": "XX",
+    "pincode": "380006",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101341_nKsDpr.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.0225,
+      "longitude": 72.5714
+    }
+  },
+  {
+    "id": "coop-konokolla-mahila-shahari-sahak-6d12e8",
+    "name": "Konokolla Mahila Shahari Sahakari Bank",
+    "localizedNames": {},
+    "type": "SCA",
+    "address": "Assam",
+    "district": "Unknown",
+    "stateCode": "AS",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_101341_nKsDpr.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "rrb-andhra-pradesh-grameena-vikas--a45142",
+    "name": "Andhra Pradesh Grameena Vikas Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Warangal, Andhra Pradesh",
+    "district": "Unknown",
+    "stateCode": "AP",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 17.385,
+      "longitude": 78.4867
+    }
+  },
+  {
+    "id": "rrb-andhra-pragathi-grameena-bank-37895c",
+    "name": "Andhra Pragathi Grameena Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Kadapa, Andhra Pradesh",
+    "district": "Unknown",
+    "stateCode": "AP",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 15.8369,
+      "longitude": 78.05
+    }
+  },
+  {
+    "id": "rrb-arunachal-pradesh-rural-bank-19e176",
+    "name": "Arunachal Pradesh Rural Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Naharlagun, Arunachal Pradesh",
+    "district": "Unknown",
+    "stateCode": "AR",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 27.0844,
+      "longitude": 93.6053
+    }
+  },
+  {
+    "id": "rrb-assam-gramin-vikash-bank-473c58",
+    "name": "Assam Gramin Vikash Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Guwahati, Assam",
+    "district": "Unknown",
+    "stateCode": "AS",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.1445,
+      "longitude": 91.7362
+    }
+  },
+  {
+    "id": "rrb-bangiya-gramin-vikash-bank-9dc9e5",
+    "name": "Bangiya Gramin Vikash Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "NH-34, Chaltia, Chuanpur, PO Berhampur – 742101, West Bengal",
+    "district": "PO Berhampur",
+    "stateCode": "WB",
+    "pincode": "742101",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 24.1863,
+      "longitude": 88.2663
+    }
+  },
+  {
+    "id": "rrb-baroda-gujarat-gramin-bank-5d7af1",
+    "name": "Baroda Gujarat Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Vadodara, Gujarat",
+    "district": "Unknown",
+    "stateCode": "GJ",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.3074,
+      "longitude": 73.1812
+    }
+  },
+  {
+    "id": "rrb-baroda-rajasthan-kshetriya-gra-9acb04",
+    "name": "Baroda Rajasthan Kshetriya Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Plot No. 2343, 2nd Floor, Anna Sagar Circular Road, Ajmer – 305004",
+    "district": "Ajmer",
+    "stateCode": "XX",
+    "pincode": "305004",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.4499,
+      "longitude": 74.6399
+    }
+  },
+  {
+    "id": "rrb-baroda-up-bank-18aa5a",
+    "name": "Baroda UP Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Lucknow, Uttar Pradesh",
+    "district": "Unknown",
+    "stateCode": "UP",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.8467,
+      "longitude": 80.9462
+    }
+  },
+  {
+    "id": "rrb-chaitanya-godavari-grameena-ba-bd9fa1",
+    "name": "Chaitanya Godavari Grameena Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Guntur, Andhra Pradesh",
+    "district": "Unknown",
+    "stateCode": "AP",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 16.3067,
+      "longitude": 80.4365
+    }
+  },
+  {
+    "id": "rrb-chhattisgarh-rajya-gramin-bank-a82b59",
+    "name": "Chhattisgarh Rajya Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Near Mahadev Ghat Road, Sundar Nagar, Raipur – 492013, Chhattisgarh",
+    "district": "Raipur",
+    "stateCode": "CG",
+    "pincode": "492013",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 21.2514,
+      "longitude": 81.6296
+    }
+  },
+  {
+    "id": "rrb-ellaquai-dehati-bank-j-k-2b67da",
+    "name": "Ellaquai Dehati Bank (J&K)",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "3rd Floor, Nirman Complex, Airport (IG) Road, Barzulla, Srinagar, J&K – 190005",
+    "district": "K",
+    "stateCode": "JK",
+    "pincode": "190005",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 34.0837,
+      "longitude": 74.7973
+    }
+  },
+  {
+    "id": "rrb-himachal-pradesh-gramin-bank-cde06b",
+    "name": "Himachal Pradesh Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "43, Khajrana Road, Pipal Chowk, Shimla, Himachal Pradesh",
+    "district": "Unknown",
+    "stateCode": "HP",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 31.1048,
+      "longitude": 77.1734
+    }
+  },
+  {
+    "id": "rrb-j-k-grameen-bank-db7af6",
+    "name": "J&K Grameen Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Near J&K Water Complex, Sundernagar, Jammu – 180006, J&K",
+    "district": "Jammu",
+    "stateCode": "JK",
+    "pincode": "180006",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 32.7266,
+      "longitude": 74.857
+    }
+  },
+  {
+    "id": "rrb-jharkhand-rajya-gramin-bank-df95d4",
+    "name": "Jharkhand Rajya Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Near Nagar Palika Chowk, Dumka, Jharkhand",
+    "district": "Unknown",
+    "stateCode": "JH",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.3441,
+      "longitude": 85.3096
+    }
+  },
+  {
+    "id": "rrb-karnataka-vikas-grameena-bank-43c0ee",
+    "name": "Karnataka Vikas Grameena Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Head Office, P.B. No. 111, Dharwad – 580008, Karnataka",
+    "district": "Dharwad",
+    "stateCode": "KA",
+    "pincode": "580008",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 15.4589,
+      "longitude": 75.0078
+    }
+  },
+  {
+    "id": "rrb-assam-gramin-vikash-bank-assam-27c3ee",
+    "name": "Assam Gramin Vikash Bank (Assam RDB)",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "GS Road, Guahati – 781005, Assam",
+    "district": "Guahati",
+    "stateCode": "AS",
+    "pincode": "781005",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 26.1445,
+      "longitude": 91.7362
+    }
+  },
+  {
+    "id": "rrb-tamil-nadu-grama-bank-f688ab",
+    "name": "Tamil Nadu Grama Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "6, Yercaud Marg, Hasthampatty, Salem – 636007, Tamil Nadu",
+    "district": "Salem",
+    "stateCode": "TN",
+    "pincode": "636007",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 11.6643,
+      "longitude": 78.146
+    }
+  },
+  {
+    "id": "rrb-punjab-gramin-bank-4b2b9c",
+    "name": "Punjab Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Head Office, Jalandhar Road, Kapurthala – 144601, Punjab",
+    "district": "Kapurthala",
+    "stateCode": "PB",
+    "pincode": "144601",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 31.326,
+      "longitude": 75.5762
+    }
+  },
+  {
+    "id": "rrb-madhyanchal-gramin-bank-46bd1b",
+    "name": "Madhyanchal Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Poddar Colony, Tili Road, Sagar – 470001, Madhya Pradesh",
+    "district": "Sagar",
+    "stateCode": "MP",
+    "pincode": "470001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.8358,
+      "longitude": 78.7602
+    }
+  },
+  {
+    "id": "rrb-aryavart-bank-8f1b52",
+    "name": "Aryavart Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "A-2/46, Vijay Khand, Gomti Nagar, Lucknow – 226010, Uttar Pradesh",
+    "district": "Lucknow",
+    "stateCode": "UP",
+    "pincode": "226010",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "rrb-andhra-pradesh-grameena-vikas--564fae",
+    "name": "Andhra Pradesh Grameena Vikas Bank (Warangal)",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Door No. 2-5-8/1, Ram Nagar, Hanamkonda – 506001, Warangal, Telangana",
+    "district": "Hanamkonda",
+    "stateCode": "TS",
+    "pincode": "506001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 17.385,
+      "longitude": 78.4867
+    }
+  },
+  {
+    "id": "rrb-saptarishi-gramin-bank-689e8c",
+    "name": "Saptarishi Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "P.B.17, Naidu Buildings, Chittoor – 517001, Andhra Pradesh",
+    "district": "Chittoor",
+    "stateCode": "AP",
+    "pincode": "517001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "rrb-sarva-haryana-gramin-bank-91814a",
+    "name": "Sarva Haryana Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Near Bajrang Bhawan, Delhi Road, Rohtak, Haryana – 124001",
+    "district": "Haryana",
+    "stateCode": "HR",
+    "pincode": "124001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 28.8955,
+      "longitude": 76.6066
+    }
+  },
+  {
+    "id": "rrb-vidharbha-konkan-gramin-bank-ac0c61",
+    "name": "Vidharbha Konkan Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Chandraprastha, 2nd & 3rd Floor, Plot No. 6, Nagpur Ring Road, Maharashtra – 440022",
+    "district": "Maharashtra",
+    "stateCode": "MH",
+    "pincode": "440022",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 21.1458,
+      "longitude": 79.0882
+    }
+  },
+  {
+    "id": "rrb-maharashtra-gramin-bank-98cd6b",
+    "name": "Maharashtra Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Plot No. 35, Jivan Shri Town Centre, CIDCO, Maharashtra – 431003",
+    "district": "Maharashtra",
+    "stateCode": "MH",
+    "pincode": "431003",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "pending"
+  },
+  {
+    "id": "rrb-uttar-bihar-gramin-bank-160d12",
+    "name": "Uttar Bihar Gramin Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "NH-30, Near BP Highway Services Petrol Pump, Asok, Bihar – 800016",
+    "district": "Bihar",
+    "stateCode": "BR",
+    "pincode": "800016",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 1,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 25.6122,
+      "longitude": 85.1233
+    }
+  },
+  {
+    "id": "rrb-baroda-gujarat-gramin-bank-raj-ca6cd9",
+    "name": "Baroda Gujarat Gramin Bank (Rajkot)",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Tagore Marg, Rajkot – 360001, Gujarat",
+    "district": "Rajkot",
+    "stateCode": "GJ",
+    "pincode": "360001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.3074,
+      "longitude": 73.1812
+    }
+  },
+  {
+    "id": "rrb-manipur-rural-bank-ccf230",
+    "name": "Manipur Rural Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Imphal, Manipur – 795001",
+    "district": "Manipur",
+    "stateCode": "MN",
+    "pincode": "795001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 2,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 24.817,
+      "longitude": 93.9368
+    }
+  },
+  {
+    "id": "rrb-meghalaya-rural-bank-b722ca",
+    "name": "Meghalaya Rural Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "MTC Building, 2nd Floor, Near New Bus Stand, Police Bazaar, Shillong – 793001",
+    "district": "Shillong",
+    "stateCode": "XX",
+    "pincode": "793001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 25.5788,
+      "longitude": 91.8933
+    }
+  },
+  {
+    "id": "rrb-mizoram-rural-bank-728f63",
+    "name": "Mizoram Rural Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Mizoram, MYNCO, Aizawl – 796001",
+    "district": "Aizawl",
+    "stateCode": "MZ",
+    "pincode": "796001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 23.7271,
+      "longitude": 92.7176
+    }
+  },
+  {
+    "id": "rrb-utkal-grameen-bank-1bd9d4",
+    "name": "Utkal Grameen Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Near New Bus Stand, Bolangir – 767001, Odisha",
+    "district": "Bolangir",
+    "stateCode": "OD",
+    "pincode": "767001",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 20.6809,
+      "longitude": 83.9318
+    }
+  },
+  {
+    "id": "rrb-bangiya-gramin-vikash-bank-coo-399779",
+    "name": "Bangiya Gramin Vikash Bank (Cooch Behar)",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "BMC House, Near Sanjay Hotel, NH-34, Chaltia, Sanjay Road, Cooch Behar – 736101, West Bengal",
+    "district": "Cooch Behar",
+    "stateCode": "WB",
+    "pincode": "736101",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 24.1863,
+      "longitude": 88.2663
+    }
+  },
+  {
+    "id": "rrb-odisha-gramya-bank-b5171b",
+    "name": "Odisha Gramya Bank",
+    "localizedNames": {},
+    "type": "RRB",
+    "address": "Odisha (Indian Overseas Bank sponsored)",
+    "district": "Unknown",
+    "stateCode": "OD",
+    "pincode": "100000",
+    "supportedSchemeCategories": [],
+    "supportedSchemeIds": [],
+    "schemeMatch": true,
+    "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "20251223_100803_2H4U72.pdf",
+    "sourcePage": 3,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 20.2961,
+      "longitude": 85.8245
+    }
+  },
+  {
+    "id": "cp-mahatma-phule-backward-class-d-d519fd",
     "name": "Mahatma Phule Backward Class Development Corporation (MPBCDC)",
-    "localizedNames": {"mr": "महात्मा फुले मागासवर्ग विकास महामंडळ"},
+    "localizedNames": {},
     "type": "SCA",
     "address": "Mumbai",
     "district": "Mumbai",
     "stateCode": "MH",
     "pincode": "400051",
-    "location": {"latitude": 19.076, "longitude": 72.8777},
-    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","AGRICULTURE","GREEN_MOBILITY"],
+    "supportedSchemeCategories": [],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
-    "languagesSpoken": ["mr","hi","en"],
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "mr",
+      "hi",
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "verified_original",
+    "sourcePage": 0,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 19.076,
+      "longitude": 72.8777
+    }
   },
   {
-    "id": "sca-mh-lidcom",
+    "id": "cp-sant-rohidas-leather-industrie-d07aff",
     "name": "Sant Rohidas Leather Industries & Charmakar Development Corporation (LIDCOM)",
-    "localizedNames": {"mr": "संत रोहिदास चर्मोद्योग व चर्मकार विकास महामंडळ"},
+    "localizedNames": {},
     "type": "SCA",
     "address": "Mumbai",
     "district": "Mumbai",
     "stateCode": "MH",
     "pincode": "400051",
-    "location": {"latitude": 19.076, "longitude": 72.8777},
-    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","ARTISAN"],
+    "supportedSchemeCategories": [],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
-    "languagesSpoken": ["mr","hi","en"],
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "mr",
+      "hi",
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "verified_original",
+    "sourcePage": 0,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 19.076,
+      "longitude": 72.8777
+    }
   },
   {
-    "id": "sca-dl-dsfdc",
+    "id": "cp-delhi-sc-st-obc-minorities-han-99b8b4",
     "name": "Delhi SC/ST/OBC/Minorities & Handicapped Finance & Development Corporation (DSFDC)",
-    "localizedNames": {"hi": "दिल्ली अनुसूचित जाति/जनजाति वित्त एवं विकास निगम"},
+    "localizedNames": {},
     "type": "SCA",
     "address": "New Delhi",
     "district": "New Delhi",
     "stateCode": "DL",
     "pincode": "110002",
-    "location": {"latitude": 28.6139, "longitude": 77.209},
-    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","GREEN_MOBILITY"],
+    "supportedSchemeCategories": [],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
-    "languagesSpoken": ["hi","en"],
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "hi",
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "verified_original",
+    "sourcePage": 0,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 28.6139,
+      "longitude": 77.209
+    }
   },
   {
-    "id": "sca-tn-tahdco",
+    "id": "cp-tamil-nadu-adi-dravidar-housin-afc686",
     "name": "Tamil Nadu Adi Dravidar Housing and Development Corporation (TAHDCO)",
-    "localizedNames": {"ta": "தமிழ்நாடு ஆதிதிராவிடர் வீட்டுவசதி மற்றும் மேம்பாட்டுக் கழகம்"},
+    "localizedNames": {},
     "type": "SCA",
     "address": "Chennai",
     "district": "Chennai",
     "stateCode": "TN",
     "pincode": "600035",
-    "location": {"latitude": 13.0827, "longitude": 80.2707},
-    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","EDUCATION_LOAN","WOMEN_SPECIFIC","ARTISAN"],
+    "supportedSchemeCategories": [],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
-    "languagesSpoken": ["ta","en"],
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "ta",
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "verified_original",
+    "sourcePage": 0,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 13.0827,
+      "longitude": 80.2707
+    }
   },
   {
-    "id": "sca-wb-wbscstobc",
+    "id": "cp-west-bengal-sc-st-obc-developm-5928b7",
     "name": "West Bengal SC, ST & OBC Development & Finance Corporation",
-    "localizedNames": {"bn": "পশ্চিমবঙ্গ তফসিলি জাতি, উপজাতি ও ওবিসি উন্নয়ন ও অর্থ নিগম"},
+    "localizedNames": {},
     "type": "SCA",
     "address": "Kolkata",
     "district": "Kolkata",
     "stateCode": "WB",
     "pincode": "700091",
-    "location": {"latitude": 22.5726, "longitude": 88.3639},
-    "supportedSchemeCategories": ["MICRO_FINANCE","TERM_LOAN","WOMEN_SPECIFIC","AGRICULTURE"],
+    "supportedSchemeCategories": [],
     "supportedSchemeIds": [],
     "schemeMatch": true,
     "schemeMappingStatus": "VERIFIED_FOR_SELECTED_SCHEME",
-    "eligibility": {"status": "UNKNOWN","reasonKey": "partners.eligibility.unknown","lastAssessedAt": "2026-09-07T00:00:00.000Z"},
-    "languagesSpoken": ["bn","hi","en"],
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "eligibility": {
+      "status": "UNKNOWN",
+      "reasonKey": "partners.eligibility.unknown",
+      "lastAssessedAt": "2026-09-25T00:00:00.000Z"
+    },
+    "languagesSpoken": [
+      "bn",
+      "hi",
+      "en"
+    ],
+    "lastUpdatedAt": "2026-09-25T00:00:00.000Z",
+    "sourceDocument": "verified_original",
+    "sourcePage": 0,
+    "geocodingStatus": "verified",
+    "location": {
+      "latitude": 22.5726,
+      "longitude": 88.3639
+    }
   }
 ]

@@ -164,7 +164,11 @@ def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]
     into the shape the frontend Zod ChannelPartnerSchema expects.
     """
     p_type = p.get("type", "SCA")
-    type_map = {"SCA": "SCA", "PSB": "PSB", "RRB": "RRB", "NBFC_MFI": "NBFC_MFI", "NBFC": "NBFC_MFI"}
+    type_map = {
+        "SCA": "SCA", "PSB": "PSB", "RRB": "RRB",
+        "NBFC_MFI": "NBFC_MFI", "NBFC": "NBFC_MFI",
+        "SFB": "SFB", "COOP": "SCA", "OTHER": "SCA",
+    }
     mapped_type = type_map.get(p_type, "SCA")
 
     raw_pincode = str(p.get("pincode", "")).strip()
@@ -230,7 +234,8 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
         
     repo = get_partner_repo()
     
-    if req.allPartners:
+    if req.allPartners or (lat is None and lon is None and not req.pincode):
+        # No location context — return everything ("All Partners" mode or no geo info)
         nearby_partners = repo.get_all_partners(
             scheme_id=req.schemeId,
             lat=lat,
@@ -245,13 +250,10 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
             lon=lon
         )
         if not nearby_partners:
-            return {
-                "items": [],
-                "fallbackUsed": False,
-                "radiusKm": req.radiusKm
-            }
-        # If we got results back but none have distance 0.0, we used a state fallback
-        if nearby_partners and all(p.get("distance_km", 0.0) > 0 for p in nearby_partners):
+            # Fallback to all partners
+            fallback_used = True
+            nearby_partners = repo.get_all_partners(scheme_id=req.schemeId, lat=lat, lon=lon)
+        elif all(p.get("distance_km", 0.0) > 0 for p in nearby_partners):
             fallback_used = True
     elif lat is not None and lon is not None:
         nearby_partners = repo.search_nearby(
@@ -260,12 +262,22 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
             radius_km=req.radiusKm,
             scheme_id=req.schemeId
         )
+        # If none in radius, return all
+        if not nearby_partners:
+            fallback_used = True
+            nearby_partners = repo.get_all_partners(scheme_id=req.schemeId, lat=lat, lon=lon)
     else:
-        return {
-            "items": [],
-            "fallbackUsed": False,
-            "radiusKm": req.radiusKm
-        }
+        nearby_partners = repo.get_all_partners(scheme_id=req.schemeId)
+
+    # Apply onlyAccepting filter — UNKNOWN is still shown, only NOT_ACCEPTING is hidden
+    if req.onlyAccepting:
+        filtered = [
+            p for p in nearby_partners
+            if p.get("eligibility", {}).get("status", "UNKNOWN") != "NOT_ACCEPTING"
+        ]
+        # If filtering removes everything, show all (avoid empty list)
+        if filtered:
+            nearby_partners = filtered
         
     return {
         "items": [_map_partner(p) for p in nearby_partners],
