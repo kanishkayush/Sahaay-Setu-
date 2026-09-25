@@ -8,7 +8,7 @@ import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Banner, Button, Card, Chip, Screen, Text } from '@/components/ui';
-import { SchemeCard } from '@/components/domain';
+import { SchemeCard, EditProfileForm } from '@/components/domain';
 import { USE_MOCK_API } from '@/api/config';
 import { useSchemes } from '@/hooks/useSchemes';
 import { useLocation } from '@/hooks/useLocation';
@@ -50,6 +50,7 @@ export default function ProfileScreen() {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'documents'>('profile');
   const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const { data: schemes } = useSchemes();
   const savedSchemes = (schemes?.items ?? []).filter((s) => savedIds.includes(s.id));
@@ -305,52 +306,44 @@ export default function ProfileScreen() {
             <ActivityIndicator color={colors.primary} />
           ) : persistentProfile ? (
             <View>
-              <Text variant="subheading" style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>{t('profile.personalDetails')}</Text>
-              <Card variant="glass">
-                <ProfileField
-                  label={t('profile.fullName')}
-                  value={persistentProfile.fullName ?? ''}
-                  onSave={(v) =>
-                    updateProfileMutation.mutate({ fullName: v || undefined })
-                  }
+              {isEditingProfile ? (
+                <EditProfileForm
+                  initialData={persistentProfile}
+                  isSaving={updateProfileMutation.isPending}
+                  onCancel={() => setIsEditingProfile(false)}
+                  onSave={(data) => {
+                    updateProfileMutation.mutate(data, {
+                      onSuccess: () => setIsEditingProfile(false)
+                    });
+                  }}
                 />
-                <ProfileField
-                  label={t('profile.phoneNumber')}
-                  value={persistentProfile.phoneNumber ?? ''}
-                  onSave={(v) =>
-                    updateProfileMutation.mutate({ phoneNumber: v || undefined })
-                  }
-                />
-                <ProfileField
-                  label={t('profile.educationLevel', 'Education Level')}
-                  value={persistentProfile.educationLevel ?? ''}
-                  onSave={(v) =>
-                    updateProfileMutation.mutate({ educationLevel: v || undefined })
-                  }
-                />
-                <ProfileField
-                  label={t('profile.occupation', 'Occupation')}
-                  value={persistentProfile.occupation ?? ''}
-                  onSave={(v) =>
-                    updateProfileMutation.mutate({ occupation: v || undefined })
-                  }
-                />
-                <ProfileField
-                  label={t('profile.annualFamilyIncome')}
-                  value={
-                    persistentProfile.eligibility?.annualFamilyIncome?.toString() ?? ''
-                  }
-                  onSave={(v) =>
-                    updateProfileMutation.mutate({
-                      eligibility: {
-                        annualFamilyIncome: v ? parseInt(v, 10) : undefined,
-                      },
-                    })
-                  }
-                  keyboardType="number-pad"
-                  last
-                />
-              </Card>
+              ) : (
+                <View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.xs }}>
+                    <Text variant="subheading">{t('profile.personalDetails', 'Profile Details')}</Text>
+                    <Button 
+                      title={persistentProfile.fullName ? t('profile.editProfile', 'Edit Profile') : t('profile.completeProfile', 'Complete Your Profile')}
+                      variant="outline" 
+                      size="sm" 
+                      onPress={() => setIsEditingProfile(true)} 
+                    />
+                  </View>
+                  <Card variant="glass">
+                    <Row label={t('profile.fullName', 'Full Name')} value={persistentProfile.fullName || 'Not provided'} />
+                    <Row label={t('profile.phoneNumber', 'Mobile Number')} value={persistentProfile.phoneNumber || 'Not provided'} />
+                    <Row label={t('profile.email', 'Email Address')} value={persistentProfile.email || 'Not provided'} />
+                    <Row label={t('profile.address', 'Address')} value={
+                      [persistentProfile.address?.addressLine1, persistentProfile.address?.city, persistentProfile.address?.district, persistentProfile.address?.state, persistentProfile.address?.pinCode]
+                      .filter(Boolean).join(', ') || 'Not provided'
+                    } />
+                    <Row label={t('profile.educationLevel', 'Education Level')} value={persistentProfile.educationLevel || 'Not provided'} />
+                    <Row label={t('profile.occupation', 'Occupation')} value={persistentProfile.occupation || 'Not provided'} />
+                    <Row label={t('profile.annualFamilyIncome', 'Family Income')} value={persistentProfile.eligibility?.annualFamilyIncome ? `₹${persistentProfile.eligibility.annualFamilyIncome}` : 'Not provided'} />
+                    <Row label={t('profile.scEligibility', 'SC Category')} value={persistentProfile.eligibility?.scEligibilityStatus ? 'Yes' : 'No'} />
+                    <Row label={t('profile.existingBusiness', 'Existing Business')} value={persistentProfile.business?.existingBusiness ? 'Yes' : 'No'} last />
+                  </Card>
+                </View>
+              )}
             </View>
           ) : null}
 
