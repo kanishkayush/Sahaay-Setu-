@@ -33,7 +33,7 @@ from app.services.storage import get_document_storage, get_profile_store
 from app.api.auth import verify_token
 
 profile_router = APIRouter(prefix="/v1", tags=["profile"])
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # ---------------------------------------------------------------------------
 # Helper to extract user_id from headers
