@@ -107,20 +107,33 @@ const styles = StyleSheet.create({
     backgroundColor: Platform.OS === 'web' ? colors.glassStrong : 'transparent',
     borderTopColor: colors.glassBorder,
     borderTopWidth: 1,
-    height: 96,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
+    height: 80,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.lg,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     elevation: 0, // Remove shadow on Android for absolute bar
   },
-  label: { textAlign: 'center', lineHeight: 16, marginTop: 3, paddingHorizontal: 2 },
-  item: { paddingVertical: 2 },
+  label: {
+    textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 2,
+    paddingHorizontal: 2,
+    // Prevent long translated labels from pushing icons out of alignment
+    numberOfLines: 1,
+  },
+  item: {
+    // Ensure every tab item allocates the same space for the icon row
+    paddingVertical: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
   iconWrap: {
-    minWidth: 56,
-    height: 30,
+    // Fixed 32×32 container so all icons sit on the same baseline
+    width: 56,
+    height: 32,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',

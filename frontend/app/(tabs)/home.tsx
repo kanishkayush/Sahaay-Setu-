@@ -1,18 +1,74 @@
 // @ts-nocheck
-import React from 'react';
-import { StyleSheet, View, TextInput, Pressable } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, TextInput, Pressable, AppState } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Screen, Text, Icon, Card } from '@/components/ui';
-import { USE_MOCK_API } from '@/api/config';
-import { useSchemes } from '@/hooks/useSchemes';
 import { colors, spacing, radius, typography } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { getProfile } from '@/api/services/profile.service';
 
+/**
+ * Returns the correct i18n key for the greeting based on device local time.
+ *
+ * 05:00–11:59 → home.greetingMorning
+ * 12:00–16:59 → home.greetingAfternoon
+ * 17:00–20:59 → home.greetingEvening
+ * 21:00–04:59 → home.greetingNight
+ */
+function getGreetingKey(): string {
+  const hour = new Date().getHours(); // Uses device local time
+  if (hour >= 5 && hour < 12) return 'home.greetingMorning';
+  if (hour >= 12 && hour < 17) return 'home.greetingAfternoon';
+  if (hour >= 17 && hour < 21) return 'home.greetingEvening';
+  return 'home.greetingNight';
+}
+
+function useGreeting() {
+  const [greetingKey, setGreetingKey] = useState(getGreetingKey);
+
+  const refresh = useCallback(() => {
+    setGreetingKey(getGreetingKey());
+  }, []);
+
+  useEffect(() => {
+    // Refresh immediately
+    refresh();
+
+    // Refresh on app foreground
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+
+    // Refresh on document visibility (web)
+    const handleVisibility = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibility);
+    }
+
+    // Recalculate at the top of every minute to catch boundary crossings
+    const minuteTimer = setInterval(refresh, 60_000);
+
+    return () => {
+      sub.remove();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibility);
+      }
+      clearInterval(minuteTimer);
+    };
+  }, [refresh]);
+
+  return greetingKey;
+}
+
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const greetingKey = useGreeting();
 
   const { data: persistentProfile } = useQuery({
     queryKey: ['profile'],
@@ -46,7 +102,7 @@ export default function HomeScreen() {
 
       {/* Greeting & Header */}
       <View style={styles.header}>
-        <Text variant="subheading" color={colors.textSecondary}>{t('home.greetingMorning', 'Good morning,')}</Text>
+        <Text variant="subheading" color={colors.textSecondary}>{t(greetingKey, 'Good morning,')}</Text>
         <Text variant="display" style={styles.mainHeading}>
           {t('home.mainHeading', "Let's build a\nbrighter future together")}
         </Text>
@@ -203,7 +259,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   actionCard: {
-    width: '47%',
+    // flex: 1 with a basis that forces 2 columns.
+    // (100% - gap) / 2 ≈ 47%. Using flexBasis over width so the gap
+    // calculation is correct on both native and web.
+    flexBasis: '47%',
+    flexGrow: 1,
+    flexShrink: 1,
+    maxWidth: '50%',
     padding: spacing.lg,
     gap: spacing.md,
     alignItems: 'flex-start',
@@ -218,5 +280,6 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     lineHeight: 22,
+    flexShrink: 1,
   },
 });

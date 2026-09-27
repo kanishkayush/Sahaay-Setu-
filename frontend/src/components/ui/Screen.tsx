@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   flex: { flex: 1 },
   padded: { paddingHorizontal: spacing.lg },
-  scrollContent: { paddingBottom: spacing.xxl, gap: spacing.lg },
+  scrollContent: { paddingBottom: 100, gap: spacing.lg },
   footer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
