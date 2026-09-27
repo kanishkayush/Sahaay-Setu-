@@ -1,0 +1,31 @@
+{
+  "scheme_id": "776e94a1-4577-5095-b7b2-be246b89bcc4",
+  "api": {
+    "id": "776e94a1-4577-5095-b7b2-be246b89bcc4",
+    "code": "NATIONAL_A",
+    "name": {
+      "en": "National Action Plan for Drug Demand Reduction",
+      "hi": "National Action Plan for Drug Demand Reduction"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "NGO",
+    "recommendationCategory": [
+      "NGO"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/42",
+    "applicationUrl": "https://grants-msje.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/42",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

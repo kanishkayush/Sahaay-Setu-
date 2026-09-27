@@ -1,0 +1,31 @@
+{
+  "scheme_id": "c33cebc6-edb9-5f48-9ed8-318742f1144d",
+  "api": {
+    "id": "c33cebc6-edb9-5f48-9ed8-318742f1144d",
+    "code": "SCHEME_OF_",
+    "name": {
+      "en": "Scheme of Assistance to Scheduled Castes Development Corporations (SCDCs)",
+      "hi": "Scheme of Assistance to Scheduled Castes Development Corporations (SCDCs)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": [
+      "ECONOMIC_DEVELOPMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/36",
+    "applicationUrl": "https://nsfdc.nic.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/36",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

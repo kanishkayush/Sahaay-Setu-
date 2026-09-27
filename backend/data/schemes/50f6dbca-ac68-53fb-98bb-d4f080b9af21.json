@@ -1,0 +1,31 @@
+{
+  "scheme_id": "50f6dbca-ac68-53fb-98bb-d4f080b9af21",
+  "api": {
+    "id": "50f6dbca-ac68-53fb-98bb-d4f080b9af21",
+    "code": "SCHEME_OF_",
+    "name": {
+      "en": "Scheme of National Awards for Outstanding Services in the field of Prevention of Alcoholism and Substance (Drug) Abuse",
+      "hi": "Scheme of National Awards for Outstanding Services in the field of Prevention of Alcoholism and Substance (Drug) Abuse"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "NGO",
+    "recommendationCategory": [
+      "NGO"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/90",
+    "applicationUrl": "http://idams.dosje.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/90",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

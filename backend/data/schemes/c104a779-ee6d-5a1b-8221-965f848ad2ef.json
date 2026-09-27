@@ -1,0 +1,31 @@
+{
+  "scheme_id": "c104a779-ee6d-5a1b-8221-965f848ad2ef",
+  "api": {
+    "id": "c104a779-ee6d-5a1b-8221-965f848ad2ef",
+    "code": "NATIONAL_F",
+    "name": {
+      "en": "National Fellowship for OBC Students (NF-OBC)",
+      "hi": "National Fellowship for OBC Students (NF-OBC)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/7",
+    "applicationUrl": "https://nbcfdc.gov.in/NF-OBC",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/7",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

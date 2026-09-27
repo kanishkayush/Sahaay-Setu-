@@ -1,0 +1,31 @@
+{
+  "scheme_id": "b0ad3e14-11ff-5703-a81e-22e6aedc90b5",
+  "api": {
+    "id": "b0ad3e14-11ff-5703-a81e-22e6aedc90b5",
+    "code": "PRE-MATRIC",
+    "name": {
+      "en": "Pre-Matric Scholarship for OBC Students",
+      "hi": "Pre-Matric Scholarship for OBC Students"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/92",
+    "applicationUrl": "https://scholarships.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/92",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

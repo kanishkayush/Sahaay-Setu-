@@ -1,0 +1,31 @@
+{
+  "scheme_id": "1af88221-601a-5839-b5e6-ab01cfb849ce",
+  "api": {
+    "id": "1af88221-601a-5839-b5e6-ab01cfb849ce",
+    "code": "INFORMATIO",
+    "name": {
+      "en": "Information-Monitoring, Evaluation & Social Audit (I-MESA)",
+      "hi": "Information-Monitoring, Evaluation & Social Audit (I-MESA)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "SOCIAL_EMPOWERMENT",
+    "recommendationCategory": [
+      "SOCIAL_EMPOWERMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/40",
+    "applicationUrl": "",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/40",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

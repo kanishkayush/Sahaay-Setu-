@@ -1,0 +1,31 @@
+{
+  "scheme_id": "0b39d37d-3290-5755-99fd-0fadd0d96070",
+  "api": {
+    "id": "0b39d37d-3290-5755-99fd-0fadd0d96070",
+    "code": "ENTREPRENE",
+    "name": {
+      "en": "Entrepreneurial Schemes of NBCFDC",
+      "hi": "Entrepreneurial Schemes of NBCFDC"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": [
+      "ECONOMIC_DEVELOPMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/13",
+    "applicationUrl": "https://nbcfdc.gov.in/objective/en",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/13",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

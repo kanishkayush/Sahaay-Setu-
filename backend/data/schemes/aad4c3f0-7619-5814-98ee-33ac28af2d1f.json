@@ -1,0 +1,31 @@
+{
+  "scheme_id": "aad4c3f0-7619-5814-98ee-33ac28af2d1f",
+  "api": {
+    "id": "aad4c3f0-7619-5814-98ee-33ac28af2d1f",
+    "code": "SCHEME_FOR",
+    "name": {
+      "en": "Scheme For Residential Education For Students in High Schools in Targeted Areas (SHRESHTA)",
+      "hi": "Scheme For Residential Education For Students in High Schools in Targeted Areas (SHRESHTA)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "NGO",
+    "recommendationCategory": [
+      "NGO"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/41",
+    "applicationUrl": "https://grants-msje.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/41",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

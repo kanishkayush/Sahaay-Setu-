@@ -1,0 +1,31 @@
+{
+  "scheme_id": "d09ef54e-bdfc-524a-90d3-9f95eca1c999",
+  "api": {
+    "id": "d09ef54e-bdfc-524a-90d3-9f95eca1c999",
+    "code": "CREDIT_ENH",
+    "name": {
+      "en": "Credit Enhancement Guarantee Scheme for the Scheduled Castes (SCs)",
+      "hi": "Credit Enhancement Guarantee Scheme for the Scheduled Castes (SCs)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": [
+      "ECONOMIC_DEVELOPMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/32",
+    "applicationUrl": "https://www.ifcicegssc.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/32",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

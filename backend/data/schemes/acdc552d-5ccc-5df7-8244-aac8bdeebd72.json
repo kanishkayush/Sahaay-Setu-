@@ -1,0 +1,31 @@
+{
+  "scheme_id": "acdc552d-5ccc-5df7-8244-aac8bdeebd72",
+  "api": {
+    "id": "acdc552d-5ccc-5df7-8244-aac8bdeebd72",
+    "code": "CENTRAL_SE",
+    "name": {
+      "en": "Central Sector Scholarship of Top Class Education for SC Students",
+      "hi": "Central Sector Scholarship of Top Class Education for SC Students"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/27",
+    "applicationUrl": "https://scholarships.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/27",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

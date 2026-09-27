@@ -1,0 +1,31 @@
+{
+  "scheme_id": "0070a49e-2e01-554a-8f33-e6ee5648877e",
+  "api": {
+    "id": "0070a49e-2e01-554a-8f33-e6ee5648877e",
+    "code": "FREE_COACH",
+    "name": {
+      "en": "Free Coaching for SCs, OBCs and beneficiaries of PM CARES Children Scheme",
+      "hi": "Free Coaching for SCs, OBCs and beneficiaries of PM CARES Children Scheme"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/30",
+    "applicationUrl": "",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/30",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

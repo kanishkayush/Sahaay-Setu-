@@ -1,0 +1,31 @@
+{
+  "scheme_id": "df6e73ee-8c80-5997-9ffd-73e8df7edb92",
+  "api": {
+    "id": "df6e73ee-8c80-5997-9ffd-73e8df7edb92",
+    "code": "PRE-_MATRI",
+    "name": {
+      "en": "Pre- Matric Scholarships Scheme for Scheduled Castes & Others",
+      "hi": "Pre- Matric Scholarships Scheme for Scheduled Castes & Others"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/23",
+    "applicationUrl": "https://scholarships.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/23",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "scheme_id": "db2f072e-d4f9-591e-8c71-bfb4e0be9e1b",
+  "api": {
+    "id": "db2f072e-d4f9-591e-8c71-bfb4e0be9e1b",
+    "code": "CONSTRUCTI",
+    "name": {
+      "en": "Construction of Hostels for OBC Boys and Girls",
+      "hi": "Construction of Hostels for OBC Boys and Girls"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "EDUCATION",
+    "recommendationCategory": [
+      "EDUCATION"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/9",
+    "applicationUrl": "https://pmajay.dosje.gov.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/9",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

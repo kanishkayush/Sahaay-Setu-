@@ -33,7 +33,9 @@ export default function SchemesScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Text variant="title">{t('schemes.title')}</Text>
+        <Text variant="title">
+          {data?.items ? `${data.items.length} schemes` : t('schemes.title')}
+        </Text>
         <Text variant="caption" color={colors.textSecondary}>
           {t('schemes.subtitle')}
         </Text>

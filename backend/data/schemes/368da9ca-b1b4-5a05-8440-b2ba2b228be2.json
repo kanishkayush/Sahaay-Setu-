@@ -1,0 +1,31 @@
+{
+  "scheme_id": "368da9ca-b1b4-5a05-8440-b2ba2b228be2",
+  "api": {
+    "id": "368da9ca-b1b4-5a05-8440-b2ba2b228be2",
+    "code": "SUPPORT_FO",
+    "name": {
+      "en": "Support for Marginalized Individuals for Livelihood and Enterprise (SMILE)",
+      "hi": "Support for Marginalized Individuals for Livelihood and Enterprise (SMILE)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "SOCIAL_EMPOWERMENT",
+    "recommendationCategory": [
+      "SOCIAL_EMPOWERMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/99",
+    "applicationUrl": "",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/99",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}

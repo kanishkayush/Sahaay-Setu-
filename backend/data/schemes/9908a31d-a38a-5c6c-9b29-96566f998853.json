@@ -1,0 +1,31 @@
+{
+  "scheme_id": "9908a31d-a38a-5c6c-9b29-96566f998853",
+  "api": {
+    "id": "9908a31d-a38a-5c6c-9b29-96566f998853",
+    "code": "NATIONAL_S",
+    "name": {
+      "en": "National Safai Karamcharis Finance and Development Corporation (NSKFDC)",
+      "hi": "National Safai Karamcharis Finance and Development Corporation (NSKFDC)"
+    },
+    "shortDescription": {
+      "en": "Official scheme details are currently being fetched.",
+      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+    },
+    "officialCategory": "ECONOMIC_DEVELOPMENT",
+    "recommendationCategory": [
+      "ECONOMIC_DEVELOPMENT"
+    ],
+    "documentsRequired": [],
+    "channelPartnerTypes": [],
+    "channelPartnerRequired": false,
+    "officialUrl": "https://socialjustice.gov.in/schemes/33",
+    "applicationUrl": "https://nskfdc.nic.in/",
+    "sourceUrl": "https://socialjustice.gov.in/schemes/33",
+    "sourceName": "Ministry Official Catalogue",
+    "lastVerified": "2026-09-08",
+    "verificationStatus": "UNVERIFIED",
+    "citations": [],
+    "verified": false,
+    "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
+  }
+}
