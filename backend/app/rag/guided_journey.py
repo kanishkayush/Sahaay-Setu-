@@ -103,11 +103,13 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
         "EDUCATION_LOAN": [
             "education", "study", "college", "school", "btech", "degree", "course", 
             "पढ़ाई", "शिक्षा", "कॉलेज", "student", "mba", "masters", "phd", 
-            "bachelors", "graduation", "university", "institute", "fees", "higher education"
+            "bachelors", "graduation", "university", "institute", "fees", "higher education",
+            "padhai", "shiksha", "paddhai"
         ],
         "GENERAL_BUSINESS": [
             "business", "startup", "company", "enterprise", "manufacturing", "व्यापार", "बिज़नेस", 
-            "handicraft", "craft", "artisan", "weaving", "pottery", "हस्तशिल्प", "शिल्प", "कारीगर"
+            "handicraft", "craft", "artisan", "weaving", "pottery", "हस्तशिल्प", "शिल्प", "कारीगर",
+            "vyapar", "bijnes", "karkhana", "dukaan"
         ]
     }
     

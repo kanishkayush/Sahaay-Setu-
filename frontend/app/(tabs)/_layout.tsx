@@ -1,5 +1,6 @@
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BlurView } from 'expo-blur';
 
@@ -34,6 +35,11 @@ function TabLabel({ children, focused }: { children: string; focused: boolean })
 
 export default function TabsLayout() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  // We compute total height dynamically: 60px base + bottom inset
+  const barHeight = 60 + insets.bottom;
+  const tabWidth = width / 5;
 
   const tab = (name: IconName) =>
     function TabBarIcon({ focused }: { focused: boolean }) {
@@ -51,10 +57,13 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: styles.bar,
-        tabBarItemStyle: styles.item,
+        tabBarStyle: [
+          styles.bar,
+          { height: barHeight, paddingBottom: insets.bottom + spacing.xs },
+        ],
+        tabBarItemStyle: [styles.item, { width: tabWidth }],
         tabBarBackground: () => (
-          <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
         ),
       }}
     >
@@ -107,9 +116,6 @@ const styles = StyleSheet.create({
     backgroundColor: Platform.OS === 'web' ? colors.glassStrong : 'transparent',
     borderTopColor: colors.glassBorder,
     borderTopWidth: 1,
-    height: 80,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.lg,
     position: 'absolute',
     bottom: 0,
     left: 0,

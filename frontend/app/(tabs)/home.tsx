@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, TextInput, Pressable, AppState } from 'react-native';
+import { StyleSheet, View, TextInput, Pressable, AppState, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -169,8 +169,14 @@ export default function HomeScreen() {
 }
 
 function ActionCard({ icon, title, onPress }) {
+  const { width } = useWindowDimensions();
+  // Screen padding (lg=16) * 2 = 32. Gap (md=12).
+  // max-width to avoid getting too large on tablets, limit to around 300
+  const availableSpace = Math.min(width, 600) - (spacing.lg * 2) - spacing.md;
+  const cardWidth = Math.floor(availableSpace / 2);
+
   return (
-    <Card variant="glass" padded={false} onPress={onPress} style={styles.actionCard}>
+    <Card variant="glass" padded={false} onPress={onPress} style={[styles.actionCard, { width: cardWidth }]}>
       <View style={styles.actionIconWrap}>
         <Icon name={icon} size={24} color={colors.primary} />
       </View>
@@ -259,13 +265,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   actionCard: {
-    // flex: 1 with a basis that forces 2 columns.
-    // (100% - gap) / 2 ≈ 47%. Using flexBasis over width so the gap
-    // calculation is correct on both native and web.
-    flexBasis: '47%',
-    flexGrow: 1,
-    flexShrink: 1,
-    maxWidth: '50%',
     padding: spacing.lg,
     gap: spacing.md,
     alignItems: 'flex-start',

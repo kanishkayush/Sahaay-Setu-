@@ -8,6 +8,9 @@ from app.schemas.explanation import GroundingStatus
 from app.rag.retriever import retrieve
 from app.rag.chat_service import generate_chat_answer
 import app.rag.memory as memory
+import json
+import litellm
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,46 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
     """
     start_time = time.time()
     try:
+        # Step 0: Auto-Detect Language and Normalize Query
+        # If the user speaks/types in Roman Hindi or mixed language, we detect and update request.language
+        detect_sys = """You are a fast language detector for an Indian financial assistant.
+Analyze the user's query and output a JSON object:
+{
+  "detected_language": "en" | "hi" | "mr" | "bn" | "ta" | "te" (If Roman Hindi/Hinglish, return "hi"),
+  "translated_query_en": "English translation to help semantic search",
+  "is_low_info": true/false (true if the query is just 'hello', 'loan', 'help', etc.)
+}
+Return only JSON. Do not include markdown formatting or backticks.
+"""
+        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+        try:
+            det_res = litellm.completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": detect_sys},
+                    {"role": "user", "content": request.query}
+                ],
+                temperature=0.1
+            )
+            content = (det_res.choices[0].message.content or "").strip()
+            if content.startswith("```json"):
+                content = content.replace("```json", "").replace("```", "").strip()
+            det_data = json.loads(content)
+            
+            # Override language ONLY if we successfully detected it
+            if det_data.get("detected_language"):
+                request.language = det_data["detected_language"]
+                
+            # We can use translated query for search, but let's just keep it in request for now if needed.
+            # (RAG handles multilingual search via BGE-m3, but translation helps).
+            normalized_query = det_data.get("translated_query_en", request.query)
+            is_low_info = det_data.get("is_low_info", False)
+            
+        except Exception as e:
+            logger.warning(f"Language detection failed, using fallback: {e}")
+            normalized_query = request.query
+            is_low_info = False
+
         # Check if already in a guided journey
         if request.conversation_id:
             profile = memory.get_session_profile(request.conversation_id)
@@ -40,9 +83,8 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
             if gj_resp: return gj_resp
 
         # Step 1: Low-information query guard
-        low_info_words = {"loan", "help", "scheme", "hi", "लोन", "मदद", "योजना", "hello", "कर्ज", "ঋণ", "கடன்", "రుణం"}
         query_stripped = request.query.strip().lower()
-        if query_stripped in low_info_words:
+        if is_low_info:
             lang = request.language or "en"
             
             clarification_map = {
@@ -68,10 +110,10 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
 
         # Step 2: Context Resolution for Retrieval
         recent_turns = memory.get_recent_turns(request.conversation_id) if request.conversation_id else []
-        retrieval_query = request.query
-        if recent_turns and len(request.query.split()) <= 6:
+        retrieval_query = normalized_query
+        if recent_turns and len(normalized_query.split()) <= 6:
             # If the current query is very short and we have history, prepend the last query for context
-            retrieval_query = f"{recent_turns[-1]['query']} {request.query}"
+            retrieval_query = f"{recent_turns[-1]['query']} {normalized_query}"
 
         # Step 3: Retrieve context
         retrieval_start = time.time()

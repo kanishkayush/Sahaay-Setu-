@@ -609,8 +609,8 @@ function ProfileField({
           <Button title="Save" variant="primary" size="sm" fullWidth={false} onPress={handleSave} />
         </View>
       ) : (
-        <Pressable onPress={() => { setDraft(value); setEditing(true); }}>
-          <Text variant="bodyStrong" color={value ? colors.text : colors.textMuted}>
+        <Pressable onPress={() => { setDraft(value); setEditing(true); }} style={{ flexShrink: 1, paddingLeft: 8 }}>
+          <Text variant="bodyStrong" color={value ? colors.text : colors.textMuted} style={{ textAlign: 'right' }}>
             {value || t('profile.tapToAdd', 'Tap to add')}
           </Text>
         </Pressable>
@@ -629,50 +629,41 @@ function LocationCard({
   const { t } = useTranslation();
   const { request, status } = useLocation();
   const [locationStatus, setLocationStatus] = useState<
-    'idle' | 'detecting' | 'success' | 'error' | 'denied' | 'pin_failed'
+    'idle' | 'detecting' | 'success' | 'error' | 'denied' | 'preview'
   >('idle');
+  const [previewAddress, setPreviewAddress] = useState<any>(null);
 
   const handleUseCurrentLocation = async () => {
-    console.log('[LOCATION] button pressed — handleUseCurrentLocation');
     setLocationStatus('detecting');
     try {
       const result = await request();
 
       if (result && result.point) {
-        console.log('[LOCATION] GPS obtained:', JSON.stringify(result.point));
-
-        // Extract address fields from reverse geocode (may be null)
         const postalCode = result.addressData?.postalCode ?? null;
         const subregion = result.addressData?.subregion ?? null;
         const region = result.addressData?.region ?? null;
+        const city = result.addressData?.city ?? result.addressData?.name ?? null;
+        const addressLine1 = result.addressData?.name ?? null;
 
-        // Validate PIN
-        let pinCode = profile.address?.pinCode;
+        let pinCode = undefined;
         if (postalCode && /^[0-9]{6}$/.test(postalCode.trim())) {
           pinCode = postalCode.trim();
-          console.log('[LOCATION] valid PIN extracted:', pinCode);
-        } else {
-          console.warn('[LOCATION] PIN could not be determined. postalCode=', postalCode);
-          setLocationStatus('pin_failed');
-          // Still proceed — coordinates are valid even without PIN
         }
 
-        const addressPayload = {
-          ...profile.address,
+        // Atomically completely new location object, NEVER mix with old profile.address
+        const newAddress = {
+          addressLine1,
+          city,
+          district: subregion,
+          state: region,
           pinCode,
-          district: subregion || profile.address?.district,
-          state: region || profile.address?.state,
           coordinates: result.point,
+          country: 'India'
         };
 
-        console.log('[LOCATION] profile update payload=', JSON.stringify(addressPayload));
-        onUpdate(addressPayload);
-        if (locationStatus !== 'pin_failed') {
-          setLocationStatus('success');
-        }
+        setPreviewAddress(newAddress);
+        setLocationStatus('preview');
       } else {
-        // request() returned null — permission denied or GPS failure
-        console.log('[LOCATION] request returned null. hook status=', status);
         if (status === 'denied') {
           setLocationStatus('denied');
         } else {
@@ -680,29 +671,58 @@ function LocationCard({
         }
       }
     } catch (e) {
-      console.error('[LOCATION] handleUseCurrentLocation error:', e);
       setLocationStatus('error');
     }
   };
 
-  // Derive button label and status message from locationStatus
+  const confirmLocation = () => {
+    if (previewAddress) {
+      onUpdate(previewAddress);
+      setLocationStatus('success');
+      setPreviewAddress(null);
+    }
+  };
+
+  const cancelLocation = () => {
+    setLocationStatus('idle');
+    setPreviewAddress(null);
+  };
+
   const buttonTitle = {
-    idle: t('location.useCurrentLocation'),
-    detecting: t('location.detectingLocation'),
-    success: t('location.locationUpdated'),
-    denied: t('location.useCurrentLocation'),
-    error: t('location.useCurrentLocation'),
-    pin_failed: t('location.locationUpdatedPinFailed'),
+    idle: t('location.useCurrentLocation', 'Use my current location'),
+    detecting: t('location.detectingLocation', 'Detecting...'),
+    success: t('location.locationUpdated', 'Location updated'),
+    denied: t('location.useCurrentLocation', 'Use my current location'),
+    error: t('location.useCurrentLocation', 'Use my current location'),
+    preview: 'Confirm Location',
   }[locationStatus];
 
   const statusMessage = {
     idle: null,
     detecting: null,
     success: null,
-    denied: t('location.permissionDenied'),
-    error: t('location.unableToDetermine'),
-    pin_failed: t('location.pinFailed'),
+    denied: t('location.permissionDenied', 'Location permission denied.'),
+    error: t('location.unableToDetermine', 'Unable to determine location.'),
+    preview: null,
   }[locationStatus];
+
+  if (locationStatus === 'preview' && previewAddress) {
+    return (
+      <Card variant="glass">
+        <Text variant="subheading" style={{ marginBottom: spacing.md }}>Current location found</Text>
+        
+        <Row label="City" value={previewAddress.city || 'Not found'} />
+        <Row label="District" value={previewAddress.district || 'Not found'} />
+        <Row label="State" value={previewAddress.state || 'Not found'} />
+        <Row label="PIN" value={previewAddress.pinCode || 'Not found'} last />
+        
+        <View style={{ marginTop: spacing.md, flexDirection: 'row', gap: spacing.sm }}>
+          <Button title="Use this location" variant="primary" style={{ flex: 1 }} onPress={confirmLocation} />
+          <Button title="Change manually" variant="outline" style={{ flex: 1 }} onPress={cancelLocation} />
+        </View>
+      </Card>
+    );
+  }
 
   const statusColor = locationStatus === 'denied' || locationStatus === 'error'
     ? colors.dangerText
@@ -718,6 +738,7 @@ function LocationCard({
             Alert.alert(t('profile.invalidPin'), t('profile.invalidPinMsg'));
             return;
           }
+          // Preserve existing object but just change field
           onUpdate({ ...profile.address, pinCode: v || undefined });
         }}
         keyboardType="number-pad"
@@ -736,7 +757,7 @@ function LocationCard({
       <View style={{ marginTop: spacing.md }}>
         <Button
           title={buttonTitle}
-          variant={locationStatus === 'success' || locationStatus === 'pin_failed' ? 'secondary' : 'outline'}
+          variant={locationStatus === 'success' ? 'secondary' : 'outline'}
           size="sm"
           onPress={handleUseCurrentLocation}
           disabled={locationStatus === 'detecting'}
@@ -758,7 +779,7 @@ function Row({ label, value, last }: { label: string; value: string; last?: bool
       <Text variant="caption" color={colors.textMuted} style={styles.rowLabel}>
         {label}
       </Text>
-      <Text variant="bodyStrong">{value}</Text>
+      <Text variant="bodyStrong" style={{ flexShrink: 1, textAlign: 'right', paddingLeft: 8 }}>{value}</Text>
     </View>
   );
 }

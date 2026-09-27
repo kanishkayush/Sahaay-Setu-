@@ -6,39 +6,30 @@ import { Button, Text, Card } from '@/components/ui';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@/theme';
 import { useAppStore } from '@/store/useAppStore';
-import { sendOtp, verifyOtp } from '@/api/services/auth.service';
+import { login } from '@/api/services/auth.service';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const setAuthStatus = useAppStore((s) => s.setAuthStatus);
   const [inputValue, setInputValue] = useState('');
-  const [otpValue, setOtpValue] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleRequestOtp = async () => {
+  const handleLogin = async () => {
     setErrorMsg('');
-    setIsSubmitting(true);
-    try {
-      await sendOtp(inputValue);
-      setStep('otp');
-    } catch (e: any) {
-      setErrorMsg(e.message || 'Error sending OTP');
-    } finally {
-      setIsSubmitting(false);
+    const phone = inputValue.replace(/\D/g, '');
+    if (phone.length !== 10) {
+      setErrorMsg('Enter a valid 10-digit mobile number');
+      return;
     }
-  };
-
-  const handleVerifyOtp = async () => {
-    setErrorMsg('');
+    
     setIsSubmitting(true);
     try {
-      const res = await verifyOtp(inputValue, otpValue);
+      const res = await login(phone);
       setAuthStatus('authenticated', res.token);
       router.replace('/(tabs)/home');
     } catch (e: any) {
-      setErrorMsg(e.message || 'Invalid OTP');
+      setErrorMsg(e.message || 'Error logging in');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,56 +55,33 @@ export default function LoginScreen() {
         </View>
 
         <Card variant="glass" padded={false} style={styles.formContainer}>
-          {step === 'phone' ? (
-            <>
-              <Text variant="bodyStrong" style={styles.label}>
-                {t('login.loginOrRegister', 'Login or Register')}
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder={t('login.placeholder', 'Mobile number (e.g. 9999999999)')}
-                placeholderTextColor={colors.textSecondary}
-                value={inputValue}
-                onChangeText={setInputValue}
-                keyboardType="phone-pad"
-                autoCapitalize="none"
-                autoComplete="tel"
-              />
-              
-              {errorMsg ? <Text variant="caption" color={colors.danger} style={{marginBottom: spacing.md}}>{errorMsg}</Text> : null}
-              
-              <Button 
-                title={isSubmitting ? t('login.pleaseWait', 'Please wait...') : t('common.continue', 'Continue')}
-                onPress={handleRequestOtp}
-                disabled={inputValue.trim().length < 10 || isSubmitting}
-                style={styles.button}
-              />
-            </>
-          ) : (
-            <>
-              <Text variant="bodyStrong" style={styles.label}>
-                Enter OTP sent to {inputValue}
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="6-digit OTP (use 123456)"
-                placeholderTextColor={colors.textSecondary}
-                value={otpValue}
-                onChangeText={setOtpValue}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-              
-              {errorMsg ? <Text variant="caption" color={colors.danger} style={{marginBottom: spacing.md}}>{errorMsg}</Text> : null}
-              
-              <Button 
-                title={isSubmitting ? 'Verifying...' : 'Verify OTP'}
-                onPress={handleVerifyOtp}
-                disabled={otpValue.trim().length < 6 || isSubmitting}
-                style={styles.button}
-              />
-            </>
-          )}
+          <>
+            <Text variant="bodyStrong" style={styles.label}>
+              {t('login.loginOrRegister', 'Login or Register')}
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('login.placeholder', 'Mobile number (e.g. 9876543210)')}
+              placeholderTextColor={colors.textSecondary}
+              value={inputValue}
+              onChangeText={(text) => {
+                setInputValue(text);
+                setErrorMsg('');
+              }}
+              keyboardType="phone-pad"
+              autoCapitalize="none"
+              autoComplete="tel"
+            />
+            
+            {errorMsg ? <Text variant="caption" color={colors.danger} style={{marginBottom: spacing.md}}>{errorMsg}</Text> : null}
+            
+            <Button 
+              title={isSubmitting ? t('login.pleaseWait', 'Please wait...') : t('common.login', 'LOGIN')}
+              onPress={handleLogin}
+              disabled={inputValue.trim().length < 10 || isSubmitting}
+              style={styles.button}
+            />
+          </>
           
           <Text variant="caption" color={colors.textSecondary} center style={styles.disclaimer}>
             {t('login.disclaimer')}

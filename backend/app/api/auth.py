@@ -21,79 +21,46 @@ _otp_store = {}
 _sessions = {}
 
 
-class SendOtpRequest(BaseModel):
-    phoneNumber: str
-
-
-class VerifyOtpRequest(BaseModel):
-    phoneNumber: str
-    otp: str
-
+# HACKATHON_AUTH_MODE=true
+# Temporary Hackathon Mode: Bypassing Fast2SMS/Twilio OTP verification.
+# Only 10-digit mobile number validation is required.
 
 class AuthResponse(BaseModel):
     token: str
     userId: str
     phoneNumber: str
 
+class LoginRequest(BaseModel):
+    mobile: str
 
-@auth_router.post("/send-otp")
-def send_otp(request: SendOtpRequest) -> dict[str, str]:
-    phone = request.phoneNumber.strip()
-    if not phone or len(phone) < 10:
-        raise HTTPException(status_code=400, detail="Invalid phone number.")
+@auth_router.post("/login", response_model=AuthResponse)
+def login(request: LoginRequest) -> AuthResponse:
+    phone = request.mobile.strip()
+    
+    # Normalize Indian phone number
+    if phone.startswith("+91"):
+        phone = phone[3:]
+    elif phone.startswith("0") and len(phone) == 11:
+        phone = phone[1:]
+        
+    phone = "".join([c for c in phone if c.isdigit()])
+    
+    if len(phone) != 10:
+        raise HTTPException(status_code=400, detail="Invalid Indian phone number. Must be 10 digits.")
 
-    # Generate a fixed OTP for development/testing if phone is 9999999999, else generate 6-digit random
-    import random
-    otp = "123456" if phone == "9999999999" else f"{random.randint(100000, 999999)}"
-    
-    # Store OTP with 5-minute expiry
-    _otp_store[phone] = {
-        "otp": otp,
-        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=5),
-        "attempts": 0
-    }
-    
-    # Normally we would integrate an SMS provider here (e.g. Twilio, MSG91)
-    # Since SMS provider is not configured, we print to console.
-    print(f"[AUTH] Sending OTP {otp} to {phone}")
-    
-    return {"status": "success", "message": "OTP sent successfully."}
+    normalized_phone = f"+91{phone}"
 
-
-@auth_router.post("/verify-otp", response_model=AuthResponse)
-def verify_otp(request: VerifyOtpRequest) -> AuthResponse:
-    phone = request.phoneNumber.strip()
-    otp_record = _otp_store.get(phone)
-    
-    if not otp_record:
-        raise HTTPException(status_code=400, detail="No OTP requested for this number.")
-        
-    if datetime.now(timezone.utc) > otp_record["expires_at"]:
-        _otp_store.pop(phone, None)
-        raise HTTPException(status_code=400, detail="OTP has expired.")
-        
-    if otp_record["attempts"] >= 3:
-        _otp_store.pop(phone, None)
-        raise HTTPException(status_code=400, detail="Too many failed attempts. Request a new OTP.")
-        
-    if otp_record["otp"] != request.otp.strip():
-        otp_record["attempts"] += 1
-        raise HTTPException(status_code=400, detail="Invalid OTP.")
-        
-    # OTP verified! Clear it.
-    _otp_store.pop(phone, None)
-    
-    # Create session
+    # Create session directly without OTP
     token = str(uuid.uuid4())
-    user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, phone)) # Deterministic ID based on phone
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, normalized_phone)) # Deterministic ID based on phone
     
     _sessions[token] = {
         "user_id": user_id,
-        "phone": phone,
+        "phone": normalized_phone,
         "expires_at": datetime.now(timezone.utc) + timedelta(days=30)
     }
     
-    return AuthResponse(token=token, userId=user_id, phoneNumber=phone)
+    return AuthResponse(token=token, userId=user_id, phoneNumber=normalized_phone)
 
 
 def verify_token(token: str) -> str:
