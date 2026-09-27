@@ -34,6 +34,12 @@ def main():
         if not name_en:
             continue
             
+        org = data.get("organization", "UNKNOWN")
+        domain = data.get("domain", "OTHER")
+        scheme_type = data.get("scheme_type", "OTHER_FINANCIAL_ASSISTANCE")
+        purpose = data.get("purpose", "GENERAL")
+        assistance_type = data.get("assistance_type", "OTHER")
+            
         # Create an overview chunk
         chunk = Chunk(
             chunk_id=f"{scheme_id}__overview__0",
@@ -45,7 +51,12 @@ def main():
             source_priority="1",
             financial_terms_status="AVAILABLE",
             last_verified="2026-09-08",
-            text=f"Scheme Name: {name_en}\nDescription: {desc_en}\nCategory: {cat}"
+            text=f"Scheme Name: {name_en}\nDescription: {desc_en}\nCategory: {cat}",
+            organization=org,
+            domain=domain,
+            scheme_type=scheme_type,
+            purpose=purpose,
+            assistance_type=assistance_type
         )
         chunks.append(chunk)
         
@@ -66,14 +77,20 @@ def main():
                 source_priority="1",
                 financial_terms_status="AVAILABLE",
                 last_verified="2026-09-08",
-                text=f"Financial Terms for {name_en}: Loan Amount is {min_loan} to {max_loan}. Interest Rate is {int_min}% to {int_max}%."
+                text=f"Financial Terms for {name_en}: Loan Amount is {min_loan} to {max_loan}. Interest Rate is {int_min}% to {int_max}%.",
+                organization=org,
+                domain=domain,
+                scheme_type=scheme_type,
+                purpose=purpose,
+                assistance_type=assistance_type
             )
             chunks.append(fin_chunk)
 
     print(f"Total chunks created: {len(chunks)}")
     
     # We must use SAARTHI_MOCK_EMBEDDING=1 for testing if huggingface isn't available, but let's try standard embed
-    os.environ["SAARTHI_MOCK_EMBEDDING"] = "1"
+    if "SAARTHI_MOCK_EMBEDDING" not in os.environ:
+        os.environ["SAARTHI_MOCK_EMBEDDING"] = "0"
     
     print("Building vector store...")
     store = build_store(chunks, embed)

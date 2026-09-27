@@ -5,6 +5,7 @@ import { speak, stopSpeaking } from '@/features/voice/textToSpeech';
 import { useCanSpeak } from './useCanSpeak';
 import { useSpeechInput, type SpeechInputError } from './useSpeechInput';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAppStore } from '@/store/useAppStore';
 
 /**
  * The voice pipeline, as one state machine.
@@ -63,6 +64,7 @@ function generateUUID(): string {
 
 export function useVoiceQuery(language: LanguageCode) {
   const queryClient = useQueryClient();
+  const profile = useAppStore((state) => state.profile);
   const canRead = useCanSpeak(language);
   const [busyPhase, setBusyPhase] = useState<'idle' | 'thinking' | 'speaking'>('idle');
   const [transcript, setTranscript] = useState('');
@@ -120,6 +122,10 @@ export function useVoiceQuery(language: LanguageCode) {
           query: trimmed,
           responseLanguage: apiLanguage,
           history: [],
+          profileContext: profile?.address?.coordinates ? {
+            latitude: profile.address.coordinates.latitude,
+            longitude: profile.address.coordinates.longitude,
+          } : undefined,
           sessionId: sessionId.current,
           guideMe: true,
         }, abortController.current.signal);

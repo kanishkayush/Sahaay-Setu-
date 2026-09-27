@@ -38,14 +38,16 @@ export const AssistantQueryRequestSchema = z.object({
     .max(20)
     .default([]),
   /** Lets the RAG layer personalise answers. Optional — never required. */
-  profileContext: z
-    .object({
-      annualFamilyIncome: z.number().optional(),
-      projectType: z.string().optional(),
-      stateCode: z.string().optional(),
-    })
-    .optional(),
-  sessionId: z.string().optional(),
+    profileContext: z
+      .object({
+        annualFamilyIncome: z.number().optional(),
+        projectType: z.string().optional(),
+        stateCode: z.string().optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+      })
+      .optional(),
+    sessionId: z.string().optional(),
   guideMe: z.boolean().optional(),
 });
 export type AssistantQueryRequest = z.infer<typeof AssistantQueryRequestSchema>;

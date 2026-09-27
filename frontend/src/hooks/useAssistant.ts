@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { askAssistant } from '@/api/services';
 import type { ChatMessage, LanguageCode } from '@/api/contracts';
+import { useAppStore } from '@/store/useAppStore';
 
 let idCounter = 0;
 const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
@@ -12,6 +13,7 @@ const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
  * session-scoped — we deliberately do not persist question history to disk.
  */
 export function useAssistant(language: LanguageCode) {
+  const profile = useAppStore((state) => state.profile);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const sessionId = useRef<string | undefined>(undefined);
@@ -40,6 +42,10 @@ export function useAssistant(language: LanguageCode) {
           query: trimmed,
           responseLanguage: language,
           history,
+          profileContext: profile?.address?.coordinates ? {
+            latitude: profile.address.coordinates.latitude,
+            longitude: profile.address.coordinates.longitude,
+          } : undefined,
           sessionId: sessionId.current,
           guideMe: true,
         });

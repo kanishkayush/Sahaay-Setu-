@@ -7,6 +7,8 @@ class AssistantProfileContext(BaseModel):
     annualFamilyIncome: Optional[float] = None
     projectType: Optional[str] = None
     stateCode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class AssistantQueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)

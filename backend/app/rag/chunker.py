@@ -24,6 +24,11 @@ class Chunk:
     financial_terms_status: str
     last_verified: str
     text: str
+    organization: str = "UNKNOWN"
+    domain: str = "OTHER"
+    scheme_type: str = "OTHER_FINANCIAL_ASSISTANCE"
+    purpose: str = "GENERAL"
+    assistance_type: str = "OTHER"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -37,6 +42,11 @@ class Chunk:
             "financial_terms_status": self.financial_terms_status,
             "last_verified": self.last_verified,
             "text": self.text,
+            "organization": self.organization,
+            "domain": self.domain,
+            "scheme_type": self.scheme_type,
+            "purpose": self.purpose,
+            "assistance_type": self.assistance_type,
         }
 
 def _normalize_section_name(name: str) -> str:

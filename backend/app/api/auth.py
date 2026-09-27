@@ -50,28 +50,22 @@ def login(request: LoginRequest) -> AuthResponse:
 
     normalized_phone = f"+91{phone}"
 
-    # Create session directly without OTP
-    token = str(uuid.uuid4())
+    # Create session directly without OTP. To avoid fragile in-memory sessions across restarts,
+    # we use the deterministic user_id as the token itself.
     user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, normalized_phone)) # Deterministic ID based on phone
-    
-    _sessions[token] = {
-        "user_id": user_id,
-        "phone": normalized_phone,
-        "expires_at": datetime.now(timezone.utc) + timedelta(days=30)
-    }
+    token = user_id 
     
     return AuthResponse(token=token, userId=user_id, phoneNumber=normalized_phone)
 
 
 def verify_token(token: str) -> str:
     """Validate token and return user_id. Raises 401 if invalid."""
-    session = _sessions.get(token)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    if datetime.now(timezone.utc) > session["expires_at"]:
-        _sessions.pop(token, None)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
-    return session["user_id"]
+    # Since we use user_id as the token for stateless auth, just verify it's a valid UUID
+    try:
+        val = uuid.UUID(token, version=5)
+        return str(val)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token format")
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Header, Depends

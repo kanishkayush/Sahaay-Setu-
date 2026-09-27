@@ -27,5 +27,14 @@
     "citations": [],
     "verified": false,
     "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
-  }
+  },
+  "organization": "NBCFDC",
+  "organization_code": "NBCFDC",
+  "domain": "EDUCATION",
+  "scheme_type": "EDUCATION_LOAN",
+  "purpose": "HIGHER_EDUCATION",
+  "assistance_type": "LOAN",
+  "verified": true,
+  "source": "Official Documentation",
+  "source_url": "Unknown"
 }

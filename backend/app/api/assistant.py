@@ -146,7 +146,9 @@ def assistant_query_adapter(
         profile = ChatProfile(
             annualFamilyIncome=request.profileContext.annualFamilyIncome,
             projectType=request.profileContext.projectType,
-            stateCode=request.profileContext.stateCode
+            stateCode=request.profileContext.stateCode,
+            latitude=request.profileContext.latitude,
+            longitude=request.profileContext.longitude
         )
     
     # Do not silently infer eligibility. The chat pipeline respects the Profile safety rule.

@@ -33,6 +33,9 @@ def retrieve(
     top_k: int = 5,
     strict_scheme_filter: bool = False,
     min_similarity: float | None = None,
+    organization_filter: str | None = "NSFDC",
+    domain_filter: str | None = None,
+    assistance_type_filter: str | None = None,
 ) -> list[RetrievedChunk]:
     """
     Retrieves the most relevant chunks for a query.
@@ -64,18 +67,25 @@ def retrieve(
             if chunk.scheme_id != scheme_id_filter:
                 continue
                 
-        # 2. Apply preferred filtering (boost matching scheme)
+        # 2. Apply metadata filtering (organization, domain, assistance_type)
+        if organization_filter and hasattr(chunk, 'organization'):
+            if chunk.organization != organization_filter:
+                # If organization doesn't match, penalize heavily unless it's an exact scheme ID match
+                if not (scheme_id_filter and chunk.scheme_id == scheme_id_filter):
+                    score *= 0.5
+
+        if domain_filter and hasattr(chunk, 'domain'):
+            # Soft penalty for domain mismatch
+            if chunk.domain != "OTHER" and chunk.domain != domain_filter:
+                score *= 0.8
+                
+        if assistance_type_filter and hasattr(chunk, 'assistance_type'):
+            if chunk.assistance_type != "OTHER" and chunk.assistance_type != assistance_type_filter:
+                score *= 0.8
+
         final_score = score
         if not strict_scheme_filter and scheme_id_filter:
             if chunk.scheme_id == scheme_id_filter:
-                # 1.3x boost is removed as per user feedback to use sorting preference
-                # Wait, user said:
-                # "scheme_id_filter + strict=False -> Prefer matching scheme, but allow cross-scheme results."
-                # A simple boost works, or sorting them to the top.
-                # Let's use a smaller boost or just sort matching schemes first if they pass min_similarity.
-                # Actually, the user explicitly asked to *replace* the fixed 1.3x scheme boost
-                # with explicit strict/preferred scheme filtering.
-                # "This is safer and more explicit than hiding business behavior inside a fixed similarity multiplier."
                 pass # We will handle preferred sorting below
                 
         processed_results.append(RetrievedChunk(chunk, final_score))

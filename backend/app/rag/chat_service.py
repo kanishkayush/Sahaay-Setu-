@@ -237,6 +237,8 @@ def generate_chat_answer(
         if content.endswith("```"):
             content = content[:-3]
             
+        print(f"RAW LLM RESPONSE:\n{content}\n")
+            
         data = json.loads(content.strip())
         
         # Parse and validate citations

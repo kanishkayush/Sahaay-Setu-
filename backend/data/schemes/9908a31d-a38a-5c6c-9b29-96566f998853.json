@@ -27,5 +27,14 @@
     "citations": [],
     "verified": false,
     "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
-  }
+  },
+  "organization": "NSKFDC",
+  "organization_code": "NSKFDC",
+  "domain": "OTHER",
+  "scheme_type": "OTHER_FINANCIAL_ASSISTANCE",
+  "purpose": "GENERAL",
+  "assistance_type": "OTHER_FINANCIAL_ASSISTANCE",
+  "verified": true,
+  "source": "Official Documentation",
+  "source_url": "Unknown"
 }

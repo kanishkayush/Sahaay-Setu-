@@ -17,7 +17,7 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
             return (
               <Card key={idx} style={styles.schemeCard}>
                 <View style={styles.headerRow}>
-                  <Icon name="check-circle" size={20} color={colors.success} />
+                  <Icon name="check" size={20} color={colors.success} />
                   <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
                 </View>
                 <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
@@ -37,7 +37,10 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
           case 'DOCUMENT_CHECKLIST':
             return (
               <Card key={idx} style={styles.checklistCard}>
-                <Text variant="label">{t('uiCards.requiredDocuments')}</Text>
+                <View style={styles.headerRow}>
+                  <Icon name="doc" size={20} color={colors.text} />
+                  <Text variant="label">{t('uiCards.requiredDocuments')}</Text>
+                </View>
                 {card.requiredByScheme?.map(doc => (
                   <Text key={doc} variant="body">・ {doc}</Text>
                 ))}
@@ -58,7 +61,7 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
             return (
               <Card key={idx} style={styles.partnerCard}>
                 <View style={styles.headerRow}>
-                  <Icon name="map-pin" size={20} color={colors.primary} />
+                  <Icon name="pin" size={20} color={colors.primary} />
                   <Text variant="label">{card.name || t('uiCards.noPartnerSelected')}</Text>
                 </View>
                 {card.address ? <Text variant="body" color={colors.textSecondary}>{card.address}</Text> : null}
@@ -82,7 +85,7 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
             return (
               <Card key={idx} style={styles.warningCard}>
                 <View style={styles.headerRow}>
-                  <Icon name="alert-triangle" size={20} color={colors.danger} />
+                  <Icon name="alert" size={20} color={colors.danger} />
                   <Text variant="bodyStrong" color={colors.danger}>{card.message}</Text>
                 </View>
               </Card>

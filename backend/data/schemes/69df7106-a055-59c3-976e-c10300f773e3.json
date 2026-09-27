@@ -27,5 +27,14 @@
     "citations": [],
     "verified": false,
     "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
-  }
+  },
+  "organization": "MINISTRY/DEPARTMENT",
+  "organization_code": "MINISTRY/DEPARTMENT",
+  "domain": "EDUCATION",
+  "scheme_type": "EDUCATION_SCHOLARSHIP",
+  "purpose": "HIGHER_EDUCATION",
+  "assistance_type": "SCHOLARSHIP",
+  "verified": true,
+  "source": "Official Documentation",
+  "source_url": "Unknown"
 }

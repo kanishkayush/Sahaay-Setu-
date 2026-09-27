@@ -66,5 +66,14 @@
     ],
     "verified": true,
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
-  }
+  },
+  "organization": "NSFDC",
+  "organization_code": "NSFDC",
+  "domain": "OTHER",
+  "scheme_type": "OTHER_FINANCIAL_ASSISTANCE",
+  "purpose": "GENERAL",
+  "assistance_type": "OTHER_FINANCIAL_ASSISTANCE",
+  "verified": true,
+  "source": "Official Documentation",
+  "source_url": "https://nsfdc.nic.in"
 }

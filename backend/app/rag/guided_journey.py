@@ -199,12 +199,21 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             # Build a retrieval query that matches the intent
             if is_education:
                 retrieval_query = "education loan scheme for students college course fees"
+                domain = "EDUCATION"
             elif any(kw in activity_lower for kw in ["dairy", "farm", "agriculture", "kheti", "pashupalan"]):
                 retrieval_query = "agriculture farming dairy loan scheme self-employment"
+                domain = "AGRICULTURE"
             else:
                 retrieval_query = "business loan scheme self-employment enterprise"
+                domain = "BUSINESS"
             
-            retrieved_chunks = retrieve(query=retrieval_query, top_k=3, min_similarity=0.05)
+            retrieved_chunks = retrieve(
+                query=retrieval_query, 
+                top_k=3, 
+                min_similarity=0.05,
+                domain_filter=domain,
+                assistance_type_filter="LOAN"
+            )
             
             # Build a natural first response using the retrieved context
             answer_text = _build_conversational_first_response(
@@ -274,10 +283,18 @@ Do not include any other text.
             from app.rag.retriever import retrieve
             if is_education:
                 retrieval_query = "education loan scheme for students college course fees"
+                domain = "EDUCATION"
             else:
                 retrieval_query = f"{activity or 'business'} loan scheme self-employment"
+                domain = "BUSINESS"
             
-            retrieved_chunks = retrieve(query=retrieval_query, top_k=3, min_similarity=0.05)
+            retrieved_chunks = retrieve(
+                query=retrieval_query, 
+                top_k=3, 
+                min_similarity=0.05,
+                domain_filter=domain,
+                assistance_type_filter="LOAN"
+            )
             
             answer_text = _build_conversational_first_response(
                 activity=activity,
@@ -773,18 +790,48 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
     # 5. Generate LLM Explanation
     lang_names = {"hi": "Hindi", "en": "English", "mr": "Marathi", "bn": "Bengali", "ta": "Tamil", "te": "Telugu"}
     lang_name = lang_names.get(request.language, "English")
-    system_prompt = f"""You are SAARTHI.
-Based on the user's profile, the deterministic engine recommended the scheme: {top.scheme_name}.
+    system_prompt = f"""You are SAARTHI, an NSFDC assistance assistant.
+Based on the user's profile and query context, the deterministic engine recommended the scheme: {top.scheme_name}.
+
+User profile summary:
+Purpose/Activity: {purpose}
+Project Cost / Course Fee: {profile.estimatedProjectCost}
+Family Income: {profile.annualFamilyIncome}
+Location/PIN: {profile.pinCode}
 
 Here is the verified context for this scheme:
 {context_text}
 
-Explain why this scheme matches their needs (e.g. Project Cost is within limits).
-Do NOT invent loan amounts or interest rates if they are not in the verified context.
-Do NOT expose internal database fields.
-Then, ask the user if they would like to check their required documents next.
-RESPONSE LANGUAGE: {lang_name}
-You MUST answer entirely in {lang_name}.
+Generate a compact, villager-friendly response in {lang_name} following this EXACT structure:
+
+━━━━━━━━━━━━━━━━
+आपके लिए उपयुक्त योजना (Translate header to {lang_name})
+━━━━━━━━━━━━━━━━
+
+{top.scheme_name}
+
+क्यों? / Why this scheme? (Translate to {lang_name})
+• [Point 1: e.g. You mentioned you want to do {purpose}]
+• [Point 2: e.g. This scheme supports the relevant income-generating activity]
+• [Point 3: e.g. Your project cost/needs match the scheme criteria]
+
+योजना की जानकारी / Scheme Details: (Translate to {lang_name})
+• Loan / वित्तीय सहायता: [Extract from context]
+• Interest / ब्याज: [Extract from context]
+• Repayment / भुगतान अवधि: [Extract from context]
+• Eligibility / पात्रता: [Extract from context]
+
+आप क्या करना चाहते हैं? / What would you like to do next? (Translate to {lang_name})
+• Check EMI
+• Find Channel Partners
+• View Documents
+• Application Process
+
+RULES:
+- Do NOT invent loan amounts, interest rates, or eligibility. If not found in the verified context, explicitly say: "इस योजना के उपलब्ध दस्तावेज़ में यह जानकारी नहीं मिली है।" (or equivalent in {lang_name}).
+- Do NOT expose internal database fields.
+- Keep it simple and easy to read.
+- Response MUST be entirely in {lang_name}.
 """
     model = _llm_model()
     response = litellm.completion(
@@ -999,7 +1046,12 @@ def _handle_partner_search(request: ChatRequest, profile: ChatProfile, session_i
     from app.rag.partner_repo import get_partner_repo
     repo = get_partner_repo()
     
-    partners = repo.search_by_pincode_with_expansion(profile.pinCode)
+    partners = repo.search_by_pincode_with_expansion(
+        pincode=profile.pinCode,
+        scheme_id=profile.recommendedSchemeId,
+        lat=profile.latitude,
+        lon=profile.longitude
+    )
     
     ui_cards = []
     if partners:

@@ -46,6 +46,8 @@ class ChatProfile(BaseModel):
     conversationState: Optional[ConversationState] = None
     recommendedSchemeId: Optional[str] = None
     channelPartnerRequired: Optional[bool] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class ChatRequest(BaseModel):
     model_config = {"populate_by_name": True}

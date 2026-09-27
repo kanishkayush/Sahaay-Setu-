@@ -37,9 +37,15 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
         # Step 0: Language detection + intent extraction (deterministic, no LLM)
         detection = detect_language_and_intent(request.query)
         
-        # Override language ONLY if we successfully detected it
+        # Override language ONLY if we successfully detected it, and respect stickiness
         if detection.detected_language:
-            request.language = detection.detected_language
+            # If detected as English but user wants another language,
+            # only switch if it's a longer query (not a short 1-2 word context answer).
+            if detection.detected_language == "en" and request.language and request.language != "en":
+                if len(request.query.split()) > 3:
+                    request.language = detection.detected_language
+            else:
+                request.language = detection.detected_language
         
         normalized_query = detection.translated_query_en
         is_low_info = detection.is_low_info
@@ -100,7 +106,10 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
         retrieved_chunks = retrieve(
             query=retrieval_query,
             scheme_id_filter=request.scheme_id_filter,
-            min_similarity=0.08
+            min_similarity=0.08,
+            organization_filter=detection.organization,
+            domain_filter=detection.domain,
+            assistance_type_filter=detection.assistance_type,
         )
         retrieval_ms = int((time.time() - retrieval_start) * 1000)
         

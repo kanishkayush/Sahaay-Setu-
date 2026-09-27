@@ -82,5 +82,14 @@
     ],
     "verified": true,
     "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
-  }
+  },
+  "organization": "NSFDC",
+  "organization_code": "NSFDC",
+  "domain": "EDUCATION",
+  "scheme_type": "EDUCATION_LOAN",
+  "purpose": "HIGHER_EDUCATION",
+  "assistance_type": "LOAN",
+  "verified": true,
+  "source": "Official Documentation",
+  "source_url": "https://nsfdc.nic.in"
 }

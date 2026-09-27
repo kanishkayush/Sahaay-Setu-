@@ -23,6 +23,10 @@ class DetectionResult:
     is_low_info: bool
     intent: Optional[str]  # EDUCATION_LOAN, AGRICULTURE, BUSINESS, GENERAL_LOAN, None
     confidence: float
+    organization: str
+    domain: Optional[str]
+    purpose: Optional[str]
+    assistance_type: Optional[str]
 
 
 # ── Script detection ───────────────────────────────────────────────
@@ -216,11 +220,31 @@ def detect_language_and_intent(query: str) -> DetectionResult:
 
     # Build a retrieval-friendly English translation
     if intent and intent in _INTENT_TO_RETRIEVAL_QUERY:
-        translated = _INTENT_TO_RETRIEVAL_QUERY[intent]
+        translated = f"{stripped} {_INTENT_TO_RETRIEVAL_QUERY[intent]}"
     else:
         translated = stripped  # Use original if no intent mapping
 
     confidence = 0.9 if lang != "en" or intent else 0.7
+
+    domain = None
+    purpose = "GENERAL"
+    assistance_type = "LOAN" if intent != None else "OTHER"
+    
+    if intent == "EDUCATION_LOAN":
+        domain = "EDUCATION"
+        purpose = "HIGHER_EDUCATION"
+        assistance_type = "LOAN"
+    elif intent == "AGRICULTURE":
+        domain = "AGRICULTURE"
+        purpose = "FARMING"
+        assistance_type = "LOAN"
+    elif intent == "BUSINESS":
+        domain = "BUSINESS"
+        purpose = "BUSINESS"
+        assistance_type = "LOAN"
+    elif intent == "GENERAL_LOAN":
+        domain = "OTHER"
+        assistance_type = "LOAN"
 
     return DetectionResult(
         detected_language=lang,
@@ -228,4 +252,8 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         is_low_info=is_low_info,
         intent=intent,
         confidence=confidence,
+        organization="NSFDC",
+        domain=domain,
+        purpose=purpose,
+        assistance_type=assistance_type
     )
