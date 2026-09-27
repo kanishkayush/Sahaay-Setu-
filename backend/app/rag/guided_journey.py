@@ -289,7 +289,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
 
     # Derive expectedField for the frontend so it can choose the right input mode
     FIELD_MAP = {
-        "PIN Code": "none", # Redirects user to profile
+        "PIN Code": "pinCode", # Redirects user to profile
         "Is this a new business or an existing business?": "existingBusiness",
         "Estimated Project Cost": "estimatedProjectCost",
         "Course Fee": "estimatedProjectCost",
