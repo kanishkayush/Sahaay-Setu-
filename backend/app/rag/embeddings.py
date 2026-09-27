@@ -58,19 +58,18 @@ def get_model():
             _MODEL = MockSentenceTransformer()
             return _MODEL
             
-        from sentence_transformers import SentenceTransformer
-        cache_dir = os.environ.get("SAARTHI_MODEL_CACHE_DIR")
-        # macOS MPS threading bug workaround: use device="cpu" safely, and disable meta tensors
         from sentence_transformers import SentenceTransformer, models
-        cache_dir = os.environ.get("SAARTHI_MODEL_CACHE_DIR")
         
-        if cache_dir:
-            Path(cache_dir).mkdir(parents=True, exist_ok=True)
-            word_embedding_model = models.Transformer(MODEL_NAME, cache_dir=cache_dir, model_args={"low_cpu_mem_usage": False})
-        else:
-            word_embedding_model = models.Transformer(MODEL_NAME, model_args={"low_cpu_mem_usage": False})
-            
+        # Always default to a baked-in project directory cache
+        default_cache = str(Path(__file__).parent.parent.parent / "data" / "rag" / "model_cache")
+        cache_dir = os.environ.get("SAARTHI_MODEL_CACHE_DIR", default_cache)
+        
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Use low_cpu_mem_usage to prevent OOM during loading on 512MB RAM servers
+        word_embedding_model = models.Transformer(MODEL_NAME, cache_dir=cache_dir, model_args={"low_cpu_mem_usage": True})
         pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+        
         _MODEL = SentenceTransformer(modules=[word_embedding_model, pooling_model], device="cpu")
         
     return _MODEL
