@@ -81,6 +81,30 @@ def embed(texts: list[str]) -> np.ndarray:
     if not texts:
         return np.array([])
         
+    # Attempt to use HuggingFace Inference API to save memory on Render (512MB RAM limit)
+    # The API might be rate-limited, but it avoids OOM crashes on free-tier Render.
+    if os.environ.get("ENVIRONMENT") == "production" or os.environ.get("RENDER"):
+        import requests
+        api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+        try:
+            # wait_for_model=True ensures it wakes up the model if cold
+            response = requests.post(api_url, json={"inputs": texts, "options": {"wait_for_model": True}}, timeout=20)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) == len(texts):
+                    return np.array(data, dtype=np.float32)
+            else:
+                print(f"HF API returned {response.status_code}: {response.text}")
+                # Fallback to Mock to prevent OOM
+                model = MockSentenceTransformer()
+                return model.encode(texts)
+        except Exception as e:
+            print(f"HF API fallback failed: {e}")
+            # Fallback to Mock to prevent OOM
+            model = MockSentenceTransformer()
+            return model.encode(texts)
+            
+    # Fallback to local model if running locally
     model = get_model()
     embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
     return embeddings
