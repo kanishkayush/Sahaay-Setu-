@@ -415,6 +415,26 @@ For agriculture queries, ask about the specific farming activity.
             "agriculture": "मैं आपको खेती और कृषि के लिए वित्तीय सहायता खोजने में मदद कर सकता हूँ। कई योजनाएं उपलब्ध हैं। आप किस प्रकार की खेती की योजना बना रहे हैं?",
             "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
         },
+        "mr": {
+            "education": "नक्कीच, मी तुम्हाला शैक्षणिक कर्जामध्ये मदत करू शकतो. कोणत्या कोर्ससाठी तुम्ही विचार करत आहात?",
+            "agriculture": "मी तुम्हाला शेती आणि कृषीसाठी आर्थिक मदत शोधण्यात मदत करू शकतो. तुम्ही कोणत्या प्रकारची शेती करणार आहात?",
+            "business": "मी तुम्हाला व्यवसायासाठी आर्थिक मदतीत मदत करू शकतो. तुम्ही कोणता व्यवसाय सुरू करणार आहात?"
+        },
+        "bn": {
+            "education": "আমি আপনাকে শিক্ষা ঋণের বিষয়ে সাহায্য করতে পারি। আপনি কোন কোর্সটি করতে চান?",
+            "agriculture": "আমি আপনাকে চাষাবাদের জন্য আর্থিক সহায়তা খুঁজে পেতে সাহায্য করতে পারি। আপনি কি ধরণের চাষাবাদ করতে চান?",
+            "business": "আমি আপনাকে ব্যবসার জন্য আর্থিক সহায়তা পেতে সাহায্য করতে পারি। আপনি কি ধরণের ব্যবসা শুরু করতে চান?"
+        },
+        "ta": {
+            "education": "நான் உங்களுக்கு கல்வி கடன்களுக்கு உதவ முடியும். நீங்கள் எந்த படிப்பை படிக்க விரும்புகிறீர்கள்?",
+            "agriculture": "விவசாயத்திற்கான நிதி உதவியைக் கண்டறிய நான் உங்களுக்கு உதவ முடியும். நீங்கள் என்ன வகையான விவசாயம் செய்ய திட்டமிட்டுள்ளீர்கள்?",
+            "business": "வணிக நிதிக்கு நான் உங்களுக்கு உதவ முடியும். நீங்கள் என்ன வகையான வணிகத்தைத் தொடங்க திட்டமிட்டுள்ளீர்கள்?"
+        },
+        "te": {
+            "education": "నేను మీకు విద్యా రుణాలతో సహాయం చేయగలను. మీరు ఏ కోర్సు చదవాలనుకుంటున్నారు?",
+            "agriculture": "వ్యవసాయం కోసం ఆర్థిక సహాయాన్ని కనుగొనడంలో నేను మీకు సహాయం చేయగలను. మీరు ఏ రకమైన వ్యవసాయం చేయాలనుకుంటున్నారు?",
+            "business": "వ్యాపార ఆర్థిక సహాయంతో నేను మీకు సహాయం చేయగలను. మీరు ఏ రకమైన వ్యాపారాన్ని ప్రారంభించాలనుకుంటున్నారు?"
+        }
     }
     
     category = "education" if is_education else ("agriculture" if activity and any(kw in str(activity).lower() for kw in ["dairy", "farm", "agriculture", "kheti"]) else "business")
@@ -432,6 +452,8 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     missing_fields = []
     if profile.pinCode is None and (profile.stateCode is None or profile.districtCode is None):
         missing_fields.append("PIN Code")
+    elif profile.projectType != "EDUCATION" and (profile.activity is None or profile.activity in ["BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING"]):
+        missing_fields.append("Specific Activity")
     elif profile.projectType != "EDUCATION" and profile.existingBusiness is None:
         missing_fields.append("Is this a new business or an existing business?")
     elif profile.estimatedProjectCost is None:
@@ -452,36 +474,42 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     lang = request.language or "en"
     questions_map = {
         "en": {
+            "Specific Activity": "Could you tell me what specific kind of work or farming you want to do?",
             "PIN Code": "I need your 6-digit PIN code to find accurate schemes and partners. Please update your PIN in your Profile.",
             "Is this a new business or an existing business?": "Is this a new business or an existing business?",
             "Estimated Project Cost": "What is the estimated total project cost?",
             "Course Fee": "What is the total estimated course fee?"
         },
         "hi": {
+            "Specific Activity": "आप किस प्रकार का काम या खेती शुरू करना चाहते हैं?",
             "PIN Code": "सटीक योजनाएं और भागीदार खोजने के लिए मुझे आपके 6 अंकों के पिन कोड की आवश्यकता है। कृपया अपने प्रोफाइल में अपना पिन अपडेट करें।",
             "Is this a new business or an existing business?": "क्या यह नया व्यवसाय है या आपका पहले से चल रहा व्यवसाय है?",
             "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?",
             "Course Fee": "कोर्स की अनुमानित कुल फीस कितनी है?"
         },
         "mr": {
+            "Specific Activity": "तुम्हाला कोणता विशिष्ट प्रकारचा व्यवसाय किंवा शेती करायची आहे?",
             "PIN Code": "अचूक योजना आणि भागीदार शोधण्यासाठी मला तुमचा 6-अंकी पिन कोड आवश्यक आहे. कृपया तुमच्या प्रोफाइलमध्ये तुमचा पिन अपडेट करा.",
             "Is this a new business or an existing business?": "हा नवीन व्यवसाय आहे की जुना?",
             "Estimated Project Cost": "अंदाजित प्रकल्प खर्च किती आहे?",
             "Course Fee": "कोर्सची अंदाजित एकूण फी किती आहे?"
         },
         "bn": {
+            "Specific Activity": "আপনি নির্দিষ্ট কি ধরনের কাজ বা চাষাবাদ করতে চান তা কি বলতে পারবেন?",
             "PIN Code": "সঠিক স্কিম এবং পার্টনার খুঁজে পেতে আমার আপনার ৬-সংখ্যার পিন কোড দরকার। অনুগ্রহ করে আপনার প্রোফাইলে পিন আপডেট করুন।",
             "Is this a new business or an existing business?": "এটি কি একটি নতুন ব্যবসা না বিদ্যমান ব্যবসা?",
             "Estimated Project Cost": "আনুমানিক প্রকল্প ব্যয় কত?",
             "Course Fee": "কোর্সের আনুমানিক মোট ফি কত?"
         },
         "ta": {
+            "Specific Activity": "நீங்கள் எந்த வகையான குறிப்பிட்ட வேலை அல்லது விவசாயம் செய்ய விரும்புகிறீர்கள் என்பதை என்னிடம் கூற முடியுமா?",
             "PIN Code": "சரியான திட்டங்கள் மற்றும் கூட்டாளர்களைக் கண்டறிய உங்கள் 6 இலக்க பின் குறியீடு எனக்குத் தேவை. தயவுசெய்து உங்கள் சுயவிவரத்தில் உங்கள் பின்னைப் புதுப்பிக்கவும்.",
             "Is this a new business or an existing business?": "இது புதிய தொழிலா அல்லது ஏற்கனவே உள்ள தொழிலா?",
             "Estimated Project Cost": "மதிப்பிடப்பட்ட திட்ட செலவு என்ன?",
             "Course Fee": "மதிப்பிடப்பட்ட மொத்த பாட கட்டணம் என்ன?"
         },
         "te": {
+            "Specific Activity": "మీరు ఏ నిర్దిష్ట రకమైన పని లేదా వ్యవసాయం చేయాలనుకుంటున్నారో నాకు చెప్పగలరా?",
             "PIN Code": "ఖచ్చితమైన పథకాలు మరియు భాగస్వాములను కనుగొనడానికి నాకు మీ 6-అంకెల పిన్ కోడ్ కావాలి. దయచేసి మీ ప్రొఫైల్‌లో మీ పిన్‌ను అప్‌డేట్ చేయండి.",
             "Is this a new business or an existing business?": "ఇది కొత్త వ్యాపారమా లేదా ఉన్న వ్యాపారమా?",
             "Estimated Project Cost": "అంచనా ప్రాజెక్ట్ వ్యయం ఎంత?",
@@ -677,7 +705,7 @@ Recent Conversation History:
 {history_text}
 
 Update fields if the user provided them.
-Available fields: fullName (string), stateCode (string), districtCode (string), pinCode (string), existingBusiness (bool), estimatedProjectCost (int), annualFamilyIncome (int).
+Available fields: fullName (string), stateCode (string), districtCode (string), pinCode (string), existingBusiness (bool), estimatedProjectCost (int), annualFamilyIncome (int), activity (string).
 Return a JSON object with ONLY the updated fields. Do NOT invent information.
 Return ONLY raw JSON text. DO NOT wrap it in markdown blocks.
 """
@@ -833,17 +861,30 @@ RULES:
 - Keep it simple and easy to read.
 - Response MUST be entirely in {lang_name}.
 """
-    model = _llm_model()
-    response = litellm.completion(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": "Please give me the scheme recommendation."}
-        ],
-        temperature=0.1
-    )
-    
-    answer_text = response.choices[0].message.content or "Here is the recommended scheme."
+    try:
+        model = _llm_model()
+        response = litellm.completion(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": "Please give me the scheme recommendation."}
+            ],
+            temperature=0.1
+        )
+        answer_text = response.choices[0].message.content or "Here is the recommended scheme."
+    except Exception as e:
+        logger = __import__("logging").getLogger(__name__)
+        logger.warning(f"LLM scheme recommendation generation failed: {e}")
+        fallback_map = {
+            "en": f"Based on your profile, the recommended scheme is {top.scheme_name}. For full details, please check the scheme document.",
+            "hi": f"आपकी प्रोफ़ाइल के आधार पर, {top.scheme_name} आपके लिए सबसे उपयुक्त योजना है। पूरी जानकारी के लिए कृपया योजना दस्तावेज़ देखें।",
+            "mr": f"तुमच्या प्रोफाईलच्या आधारे, {top.scheme_name} ही तुमच्यासाठी सर्वात योग्य योजना आहे.",
+            "bn": f"আপনার প্রোফাইলের উপর ভিত্তি করে, {top.scheme_name} আপনার জন্য সবচেয়ে উপযুক্ত স্কিম।",
+            "ta": f"உங்கள் சுயவிவரத்தின் அடிப்படையில், {top.scheme_name} உங்களுக்கு மிகவும் பொருத்தமான திட்டம்.",
+            "te": f"మీ ప్రొఫైల్ ఆధారంగా, {top.scheme_name} మీకు అత్యంత అనుకూలమైన పథకం.",
+        }
+        answer_text = fallback_map.get(lang_name, fallback_map["en"])
+
     
     # Transition State
     profile.conversationState = ConversationState.DOCUMENT_PREPARATION
