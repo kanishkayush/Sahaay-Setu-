@@ -14,7 +14,7 @@ import hashlib
 import numpy as np
 
 _LOCAL_PATH = Path(__file__).parent.parent.parent / "data" / "rag" / "local_models" / "paraphrase-multilingual-MiniLM-L12-v2"
-MODEL_NAME = str(_LOCAL_PATH) if _LOCAL_PATH.exists() else "paraphrase-multilingual-MiniLM-L12-v2"
+MODEL_NAME = str(_LOCAL_PATH) if _LOCAL_PATH.exists() else "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 _MODEL = None
 
 class MockSentenceTransformer:
