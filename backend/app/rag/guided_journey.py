@@ -79,7 +79,7 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
     query_lower = query.lower()
     
     # Is it asking for a loan?
-    loan_keywords = ["loan", "लोन", "ऋण", "कर्ज", "finance", "financing"]
+    loan_keywords = ["loan", "लोन", "ऋण", "कर्ज", "finance", "financing", "money", "funding", "capital", "start", "expand", "run", "business", "व्यवसाय"]
     is_loan = any(kw in query_lower for kw in loan_keywords)
     
     if not is_loan:
@@ -99,24 +99,56 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
         ],
         "POULTRY": ["poultry", "murgi", "मुर्गी"],
         "TAILORING": ["tailor", "silai", "सिलाई"],
-        "SHOP": ["shop", "dukan", "दुकान", "store"]
+        "SHOP": ["shop", "dukan", "दुकान", "store"],
+        "EDUCATION_LOAN": [
+            "education", "study", "college", "school", "btech", "degree", "course", 
+            "पढ़ाई", "शिक्षा", "कॉलेज", "student", "mba", "masters", "phd", 
+            "bachelors", "graduation", "university", "institute", "fees", "higher education"
+        ],
+        "GENERAL_BUSINESS": [
+            "business", "startup", "company", "enterprise", "manufacturing", "व्यापार", "बिज़नेस", 
+            "handicraft", "craft", "artisan", "weaving", "pottery", "हस्तशिल्प", "शिल्प", "कारीगर"
+        ]
     }
     
     for activity, aliases in ACTIVITY_ALIASES.items():
         if any(alias in query_lower for alias in aliases):
             return {"intent": "LOAN", "activity": activity}
             
-    return {"intent": "LOAN", "activity": "GENERAL_BUSINESS"}
+    return {"intent": "AMBIGUOUS_LOAN"}
 
 def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
     # Deterministic check first
     data = _deterministic_intent_extraction(request.query)
-    if data and data.get("intent") == "LOAN":
-        print(f"Deterministic intent extracted: {data}")
-        profile.activity = data.get("activity")
-        profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
-        update_session_profile(session_id, profile)
-        return _handle_collecting_eligibility(request, profile, session_id, is_transition=True)
+    if data:
+        if data.get("intent") == "AMBIGUOUS_LOAN":
+            from app.schemas.chat import ChatResponse, ResponseSource, GroundingStatus
+            lang = request.language or "en"
+            clarification_map = {
+                "en": "Please tell me what you need financial assistance for, such as education, a small business, dairy farming, transport, or another activity.",
+                "hi": "कृपया मुझे बताएं कि आपको किस कार्य के लिए वित्तीय सहायता की आवश्यकता है, जैसे शिक्षा, छोटा व्यवसाय, डेयरी फार्मिंग, परिवहन, या कोई अन्य गतिविधि।",
+                "mr": "कृपया मला सांगा की तुम्हाला कोणत्या कार्यासाठी आर्थिक मदतीची आवश्यकता आहे, जसे की शिक्षण, छोटा व्यवसाय, दुग्ध व्यवसाय, वाहतूक किंवा इतर एखादी कृती.",
+                "bn": "অনুগ্রহ করে আমাকে বলুন আপনার কীসের জন্য আর্থিক সহায়তার প্রয়োজন, যেমন শিক্ষা, ছোট ব্যবসা, দুগ্ধ খামার, পরিবহন বা অন্য কোনও কাজের জন্য।",
+                "ta": "கல்வி, சிறு தொழில், பால் பண்ணை, போக்குவரத்து அல்லது வேறு ஏதேனும் செயல்பாடு போன்ற எதற்கு உங்களுக்கு நிதி உதவி தேவை என்பதை தயவுசெய்து எனக்குத் தெரிவிக்கவும்.",
+                "te": "విద్య, చిన్న వ్యాపారం, పాడి పరిశ్రమ, రవాణా లేదా ఇతర కార్యకలాపాల కోసం మీకు ఆర్థిక సహాయం ఎందుకు కావాలో దయచేసి నాకు చెప్పండి."
+            }
+            answer_text = clarification_map.get(lang, clarification_map["en"])
+            return ChatResponse(
+                answer=answer_text,
+                language=lang,
+                citations=[],
+                grounding_status=GroundingStatus.INSUFFICIENT_CONTEXT,
+                related_scheme_ids=[],
+                response_source=ResponseSource.CLARIFICATION
+            )
+        elif data.get("intent") == "LOAN":
+            print(f"Deterministic intent extracted: {data}")
+            profile.activity = data.get("activity")
+            if profile.activity == "EDUCATION_LOAN":
+                profile.projectType = "EDUCATION"
+            profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
+            update_session_profile(session_id, profile)
+            return _handle_collecting_eligibility(request, profile, session_id, is_transition=True)
     
     system_prompt = f"""You are SAARTHI, a scheme advisory assistant.
 Determine if the user's query is explicitly asking for a LOAN or FINANCIAL CREDIT for a specific business, education, or activity (e.g., dairy farming, poultry, new business, education loan).
@@ -147,6 +179,8 @@ Do not include any other text.
         if data.get("intent") == "LOAN":
             # Update profile and state
             profile.activity = data.get("activity")
+            if profile.activity == "EDUCATION_LOAN":
+                profile.projectType = "EDUCATION"
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
             
@@ -170,10 +204,13 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     missing_fields = []
     if profile.pinCode is None and (profile.stateCode is None or profile.districtCode is None):
         missing_fields.append("PIN Code")
-    elif profile.existingBusiness is None:
+    elif profile.projectType != "EDUCATION" and profile.existingBusiness is None:
         missing_fields.append("Is this a new business or an existing business?")
     elif profile.estimatedProjectCost is None:
-        missing_fields.append("Estimated Project Cost")
+        if profile.projectType == "EDUCATION":
+            missing_fields.append("Course Fee")
+        else:
+            missing_fields.append("Estimated Project Cost")
         
     if not missing_fields:
         # We have everything, move to recommendation
@@ -189,32 +226,38 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "en": {
             "PIN Code": "I need your 6-digit PIN code to find accurate schemes and partners. Please update your PIN in your Profile.",
             "Is this a new business or an existing business?": "Is this a new business or an existing business?",
-            "Estimated Project Cost": "What is the estimated total project cost?"
+            "Estimated Project Cost": "What is the estimated total project cost?",
+            "Course Fee": "What is the total estimated course fee?"
         },
         "hi": {
             "PIN Code": "सटीक योजनाएं और भागीदार खोजने के लिए मुझे आपके 6 अंकों के पिन कोड की आवश्यकता है। कृपया अपने प्रोफाइल में अपना पिन अपडेट करें।",
             "Is this a new business or an existing business?": "क्या यह नया व्यवसाय है या आपका पहले से चल रहा व्यवसाय है?",
-            "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?"
+            "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?",
+            "Course Fee": "कोर्स की अनुमानित कुल फीस कितनी है?"
         },
         "mr": {
             "PIN Code": "अचूक योजना आणि भागीदार शोधण्यासाठी मला तुमचा 6-अंकी पिन कोड आवश्यक आहे. कृपया तुमच्या प्रोफाइलमध्ये तुमचा पिन अपडेट करा.",
             "Is this a new business or an existing business?": "हा नवीन व्यवसाय आहे की जुना?",
-            "Estimated Project Cost": "अंदाजित प्रकल्प खर्च किती आहे?"
+            "Estimated Project Cost": "अंदाजित प्रकल्प खर्च किती आहे?",
+            "Course Fee": "कोर्सची अंदाजित एकूण फी किती आहे?"
         },
         "bn": {
             "PIN Code": "সঠিক স্কিম এবং পার্টনার খুঁজে পেতে আমার আপনার ৬-সংখ্যার পিন কোড দরকার। অনুগ্রহ করে আপনার প্রোফাইলে পিন আপডেট করুন।",
             "Is this a new business or an existing business?": "এটি কি একটি নতুন ব্যবসা না বিদ্যমান ব্যবসা?",
-            "Estimated Project Cost": "আনুমানিক প্রকল্প ব্যয় কত?"
+            "Estimated Project Cost": "আনুমানিক প্রকল্প ব্যয় কত?",
+            "Course Fee": "কোর্সের আনুমানিক মোট ফি কত?"
         },
         "ta": {
             "PIN Code": "சரியான திட்டங்கள் மற்றும் கூட்டாளர்களைக் கண்டறிய உங்கள் 6 இலக்க பின் குறியீடு எனக்குத் தேவை. தயவுசெய்து உங்கள் சுயவிவரத்தில் உங்கள் பின்னைப் புதுப்பிக்கவும்.",
             "Is this a new business or an existing business?": "இது புதிய தொழிலா அல்லது ஏற்கனவே உள்ள தொழிலா?",
-            "Estimated Project Cost": "மதிப்பிடப்பட்ட திட்ட செலவு என்ன?"
+            "Estimated Project Cost": "மதிப்பிடப்பட்ட திட்ட செலவு என்ன?",
+            "Course Fee": "மதிப்பிடப்பட்ட மொத்த பாட கட்டணம் என்ன?"
         },
         "te": {
             "PIN Code": "ఖచ్చితమైన పథకాలు మరియు భాగస్వాములను కనుగొనడానికి నాకు మీ 6-అంకెల పిన్ కోడ్ కావాలి. దయచేసి మీ ప్రొఫైల్‌లో మీ పిన్‌ను అప్‌డేట్ చేయండి.",
             "Is this a new business or an existing business?": "ఇది కొత్త వ్యాపారమా లేదా ఉన్న వ్యాపారమా?",
-            "Estimated Project Cost": "అంచనా ప్రాజెక్ట్ వ్యయం ఎంత?"
+            "Estimated Project Cost": "అంచనా ప్రాజెక్ట్ వ్యయం ఎంత?",
+            "Course Fee": "అంచనా వేసిన మొత్తం కోర్సు ఫీజు ఎంత?"
         }
     }
     
@@ -245,6 +288,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "PIN Code": "none", # Redirects user to profile
         "Is this a new business or an existing business?": "existingBusiness",
         "Estimated Project Cost": "estimatedProjectCost",
+        "Course Fee": "estimatedProjectCost",
     }
     expected_field = FIELD_MAP.get(next_question, "general")
         
