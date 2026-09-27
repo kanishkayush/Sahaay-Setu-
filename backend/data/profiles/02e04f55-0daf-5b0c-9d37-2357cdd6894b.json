@@ -1,0 +1,31 @@
+{
+  "fullName": "Kanishk Shahi",
+  "phoneNumber": "9999999999",
+  "email": "kanishk@example.com",
+  "dateOfBirth": "1990-01-01",
+  "address": {
+    "state": "Rajasthan",
+    "district": "Sanganer Tehsil",
+    "city": "New Delhi",
+    "pinCode": "302018",
+    "addressLine1": "Connaught Place",
+    "coordinates": {
+      "latitude": 26.852868913282393,
+      "longitude": 75.80593448456085
+    }
+  },
+  "educationLevel": "Post Graduate",
+  "occupation": "Software Engineer",
+  "eligibility": {
+    "scEligibilityStatus": true,
+    "annualFamilyIncome": 1200000
+  },
+  "business": {
+    "existingBusiness": true,
+    "businessActivity": "IT Services"
+  },
+  "user_id": "02e04f55-0daf-5b0c-9d37-2357cdd6894b",
+  "updatedAt": "2026-09-25T16:29:56.255633+00:00",
+  "createdAt": "2026-09-25T06:27:01.208590+00:00",
+  "id": "36c5b60b-cc3c-4bf3-83c4-c5824c90be25"
+}

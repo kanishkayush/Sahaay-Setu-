@@ -487,13 +487,21 @@ def evaluate_scheme(scheme: dict, user_profile: UserProfile) -> SchemeEvaluation
 def evaluate_all_schemes(user_profile_dict: dict) -> EvaluateAllResponse:
     profile = UserProfile(**user_profile_dict)
     
-    schemes_to_eval = ["MFS", "TL", "ELS"]
+    base_dir = Path(__file__).parent.parent
+    schemes_dir = base_dir / "data" / "schemes"
+    schemes_to_eval = [p.stem for p in schemes_dir.glob("*.json")]
+    
     evaluated = []
     
     for sid in schemes_to_eval:
-        scheme_data = load_scheme(sid)
-        res = evaluate_scheme(scheme_data, profile)
-        evaluated.append(res)
+        try:
+            scheme_data = load_scheme(sid)
+            res = evaluate_scheme(scheme_data, profile)
+            evaluated.append(res)
+        except Exception as e:
+            # Skip invalid/unparseable schemes
+            print(f"Error evaluating scheme {sid}: {e}")
+            continue
             
     summary = EngineSummary()
     for res in evaluated:

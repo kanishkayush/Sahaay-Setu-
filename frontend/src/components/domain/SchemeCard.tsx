@@ -83,6 +83,9 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
 
       <View style={styles.chips}>
         <Chip label={scheme.officialCategory.replace(/_/g, ' ')} tone="neutral" />
+        {scheme.sourceName ? (
+          <Chip label={scheme.sourceName} tone="primary" />
+        ) : null}
         {scheme.womenInterestRatePct !== undefined ? (
           <Chip
             label={t('schemes.womenRate', { rate: scheme.womenInterestRatePct })}
