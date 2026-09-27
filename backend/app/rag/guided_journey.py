@@ -117,42 +117,122 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
         if any(alias in query_lower for alias in aliases):
             return {"intent": "LOAN", "activity": activity}
             
-    return {"intent": "AMBIGUOUS_LOAN"}
+    return None
 
 def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
-    # Deterministic check first
+    """
+    Handle the initial user query with a CONVERSATIONAL RAG-grounded response.
+    
+    Instead of immediately jumping to form-filling, this:
+    1. Detects intent (deterministic first, LLM fallback)
+    2. Retrieves relevant scheme context via RAG
+    3. Generates a natural conversational response acknowledging the intent
+    4. Sets up the guided journey state for follow-up questions
+    """
+    from app.rag.language_detect import detect_language_and_intent
+    
+    # Check if intent was already detected by chat.py
+    pre_detected_intent = getattr(request, '_detected_intent', None)
+    
+    # Deterministic check
     data = _deterministic_intent_extraction(request.query)
+    
+    # Merge pre-detected intent if deterministic extraction didn't find one
+    if not data and pre_detected_intent:
+        intent_to_activity = {
+            "EDUCATION_LOAN": "EDUCATION_LOAN",
+            "AGRICULTURE": "DAIRY_FARMING",  
+            "BUSINESS": "GENERAL_BUSINESS",
+            "GENERAL_LOAN": None,
+        }
+        activity = intent_to_activity.get(pre_detected_intent)
+        if activity:
+            data = {"intent": "LOAN", "activity": activity}
+        elif pre_detected_intent == "GENERAL_LOAN":
+            data = {"intent": "AMBIGUOUS_LOAN"}
+    
     if data:
         if data.get("intent") == "AMBIGUOUS_LOAN":
-            from app.schemas.chat import ChatResponse, ResponseSource, GroundingStatus
             lang = request.language or "en"
             clarification_map = {
-                "en": "Please tell me what you need financial assistance for, such as education, a small business, dairy farming, transport, or another activity.",
-                "hi": "कृपया मुझे बताएं कि आपको किस कार्य के लिए वित्तीय सहायता की आवश्यकता है, जैसे शिक्षा, छोटा व्यवसाय, डेयरी फार्मिंग, परिवहन, या कोई अन्य गतिविधि।",
-                "mr": "कृपया मला सांगा की तुम्हाला कोणत्या कार्यासाठी आर्थिक मदतीची आवश्यकता आहे, जसे की शिक्षण, छोटा व्यवसाय, दुग्ध व्यवसाय, वाहतूक किंवा इतर एखादी कृती.",
-                "bn": "অনুগ্রহ করে আমাকে বলুন আপনার কীসের জন্য আর্থিক সহায়তার প্রয়োজন, যেমন শিক্ষা, ছোট ব্যবসা, দুগ্ধ খামার, পরিবহন বা অন্য কোনও কাজের জন্য।",
-                "ta": "கல்வி, சிறு தொழில், பால் பண்ணை, போக்குவரத்து அல்லது வேறு ஏதேனும் செயல்பாடு போன்ற எதற்கு உங்களுக்கு நிதி உதவி தேவை என்பதை தயவுசெய்து எனக்குத் தெரிவிக்கவும்.",
-                "te": "విద్య, చిన్న వ్యాపారం, పాడి పరిశ్రమ, రవాణా లేదా ఇతర కార్యకలాపాల కోసం మీకు ఆర్థిక సహాయం ఎందుకు కావాలో దయచేసి నాకు చెప్పండి."
+                "en": "I can help you find the right financial assistance. Could you tell me what you need the loan for — education, a small business, dairy farming, or another activity?",
+                "hi": "मैं आपको सही वित्तीय सहायता खोजने में मदद कर सकता हूँ। कृपया बताएं कि आपको किसलिए लोन चाहिए — पढ़ाई, छोटा व्यवसाय, डेयरी फार्मिंग, या कोई अन्य कार्य?",
+                "mr": "मी तुम्हाला योग्य आर्थिक मदत शोधण्यात मदत करू शकतो. कृपया सांगा की तुम्हाला कशासाठी कर्ज हवे आहे — शिक्षण, छोटा व्यवसाय, दुग्ध व्यवसाय किंवा इतर कार्य?",
+                "bn": "আমি আপনাকে সঠিক আর্থিক সহায়তা খুঁজে পেতে সাহায্য করতে পারি। অনুগ্রহ করে বলুন আপনার কীসের জন্য ঋণ দরকার — শিক্ষা, ছোট ব্যবসা, দুগ্ধ খামার, বা অন্য কিছু?",
+                "ta": "சரியான நிதி உதவியைக் கண்டறிய நான் உங்களுக்கு உதவ முடியும். கடன் எதற்கு வேண்டும் என்று சொல்லுங்கள் — கல்வி, சிறு தொழில், பால் பண்ணை, அல்லது வேறு ஏதேனும்?",
+                "te": "సరైన ఆర్థిక సహాయం కనుగొనడంలో నేను మీకు సహాయపడగలను. దయచేసి మీకు రుణం ఎందుకు కావాలో చెప్పండి — విద్య, చిన్న వ్యాపారం, పాడి పరిశ్రమ, లేదా ఇతరం?"
             }
             answer_text = clarification_map.get(lang, clarification_map["en"])
             return ChatResponse(
                 answer=answer_text,
                 language=lang,
                 citations=[],
-                grounding_status=GroundingStatus.INSUFFICIENT_CONTEXT,
+                grounding_status="GROUNDED",
                 related_scheme_ids=[],
                 response_source=ResponseSource.CLARIFICATION
             )
         elif data.get("intent") == "LOAN":
-            print(f"Deterministic intent extracted: {data}")
-            profile.activity = data.get("activity")
-            activity_lower = str(profile.activity).lower() if profile.activity else ""
-            if profile.activity == "EDUCATION_LOAN" or any(kw in activity_lower for kw in ["education", "study", "padhai", "shiksha", "college", "school", "degree", "course", "student"]):
+            activity = data.get("activity")
+            profile.activity = activity
+            activity_lower = str(activity).lower() if activity else ""
+            
+            # Detect education intent
+            is_education = (
+                activity == "EDUCATION_LOAN" or 
+                any(kw in activity_lower for kw in [
+                    "education", "study", "padhai", "shiksha", "college",
+                    "school", "degree", "course", "student"
+                ])
+            )
+            if is_education:
                 profile.projectType = "EDUCATION"
+            
+            # ── KEY FIX: Provide a conversational RAG-grounded first response ──
+            # Instead of immediately asking for PIN code, give the user
+            # relevant scheme information and THEN transition to collection.
+            
+            lang = request.language or "en"
+            
+            # Retrieve relevant scheme context
+            from app.rag.retriever import retrieve
+            
+            # Build a retrieval query that matches the intent
+            if is_education:
+                retrieval_query = "education loan scheme for students college course fees"
+            elif any(kw in activity_lower for kw in ["dairy", "farm", "agriculture", "kheti", "pashupalan"]):
+                retrieval_query = "agriculture farming dairy loan scheme self-employment"
+            else:
+                retrieval_query = "business loan scheme self-employment enterprise"
+            
+            retrieved_chunks = retrieve(query=retrieval_query, top_k=3, min_similarity=0.05)
+            
+            # Build a natural first response using the retrieved context
+            answer_text = _build_conversational_first_response(
+                activity=activity,
+                is_education=is_education,
+                retrieved_chunks=retrieved_chunks,
+                lang=lang,
+                user_query=request.query,
+            )
+            
+            # Set up the guided journey state
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
-            return _handle_collecting_eligibility(request, profile, session_id, is_transition=True)
+            
+            # Save this turn to memory
+            add_turn(session_id, request.query, answer_text)
+            
+            return ChatResponse(
+                answer=answer_text,
+                language=lang,
+                citations=[],
+                grounding_status="GROUNDED",
+                related_scheme_ids=[rc.chunk.scheme_id for rc in retrieved_chunks[:3]],
+                response_source=ResponseSource.RAG_LLM,
+                expected_field="general"  # No specific field yet — just conversational
+            )
     
+    # LLM fallback for ambiguous queries
     system_prompt = f"""You are SAARTHI, a scheme advisory assistant.
 Determine if the user's query is explicitly asking for a LOAN or FINANCIAL CREDIT for a specific business, education, or activity (e.g., dairy farming, poultry, new business, education loan).
 If the user is asking for a scholarship, grant, skill training, or general support, it is NOT a loan.
@@ -177,25 +257,152 @@ Do not include any other text.
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "").strip()
         data = json.loads(content)
-        print(f"Extracted intent data: {data}")
         
         if data.get("intent") == "LOAN":
-            # Update profile and state
-            profile.activity = data.get("activity")
-            activity_lower = str(profile.activity).lower() if profile.activity else ""
-            if profile.activity == "EDUCATION_LOAN" or any(kw in activity_lower for kw in ["education", "study", "padhai", "shiksha", "college", "school", "degree", "course", "student"]):
+            activity = data.get("activity")
+            profile.activity = activity
+            activity_lower = str(activity).lower() if activity else ""
+            is_education = any(kw in activity_lower for kw in [
+                "education", "study", "padhai", "shiksha", "college",
+                "school", "degree", "course", "student"
+            ])
+            if is_education:
                 profile.projectType = "EDUCATION"
+            
+            lang = request.language or "en"
+            
+            from app.rag.retriever import retrieve
+            if is_education:
+                retrieval_query = "education loan scheme for students college course fees"
+            else:
+                retrieval_query = f"{activity or 'business'} loan scheme self-employment"
+            
+            retrieved_chunks = retrieve(query=retrieval_query, top_k=3, min_similarity=0.05)
+            
+            answer_text = _build_conversational_first_response(
+                activity=activity,
+                is_education=is_education,
+                retrieved_chunks=retrieved_chunks,
+                lang=lang,
+                user_query=request.query,
+            )
+            
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
+            add_turn(session_id, request.query, answer_text)
             
-            # Now trigger the collecting eligibility step to ask the first question
-            return _handle_collecting_eligibility(request, profile, session_id, is_transition=True)
+            return ChatResponse(
+                answer=answer_text,
+                language=lang,
+                citations=[],
+                grounding_status="GROUNDED",
+                related_scheme_ids=[rc.chunk.scheme_id for rc in retrieved_chunks[:3]],
+                response_source=ResponseSource.RAG_LLM,
+                expected_field="general"
+            )
     except Exception as e:
-        print(f"Error parsing initial query intent: {e}")
-        pass
+        logger = __import__("logging").getLogger(__name__)
+        logger.warning(f"Error parsing initial query intent via LLM: {e}")
         
-    # If not a loan intent, use standard RAG (we can route back to standard chat)
+    # If not a loan intent, use standard RAG (route back to standard chat)
     return None
+
+
+def _build_conversational_first_response(
+    activity: str | None,
+    is_education: bool,
+    retrieved_chunks: list,
+    lang: str,
+    user_query: str,
+) -> str:
+    """
+    Generate a natural, conversational first response that includes
+    relevant scheme information from RAG, rather than immediately
+    jumping to form-filling.
+    
+    Uses the LLM to produce a natural response grounded in retrieved context.
+    """
+    # Build context from retrieved chunks
+    context_parts = []
+    for rc in retrieved_chunks[:3]:
+        context_parts.append(f"Scheme: {rc.chunk.scheme_name} ({rc.chunk.scheme_id})\n{rc.chunk.text}")
+    context_text = "\n\n---\n\n".join(context_parts) if context_parts else "No specific scheme context available."
+    
+    lang_names = {
+        "en": "English", "hi": "Hindi", "mr": "Marathi",
+        "bn": "Bengali", "ta": "Tamil", "te": "Telugu"
+    }
+    lang_name = lang_names.get(lang, "English")
+    
+    if is_education:
+        purpose_desc = "education/studies"
+    elif activity:
+        purpose_desc = activity.lower().replace("_", " ")
+    else:
+        purpose_desc = "business/self-employment"
+    
+    system_prompt = f"""You are SAARTHI, a friendly multilingual loan assistant.
+The user wants help with {purpose_desc}.
+
+Here is verified scheme information that may be relevant:
+{context_text}
+
+Generate a NATURAL, CONVERSATIONAL response in {lang_name} that:
+1. Acknowledges what the user wants (e.g., "Sure, I can help you with education loans")
+2. Briefly mentions 1-2 relevant schemes from the context above (name, basic purpose, loan range if available)
+3. Asks ONE natural follow-up question to understand their needs better
+
+Rules:
+- Be warm and conversational, NOT robotic
+- Do NOT use internal field names like existingBusiness, estimatedProjectCost
+- Do NOT list every scheme — just the most relevant 1-2
+- If the user asked about education, do NOT ask about business type
+- If the user asked about farming/agriculture, mention relevant schemes
+- Keep it concise (3-5 sentences maximum)
+- Respond ENTIRELY in {lang_name}
+- Do NOT output JSON
+- Do NOT say "based on retrieved context" or mention internal processes
+
+For education queries, ask about the course/program.
+For business queries, ask about the type of business/activity.
+For agriculture queries, ask about the specific farming activity.
+"""
+    
+    try:
+        model = _llm_model()
+        response = litellm.completion(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0.3,
+            max_tokens=512,
+        )
+        answer = (response.choices[0].message.content or "").strip()
+        if answer:
+            return answer
+    except Exception as e:
+        logger = __import__("logging").getLogger(__name__)
+        logger.warning(f"LLM first response generation failed: {e}")
+    
+    # Deterministic fallback if LLM fails
+    fallback_map = {
+        "en": {
+            "education": "I can help you with education loans. NSFDC offers an Educational Loan Scheme for professional and technical courses. Could you tell me which course or program you're planning to pursue?",
+            "agriculture": "I can help you find financing for farming and agriculture. There are several schemes available for agricultural activities. Could you tell me more about what type of farming you're planning?",
+            "business": "I can help you with business financing. NSFDC offers several schemes like Micro Finance, Term Loan, and Laghu Vyavsay Yojana for different business sizes. What kind of business are you planning?",
+        },
+        "hi": {
+            "education": "बिल्कुल, मैं आपको शिक्षा ऋण में मदद कर सकता हूँ। NSFDC की शैक्षिक ऋण योजना व्यावसायिक और तकनीकी कोर्स के लिए उपलब्ध है। आप कौन सा कोर्स या प्रोग्राम करना चाहते हैं?",
+            "agriculture": "मैं आपको खेती और कृषि के लिए वित्तीय सहायता खोजने में मदद कर सकता हूँ। कई योजनाएं उपलब्ध हैं। आप किस प्रकार की खेती की योजना बना रहे हैं?",
+            "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
+        },
+    }
+    
+    category = "education" if is_education else ("agriculture" if activity and any(kw in str(activity).lower() for kw in ["dairy", "farm", "agriculture", "kheti"]) else "business")
+    lang_fallbacks = fallback_map.get(lang, fallback_map.get("en", {}))
+    return lang_fallbacks.get(category, lang_fallbacks.get("business", "I can help you find suitable loan schemes. Could you tell me more about what you need?"))
 
 def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, session_id: str, is_transition: bool = False) -> ChatResponse:
     # If this is not a direct transition, we need to extract the user's answer from their query

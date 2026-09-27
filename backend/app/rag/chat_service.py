@@ -219,13 +219,11 @@ def generate_chat_answer(
     model = _llm_model()
 
     try:
-        print(f"DEBUG SARVAM KEY: '{os.environ.get('SARVAM_API_KEY')}'")
         response = litellm.completion(
             model=model,
             messages=messages,
             temperature=0.1,
             max_tokens=2048,
-            extra_body={"reasoning_effort": None}
         )
         
         content = response.choices[0].message.content or ""

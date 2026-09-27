@@ -67,25 +67,27 @@ export async function apiRequest<TSchema extends z.ZodTypeAny>(
 ): Promise<z.infer<TSchema>> {
   const { method = 'GET', body, headers = {}, signal, timeoutMs = API_TIMEOUT_MS } = options;
 
-  // Create a dedicated controller for timeout only.
-  // We do NOT chain the caller's signal into this controller — that caused
-  // premature aborts in React strict mode where a cleanup from the first
-  // mount would cancel the second, still-valid request.
-  const timeoutController = new AbortController();
-  const timeout = setTimeout(() => timeoutController.abort(), timeoutMs);
+  // Create a dedicated controller for the fetch request
+  const fetchController = new AbortController();
+  
+  // Set up timeout
+  const timeout = setTimeout(() => fetchController.abort(), timeoutMs);
 
-  // Combine the timeout signal with the caller's optional signal via a race.
-  // If the browser supports AbortSignal.any(), use it; otherwise fall back to
-  // the timeout controller alone (caller's signal is ignored in that case,
-  // which is acceptable since the only caller-supplied signal is a manual
-  // "newer request replaces this one" cancellation inside useVoiceQuery).
-  const combinedSignal: AbortSignal =
-    signal && typeof AbortSignal !== 'undefined' && 'any' in AbortSignal
-      ? (AbortSignal as { any: (signals: AbortSignal[]) => AbortSignal }).any([
-          timeoutController.signal,
-          signal,
-        ])
-      : timeoutController.signal;
+  // If caller provided a signal, wire it up to abort our fetchController
+  if (signal) {
+    if (signal.aborted) {
+      fetchController.abort();
+    } else {
+      const onAbort = () => fetchController.abort();
+      signal.addEventListener('abort', onAbort);
+      // Clean up the listener when the request finishes (handled in finally block below,
+      // but we need to track it)
+      (fetchController as any)._callerSignal = signal;
+      (fetchController as any)._onAbort = onAbort;
+    }
+  }
+
+  const combinedSignal = fetchController.signal;
 
   try {
     const isFormData = body instanceof FormData;
@@ -125,5 +127,8 @@ export async function apiRequest<TSchema extends z.ZodTypeAny>(
     return parsed.data;
   } finally {
     clearTimeout(timeout);
+    if ((fetchController as any)._callerSignal && (fetchController as any)._onAbort) {
+      (fetchController as any)._callerSignal.removeEventListener('abort', (fetchController as any)._onAbort);
+    }
   }
 }

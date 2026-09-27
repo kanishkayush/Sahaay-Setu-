@@ -8,9 +8,7 @@ from app.schemas.explanation import GroundingStatus
 from app.rag.retriever import retrieve
 from app.rag.chat_service import generate_chat_answer
 import app.rag.memory as memory
-import json
-import litellm
-import os
+from app.rag.language_detect import detect_language_and_intent
 
 logger = logging.getLogger(__name__)
 
@@ -27,63 +25,45 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
     """
     Core conversational orchestration logic.
     Shared by /v1/chat and /v1/assistant/query endpoints.
+    
+    Pipeline:
+      1. Detect language + intent (deterministic, <1ms)
+      2. If already in a guided journey session → continue it
+      3. If guideMe and loan intent detected → start guided journey
+      4. Otherwise → RAG retrieval + LLM answer generation
     """
     start_time = time.time()
     try:
-        # Step 0: Auto-Detect Language and Normalize Query
-        # If the user speaks/types in Roman Hindi or mixed language, we detect and update request.language
-        detect_sys = """You are a fast language detector for an Indian financial assistant.
-Analyze the user's query and output a JSON object:
-{
-  "detected_language": "en" | "hi" | "mr" | "bn" | "ta" | "te" (If Roman Hindi/Hinglish, return "hi"),
-  "translated_query_en": "English translation to help semantic search",
-  "is_low_info": true/false (true if the query is just 'hello', 'loan', 'help', etc.)
-}
-Return only JSON. Do not include markdown formatting or backticks.
-"""
-        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
-        try:
-            det_res = litellm.completion(
-                model=model,
-                messages=[
-                    {"role": "system", "content": detect_sys},
-                    {"role": "user", "content": request.query}
-                ],
-                temperature=0.1
-            )
-            content = (det_res.choices[0].message.content or "").strip()
-            if content.startswith("```json"):
-                content = content.replace("```json", "").replace("```", "").strip()
-            det_data = json.loads(content)
-            
-            # Override language ONLY if we successfully detected it
-            if det_data.get("detected_language"):
-                request.language = det_data["detected_language"]
-                
-            # We can use translated query for search, but let's just keep it in request for now if needed.
-            # (RAG handles multilingual search via BGE-m3, but translation helps).
-            normalized_query = det_data.get("translated_query_en", request.query)
-            is_low_info = det_data.get("is_low_info", False)
-            
-        except Exception as e:
-            logger.warning(f"Language detection failed, using fallback: {e}")
-            normalized_query = request.query
-            is_low_info = False
+        # Step 0: Language detection + intent extraction (deterministic, no LLM)
+        detection = detect_language_and_intent(request.query)
+        
+        # Override language ONLY if we successfully detected it
+        if detection.detected_language:
+            request.language = detection.detected_language
+        
+        normalized_query = detection.translated_query_en
+        is_low_info = detection.is_low_info
 
-        # Check if already in a guided journey
+        # Step 0.5: If already in a guided journey, continue it
+        # (This handles follow-up answers like PIN codes, business type, etc.)
         if request.conversation_id:
             profile = memory.get_session_profile(request.conversation_id)
             if profile.conversationState and profile.conversationState != ConversationState.COMPLETED:
                 gj_resp = process_guided_journey(request)
-                if gj_resp: return gj_resp
+                if gj_resp:
+                    return gj_resp
 
-        # Check if we should start a new guided journey
-        if request.guideMe:
+        # Step 0.6: If guideMe is requested and we detected a loan intent,
+        # start the guided journey — but with intent context
+        if request.guideMe and detection.intent:
+            # Pass the detected intent to the guided journey so it can
+            # provide a conversational RAG-grounded response first
+            request._detected_intent = detection.intent
             gj_resp = process_guided_journey(request)
-            if gj_resp: return gj_resp
+            if gj_resp:
+                return gj_resp
 
         # Step 1: Low-information query guard
-        query_stripped = request.query.strip().lower()
         if is_low_info:
             lang = request.language or "en"
             
