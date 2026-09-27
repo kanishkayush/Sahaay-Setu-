@@ -218,12 +218,14 @@ def transcribe_audio(request: TranscriptionRequest) -> TranscriptionResponse:
         files = {'file': ('audio.wav', audio_bytes, request.mimeType)}
         
         # Sarvam typically expects 'language_code' like 'hi-IN' or 'en-IN'
-        lang_map = {"hi": "hi-IN", "en": "en-IN", "mr": "mr-IN", "bn": "bn-IN", "ta": "ta-IN", "te": "te-IN"}
-        lang_code = lang_map.get(request.language, "hi-IN") if request.language else "hi-IN"
+        # But we want to use automatic language detection where possible.
+        # Sarvam speech-to-text supports "unknown" or auto-detect if the parameter is omitted/set appropriately.
+        # However, according to Sarvam docs, if we pass "unknown" for language_code, it detects automatically.
+        lang_code = "unknown"
         
         data = {'language_code': lang_code}
         
-        res = requests.post(url, files=files, data=data, headers=headers, timeout=15)
+        res = requests.post(url, files=files, data=data, headers=headers, timeout=30)
         res.raise_for_status()
         
         result = res.json()

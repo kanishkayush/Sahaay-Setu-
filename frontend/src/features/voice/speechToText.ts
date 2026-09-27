@@ -231,6 +231,7 @@ export function startListening(language: LanguageCode, handlers: SttHandlers): S
                 mimeType: 'audio/m4a', // Default format for high quality on iOS/Android
                 language,
               },
+              timeoutMs: 30_000, // Voice upload + STT can take longer than default 15s
             });
             
             if (response.text) {

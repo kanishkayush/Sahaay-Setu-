@@ -146,7 +146,8 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
         elif data.get("intent") == "LOAN":
             print(f"Deterministic intent extracted: {data}")
             profile.activity = data.get("activity")
-            if profile.activity == "EDUCATION_LOAN":
+            activity_lower = str(profile.activity).lower() if profile.activity else ""
+            if profile.activity == "EDUCATION_LOAN" or any(kw in activity_lower for kw in ["education", "study", "padhai", "shiksha", "college", "school", "degree", "course", "student"]):
                 profile.projectType = "EDUCATION"
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
@@ -181,7 +182,8 @@ Do not include any other text.
         if data.get("intent") == "LOAN":
             # Update profile and state
             profile.activity = data.get("activity")
-            if profile.activity == "EDUCATION_LOAN":
+            activity_lower = str(profile.activity).lower() if profile.activity else ""
+            if profile.activity == "EDUCATION_LOAN" or any(kw in activity_lower for kw in ["education", "study", "padhai", "shiksha", "college", "school", "degree", "course", "student"]):
                 profile.projectType = "EDUCATION"
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
@@ -483,12 +485,17 @@ Return ONLY raw JSON text. DO NOT wrap it in markdown blocks.
 
 
 def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, session_id: str, is_transition: bool = False) -> ChatResponse:
+    purpose = profile.activity or "BUSINESS"
+    is_edu = profile.projectType == "EDUCATION"
+    
     # 1. Map to Eligibility Engine format
     user_profile = {
-        "purpose": profile.activity or "BUSINESS",
+        "purpose": purpose,
         "family_income_inr": profile.annualFamilyIncome or 0,
-        "project_cost_inr": profile.estimatedProjectCost or 0,
-        "beneficiary_category_verified": True
+        "project_cost_inr": 0 if is_edu else (profile.estimatedProjectCost or 0),
+        "course_cost_inr": (profile.estimatedProjectCost or 0) if is_edu else 0,
+        "beneficiary_category_verified": True,
+        "education_status": "admission_secured" if is_edu else None
     }
     
     # 2. Run deterministic engines
@@ -551,13 +558,23 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
         )
     ]
     
-    # 4. Generate LLM Explanation
+    # 4. Retrieve context for the recommended scheme
+    from app.rag.retriever import retrieve_scheme_context
+    retrieved_chunks = retrieve_scheme_context(top.scheme_id, max_chunks=3)
+    context_text = "\n\n".join([rc.chunk.text for rc in retrieved_chunks])
+    
+    # 5. Generate LLM Explanation
     lang_names = {"hi": "Hindi", "en": "English", "mr": "Marathi", "bn": "Bengali", "ta": "Tamil", "te": "Telugu"}
     lang_name = lang_names.get(request.language, "English")
     system_prompt = f"""You are SAARTHI.
 Based on the user's profile, the deterministic engine recommended the scheme: {top.scheme_name}.
+
+Here is the verified context for this scheme:
+{context_text}
+
 Explain why this scheme matches their needs (e.g. Project Cost is within limits).
-Do NOT invent loan amounts or interest rates if it's not a financial scheme. Use terms like "possible eligibility".
+Do NOT invent loan amounts or interest rates if they are not in the verified context.
+Do NOT expose internal database fields.
 Then, ask the user if they would like to check their required documents next.
 RESPONSE LANGUAGE: {lang_name}
 You MUST answer entirely in {lang_name}.

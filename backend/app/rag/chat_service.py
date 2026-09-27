@@ -87,6 +87,9 @@ SYSTEM INSTRUCTIONS
 9. SCHEME RECOMMENDATION RULE: When providing a recommendation, you MUST recommend the EXACT scheme name from the Deterministic Eligibility Facts (e.g., 'top_recommendation') or Retrieved context. Do not recommend just a category (like 'Term Loan' or 'Micro Finance'). 
 10. RECOMMENDATION FORMAT: If a specific scheme is recommended, the "answer" string MUST clearly state the Recommended Scheme, Category, and Why it fits, written naturally in the requested language.
 11. If no exact scheme can be confidently determined, the "answer" string MUST clearly explain the suitable financing category and what specific information is missing, written naturally in the requested language.
+12. NEVER expose internal database fields or eligibility criteria names (like existingBusiness, estimatedProjectCost, etc.) to the user.
+13. NEVER ask "Which field regarding loan do you want?" or similar robotic questions. Ask conversational, natural follow-up questions only when missing information is genuinely required.
+14. NEVER ask a business-related question if the user's intent is clearly education.
 """
 
     history_section = ""
