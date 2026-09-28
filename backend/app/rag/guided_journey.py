@@ -181,7 +181,9 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 activity == "EDUCATION_LOAN" or 
                 any(kw in activity_lower for kw in [
                     "education", "study", "padhai", "shiksha", "college",
-                    "school", "degree", "course", "student"
+                    "school", "degree", "course", "student", "btech", "mtech",
+                    "bca", "mca", "mbbs", "medical", "engineering", "iti",
+                    "diploma", "nursing", "pharmacy", "10th", "12th", "b.tech", "mba", "ba", "bsc", "bcom"
                 ])
             )
             if is_education:
@@ -273,7 +275,9 @@ Do not include any other text.
             activity_lower = str(activity).lower() if activity else ""
             is_education = any(kw in activity_lower for kw in [
                 "education", "study", "padhai", "shiksha", "college",
-                "school", "degree", "course", "student"
+                "school", "degree", "course", "student", "btech", "mtech",
+                "bca", "mca", "mbbs", "medical", "engineering", "iti",
+                "diploma", "nursing", "pharmacy", "10th", "12th", "b.tech", "mba", "ba", "bsc", "bcom"
             ])
             if is_education:
                 profile.projectType = "EDUCATION"
@@ -807,6 +811,11 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
             schemeName=top.scheme_name,
             reason=reason_text,
             eligible=True
+        ),
+        AssistantUICard(
+            type=AssistantUICardType.NEXT_QUESTION_CARD,
+            question="What would you like to do next?" if lang == "en" else "आप आगे क्या करना चाहेंगे?",
+            options=["Find Channel Partners", "View Required Documents"] if lang == "en" else ["चैनल पार्टनर खोजें", "आवश्यक दस्तावेज़ देखें"]
         )
     ]
     

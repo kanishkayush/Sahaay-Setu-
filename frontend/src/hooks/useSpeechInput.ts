@@ -82,6 +82,7 @@ export function useSpeechInput(
         if (generation.current !== mine) return;
         clearTimeout(safetyTimer);
         setIsListening(false);
+        session.current?.stop();
         handlers.current.onFinal(text);
       },
       onError: (reason, raw) => {

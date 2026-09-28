@@ -165,7 +165,8 @@ export function Icon({ name, size = 24, color = colors.text, strokeWidth = 1.7 }
     >
       {els.map((el, i) => {
         const sw = el.p.strokeWidth ? Number(el.p.strokeWidth) : undefined;
-        if (el.t === 'path') return <Path key={i} d={el.p.d} strokeWidth={sw} />;
+        const swProp = sw !== undefined ? { strokeWidth: sw } : {};
+        if (el.t === 'path') return <Path key={i} d={el.p.d} {...swProp} />;
         if (el.t === 'rect')
           return (
             <Rect
@@ -175,10 +176,10 @@ export function Icon({ name, size = 24, color = colors.text, strokeWidth = 1.7 }
               width={el.p.width}
               height={el.p.height}
               rx={el.p.rx}
-              strokeWidth={sw}
+              {...swProp}
             />
           );
-        return <Circle key={i} cx={el.p.cx} cy={el.p.cy} r={el.p.r} strokeWidth={sw} />;
+        return <Circle key={i} cx={el.p.cx} cy={el.p.cy} r={el.p.r} {...swProp} />;
       })}
     </Svg>
   );

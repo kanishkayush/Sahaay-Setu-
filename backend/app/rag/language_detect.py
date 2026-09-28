@@ -97,7 +97,9 @@ _EDUCATION_KEYWORDS = frozenset({
     "course", "degree", "btech", "b.tech", "mba", "masters", "phd",
     "student", "fees", "tuition", "graduation", "diploma",
     "engineering", "medical", "institute", "scholarship",
-    "higher education", "bachelors", "admission",
+    "higher education", "bachelors", "admission", "mtech",
+    "bca", "mca", "mbbs", "iti", "nursing", "pharmacy", "10th", "12th",
+    "ba", "bsc", "bcom"
     # Hindi / Devanagari
     "पढ़ाई", "शिक्षा", "कॉलेज", "स्कूल", "विश्वविद्यालय",
     "कोर्स", "डिग्री", "छात्र", "फीस", "ट्यूशन",

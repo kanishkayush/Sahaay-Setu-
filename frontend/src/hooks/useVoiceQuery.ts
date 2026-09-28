@@ -102,6 +102,7 @@ export function useVoiceQuery(language: LanguageCode) {
         sessionId.current = generateUUID();
       }
 
+      generation.current += 1;
       const mine = generation.current;
       setTranscript(trimmed);
       setBusyPhase('thinking');

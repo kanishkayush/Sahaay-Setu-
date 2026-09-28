@@ -282,6 +282,7 @@ export function startListening(language: LanguageCode, handlers: SttHandlers): S
     }
     if (finalText) {
       settled = true;
+      recognition.stop();
       handlers.onFinal(finalText.trim());
     } else if (interim) {
       bestPartial = interim;
