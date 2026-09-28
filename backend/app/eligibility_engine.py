@@ -514,7 +514,11 @@ def evaluate_scheme(scheme: dict, user_profile: UserProfile) -> SchemeEvaluation
     result.reason_codes = [check.reason_code for check in result.checks]
     return result
 
-def evaluate_all_schemes(user_profile_dict: dict) -> EvaluateAllResponse:
+def evaluate_all_schemes(
+    user_profile_dict: dict,
+    organization: str | None = None,
+) -> EvaluateAllResponse:
+    """Evaluate catalogue schemes. If organization is set, only that org is included."""
     profile = UserProfile(**user_profile_dict)
     
     base_dir = Path(__file__).parent.parent
@@ -526,6 +530,8 @@ def evaluate_all_schemes(user_profile_dict: dict) -> EvaluateAllResponse:
     for sid in schemes_to_eval:
         try:
             scheme_data = load_scheme(sid)
+            if organization is not None and scheme_data.get("organization") != organization:
+                continue
             res = evaluate_scheme(scheme_data, profile)
             evaluated.append(res)
         except Exception as e:

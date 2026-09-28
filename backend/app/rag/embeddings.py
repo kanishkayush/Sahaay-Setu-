@@ -80,31 +80,45 @@ def embed(texts: list[str]) -> np.ndarray:
     """
     if not texts:
         return np.array([])
-        
-    # Attempt to use HuggingFace Inference API to save memory on Render (512MB RAM limit)
-    # The API might be rate-limited, but it avoids OOM crashes on free-tier Render.
-    if os.environ.get("ENVIRONMENT") == "production" or os.environ.get("RENDER"):
+
+    require_hf = os.environ.get("BUILDING_VECTOR_STORE") == "1"
+    use_hf = (
+        os.environ.get("ENVIRONMENT") == "production"
+        or os.environ.get("RENDER")
+        or require_hf
+    )
+    if use_hf:
         import requests
         api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+        headers = {}
+        token = os.environ.get("HUGGINGFACE_API_KEY") or os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_HUB_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        batch_size = 8
+        parts: list[np.ndarray] = []
         try:
-            # wait_for_model=True ensures it wakes up the model if cold
-            response = requests.post(api_url, json={"inputs": texts, "options": {"wait_for_model": True}}, timeout=20)
-            if response.status_code == 200:
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                response = requests.post(
+                    api_url,
+                    headers=headers or None,
+                    json={"inputs": batch, "options": {"wait_for_model": True}},
+                    timeout=60,
+                )
+                if response.status_code != 200:
+                    raise RuntimeError(f"HF API returned {response.status_code}: {response.text[:300]}")
                 data = response.json()
-                if isinstance(data, list) and len(data) == len(texts):
-                    return np.array(data, dtype=np.float32)
-            else:
-                print(f"HF API returned {response.status_code}: {response.text}")
-                # Fallback to Mock to prevent OOM
-                model = MockSentenceTransformer()
-                return model.encode(texts)
+                if not isinstance(data, list) or len(data) != len(batch):
+                    raise RuntimeError("HF API returned an unexpected embedding payload")
+                parts.append(np.array(data, dtype=np.float32))
+            return np.vstack(parts)
         except Exception as e:
+            if require_hf:
+                raise RuntimeError(f"Production vector index build requires Hugging Face embeddings: {e}") from e
             print(f"HF API fallback failed: {e}")
-            # Fallback to Mock to prevent OOM
             model = MockSentenceTransformer()
             return model.encode(texts)
-            
-    # Fallback to local model if running locally
+
     model = get_model()
     embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
     return embeddings

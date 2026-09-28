@@ -29,6 +29,12 @@ class Chunk:
     scheme_type: str = "OTHER_FINANCIAL_ASSISTANCE"
     purpose: str = "GENERAL"
     assistance_type: str = "OTHER"
+    organization_code: str = "UNKNOWN"
+    source_url: str = "unknown"
+    verified: bool = False
+    metadata_quality: str = "UNKNOWN"
+    min_loan_amount: float | None = None
+    max_loan_amount: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -47,6 +53,12 @@ class Chunk:
             "scheme_type": self.scheme_type,
             "purpose": self.purpose,
             "assistance_type": self.assistance_type,
+            "organization_code": self.organization_code,
+            "source_url": self.source_url,
+            "verified": self.verified,
+            "metadata_quality": self.metadata_quality,
+            "min_loan_amount": self.min_loan_amount,
+            "max_loan_amount": self.max_loan_amount,
         }
 
 def _normalize_section_name(name: str) -> str:

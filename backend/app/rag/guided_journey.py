@@ -8,8 +8,8 @@ import litellm
 from app.schemas.chat import ChatRequest, ChatResponse, ChatProfile, ConversationState, ResponseSource
 from app.schemas.assistant import AssistantUICard, AssistantUICardType
 from app.rag.memory import get_history, get_session_profile, update_session_profile, add_turn
-from app.eligibility_engine import evaluate_all_schemes
-from app.recommendation_engine import generate_recommendations
+from app.eligibility_engine import evaluate_all_schemes, load_scheme
+from app.recommendation_engine import generate_recommendations, RelevanceQuery
 from app.services.storage import get_profile_store
 
 def _llm_model() -> str:
@@ -86,17 +86,22 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
         
     # Check for specific activities
     ACTIVITY_ALIASES = {
+        "RICE_FARMING": [
+            "chawal", "rice farming", "rice", "paddy", "धान", "चावल",
+        ],
         "DAIRY_FARMING": [
             "dairy farming",
             "dairy farm",
             "milk business",
             "डेयरी फार्म",
             "डेयरी फार्मिंग",
+            "डेयरी",
             "दूध का व्यवसाय",
             "पशुपालन",
             "dairy"
         ],
-        "POULTRY": ["poultry", "murgi", "मुर्गी"],
+        "POULTRY": ["poultry", "murgi", "मुर्गी पालन", "मुर्गी"],
+        "GOAT_REARING": ["goat farming", "goat", "bakri", "बकरी पालन", "बकरी"],
         "TAILORING": ["tailor", "silai", "सिलाई"],
         "SHOP": ["shop", "dukan", "दुकान", "store"],
         "EDUCATION_LOAN": [
@@ -105,10 +110,11 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
             "bachelors", "graduation", "university", "institute", "fees", "higher education",
             "padhai", "shiksha", "paddhai"
         ],
+        "FARMING": ["kheti", "farming", "agriculture", "खेती", "कृषि", "krishi"],
         "GENERAL_BUSINESS": [
             "business", "startup", "company", "enterprise", "manufacturing", "व्यापार", "बिज़नेस", 
             "handicraft", "craft", "artisan", "weaving", "pottery", "हस्तशिल्प", "शिल्प", "कारीगर",
-            "vyapar", "bijnes", "karkhana", "dukaan"
+            "vyapar", "bijnes", "karkhana", "dukaan", "बिजनेस",
         ]
     }
     
@@ -140,11 +146,19 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
     if not data and pre_detected_intent:
         intent_to_activity = {
             "EDUCATION_LOAN": "EDUCATION_LOAN",
-            "AGRICULTURE": "DAIRY_FARMING",  
+            "AGRICULTURE": "FARMING",
             "BUSINESS": "GENERAL_BUSINESS",
             "GENERAL_LOAN": None,
         }
         activity = intent_to_activity.get(pre_detected_intent)
+        if pre_detected_intent == "AGRICULTURE":
+            q = request.query.lower()
+            if any(w in q for w in ("rice", "chawal", "paddy", "धान", "चावल")):
+                activity = "RICE_FARMING"
+            elif any(w in q for w in ("dairy", "doodh", "दूध", "डेयरी")):
+                activity = "DAIRY_FARMING"
+            else:
+                activity = "FARMING"
         if activity:
             data = {"intent": "LOAN", "activity": activity}
         elif pre_detected_intent == "GENERAL_LOAN":
@@ -154,8 +168,8 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
         if data.get("intent") == "AMBIGUOUS_LOAN":
             lang = request.language or "en"
             clarification_map = {
-                "en": "I can help you find the right financial assistance. Could you tell me what you need the loan for — education, a small business, dairy farming, or another activity?",
-                "hi": "मैं आपको सही वित्तीय सहायता खोजने में मदद कर सकता हूँ। कृपया बताएं कि आपको किसलिए लोन चाहिए — पढ़ाई, छोटा व्यवसाय, डेयरी फार्मिंग, या कोई अन्य कार्य?",
+                "en": "I can help you find the right NSFDC loan. What is it for — education, farming, or a small business?",
+                "hi": "ज़रूर। आप यह loan पढ़ाई, खेती, या business के लिए चाहते हैं?",
                 "mr": "मी तुम्हाला योग्य आर्थिक मदत शोधण्यात मदत करू शकतो. कृपया सांगा की तुम्हाला कशासाठी कर्ज हवे आहे — शिक्षण, छोटा व्यवसाय, दुग्ध व्यवसाय किंवा इतर कार्य?",
                 "bn": "আমি আপনাকে সঠিক আর্থিক সহায়তা খুঁজে পেতে সাহায্য করতে পারি। অনুগ্রহ করে বলুন আপনার কীসের জন্য ঋণ দরকার — শিক্ষা, ছোট ব্যবসা, দুগ্ধ খামার, বা অন্য কিছু?",
                 "ta": "சரியான நிதி உதவியைக் கண்டறிய நான் உங்களுக்கு உதவ முடியும். கடன் எதற்கு வேண்டும் என்று சொல்லுங்கள் — கல்வி, சிறு தொழில், பால் பண்ணை, அல்லது வேறு ஏதேனும்?",
@@ -187,6 +201,12 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             )
             if is_education:
                 profile.projectType = "EDUCATION"
+
+            parsed = _try_deterministic_parse(request.query, profile)
+            for k, v in parsed.items():
+                if hasattr(profile, k):
+                    setattr(profile, k, v)
+            update_session_profile(session_id, profile)
             
             # ── KEY FIX: Provide a conversational RAG-grounded first response ──
             # Instead of immediately asking for PIN code, give the user
@@ -196,24 +216,21 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             
             # Retrieve relevant scheme context
             from app.rag.retriever import retrieve
-            
-            # Build a retrieval query that matches the intent
-            if is_education:
-                retrieval_query = "education loan scheme for students college course fees"
-                domain = "EDUCATION"
-            elif any(kw in activity_lower for kw in ["dairy", "farm", "agriculture", "kheti", "pashupalan"]):
-                retrieval_query = "agriculture farming dairy loan scheme self-employment"
-                domain = "AGRICULTURE"
-            else:
-                retrieval_query = "business loan scheme self-employment enterprise"
-                domain = "BUSINESS"
-            
+            from app.rag.query_context import build_retrieval_query
+
+            retrieval_spec = build_retrieval_query(
+                request.query,
+                profile=profile,
+                language=lang,
+            )
             retrieved_chunks = retrieve(
-                query=retrieval_query, 
-                top_k=3, 
-                min_similarity=0.05,
-                domain_filter=domain,
-                assistance_type_filter="LOAN"
+                query=retrieval_spec.search_text,
+                top_k=5,
+                min_similarity=None,
+                organization_filter="NSFDC",
+                domain_filter=retrieval_spec.domain,
+                assistance_type_filter="LOAN",
+                retrieval_query=retrieval_spec,
             )
             
             # Build a natural first response using the retrieved context
@@ -225,6 +242,19 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 user_query=request.query,
             )
             
+            if (
+                profile.activity
+                and profile.activity not in {"BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING", "GENERAL", None}
+                and profile.estimatedProjectCost is not None
+            ):
+                profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
+                update_session_profile(session_id, profile)
+                rec = _handle_scheme_recommendation(request, profile, session_id, is_transition=True)
+                if rec:
+                    rec.answer = f"{answer_text}\n\n{rec.answer}"
+                    add_turn(session_id, request.query, rec.answer)
+                    return rec
+
             # Set up the guided journey state
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             update_session_profile(session_id, profile)
@@ -284,19 +314,20 @@ Do not include any other text.
             lang = request.language or "en"
             
             from app.rag.retriever import retrieve
-            if is_education:
-                retrieval_query = "education loan scheme for students college course fees"
-                domain = "EDUCATION"
-            else:
-                retrieval_query = f"{activity or 'business'} loan scheme self-employment"
-                domain = "BUSINESS"
-            
+            from app.rag.query_context import build_retrieval_query
+            retrieval_spec = build_retrieval_query(
+                request.query,
+                profile=profile,
+                language=lang,
+            )
             retrieved_chunks = retrieve(
-                query=retrieval_query, 
-                top_k=3, 
-                min_similarity=0.05,
-                domain_filter=domain,
-                assistance_type_filter="LOAN"
+                query=retrieval_spec.search_text,
+                top_k=5,
+                min_similarity=None,
+                organization_filter="NSFDC",
+                domain_filter=retrieval_spec.domain,
+                assistance_type_filter="LOAN",
+                retrieval_query=retrieval_spec,
             )
             
             answer_text = _build_conversational_first_response(
@@ -367,25 +398,24 @@ The user wants help with {purpose_desc}.
 Here is verified scheme information that may be relevant:
 {context_text}
 
-Generate a NATURAL, CONVERSATIONAL response in {lang_name} that:
-1. Acknowledges what the user wants (e.g., "Sure, I can help you with education loans")
-2. Briefly mentions 1-2 relevant schemes from the context above (name, basic purpose, loan range if available)
-3. Asks ONE natural follow-up question to understand their needs better
+Generate a NATURAL, CONVERSATIONAL advisory reply in {lang_name} that:
+1. Acknowledges the user's purpose in one sentence. Do not introduce yourself as SAARTHI or सारथी.
+2. Briefly says what kind of NSFDC assistance typically fits this purpose. Do not dump a full scheme brochure.
+3. Asks ONE useful next question only (amount if unknown; course name for education; specific crop/activity if still vague).
+4. Never ask about business type if the purpose is farming or education.
 
 Rules:
 - Be warm and conversational, NOT robotic
 - Do NOT use internal field names like existingBusiness, estimatedProjectCost
-- Do NOT list every scheme — just the most relevant 1-2
-- If the user asked about education, do NOT ask about business type
-- If the user asked about farming/agriculture, mention relevant schemes
+- Do NOT list every scheme
+- Do NOT invent loan amounts, interest rates, or eligibility
 - Keep it concise (3-5 sentences maximum)
 - Respond ENTIRELY in {lang_name}
 - Do NOT output JSON
 - Do NOT say "based on retrieved context" or mention internal processes
 
-For education queries, ask about the course/program.
-For business queries, ask about the type of business/activity.
-For agriculture queries, ask about the specific farming activity.
+- If the verified context says no specific scheme is available, do not name Term Loan, Micro Finance, or any other scheme as an agriculture match.
+- Do not invent that a business loan covers farming unless the retrieved text says so.
 """
     
     try:
@@ -410,12 +440,12 @@ For agriculture queries, ask about the specific farming activity.
     fallback_map = {
         "en": {
             "education": "I can help you with education loans. NSFDC offers an Educational Loan Scheme for professional and technical courses. Could you tell me which course or program you're planning to pursue?",
-            "agriculture": "I can help you find financing for farming and agriculture. There are several schemes available for agricultural activities. Could you tell me more about what type of farming you're planning?",
+            "agriculture": "I can help with NSFDC financing, but I could not confirm a verified NSFDC scheme that is specifically for rice/farming from the scheme records. I will not guess a match. If this is a self-employment or business activity, tell me that; otherwise I can only note that agriculture-specific NSFDC loan details are not in the verified catalogue.",
             "business": "I can help you with business financing. NSFDC offers several schemes like Micro Finance, Term Loan, and Laghu Vyavsay Yojana for different business sizes. What kind of business are you planning?",
         },
         "hi": {
             "education": "बिल्कुल, मैं आपको शिक्षा ऋण में मदद कर सकता हूँ। NSFDC की शैक्षिक ऋण योजना व्यावसायिक और तकनीकी कोर्स के लिए उपलब्ध है। आप कौन सा कोर्स या प्रोग्राम करना चाहते हैं?",
-            "agriculture": "मैं आपको खेती और कृषि के लिए वित्तीय सहायता खोजने में मदद कर सकता हूँ। कई योजनाएं उपलब्ध हैं। आप किस प्रकार की खेती की योजना बना रहे हैं?",
+            "agriculture": "NSFDC की पुष्टि की गई योजना सूची में चावल/खेती के लिए कोई स्पष्ट रूप से मेल खाती ऋण योजना नहीं मिली, इसलिए मैं कोई योजना गढ़ नहीं रहा हूँ। यदि यह स्वरोजगार या व्यवसाय है तो बताइए; खेती-विशेष ऋण का विवरण सत्यापित रिकॉर्ड में नहीं है।",
             "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
         },
         "mr": {
@@ -457,6 +487,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     _ACTIVITY_SHORT_MAP = {
         # Agriculture / Allied
         "rice": "RICE_FARMING", "paddy": "RICE_FARMING", "धान": "RICE_FARMING",
+        "chawal": "RICE_FARMING", "चावल": "RICE_FARMING",
         "wheat": "WHEAT_FARMING", "गेहूं": "WHEAT_FARMING", "gehun": "WHEAT_FARMING",
         "vegetable": "VEGETABLE_FARMING", "vegetables": "VEGETABLE_FARMING",
         "सब्जी": "VEGETABLE_FARMING", "sabji": "VEGETABLE_FARMING",
@@ -464,7 +495,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "dairy": "DAIRY_FARMING", "milk": "DAIRY_FARMING", "डेयरी": "DAIRY_FARMING", "दूध": "DAIRY_FARMING",
         "poultry": "POULTRY", "murgi": "POULTRY", "मुर्गी": "POULTRY",
         "fish": "FISHERY", "fishing": "FISHERY", "मछली": "FISHERY",
-        "goat": "GOAT_REARING", "sheep": "GOAT_REARING", "बकरी": "GOAT_REARING",
+        "goat": "GOAT_REARING", "sheep": "GOAT_REARING", "बकरी": "GOAT_REARING", "bakri": "GOAT_REARING",
         "pig": "PIG_REARING", "सूअर": "PIG_REARING",
         # Business / Trade
         "shop": "SMALL_RETAIL", "dukaan": "SMALL_RETAIL", "दुकान": "SMALL_RETAIL",
@@ -484,14 +515,17 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
                 print(f"[Guided] Resolved short activity answer '{kw}' → {mapped}")
                 break
 
-    # Check what is missing
+    _EDU_GENERIC = {None, "EDUCATION_LOAN", "EDUCATION"}
+    _AGRI_GENERIC = {"FARMING", "AGRICULTURE"}
+
+    # PIN is useful for partners later, not required to recommend.
+    # Do not force a trade name or "new vs existing business" before a
+    # purpose+amount recommendation can be made.
     missing_fields = []
-    if profile.pinCode is None and (profile.stateCode is None or profile.districtCode is None):
-        missing_fields.append("PIN Code")
-    elif profile.projectType != "EDUCATION" and (profile.activity is None or profile.activity in _VAGUE_ACTIVITIES):
+    if profile.projectType == "EDUCATION" and profile.activity in _EDU_GENERIC:
+        missing_fields.append("Course / education level")
+    elif profile.projectType != "EDUCATION" and profile.activity in _AGRI_GENERIC:
         missing_fields.append("Specific Activity")
-    elif profile.projectType != "EDUCATION" and profile.existingBusiness is None:
-        missing_fields.append("Is this a new business or an existing business?")
     elif profile.estimatedProjectCost is None:
         if profile.projectType == "EDUCATION":
             missing_fields.append("Course Fee")
@@ -499,7 +533,19 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
             missing_fields.append("Estimated Project Cost")
         
     if not missing_fields:
-        # We have everything, move to recommendation
+        if profile.noVerifiedMatch:
+            lang = request.language or "en"
+            ack = {
+                "en": "I have updated your details. I still cannot confirm a verified NSFDC scheme that matches this purpose, so I will not invent one.",
+                "hi": "मैंने आपकी जानकारी अपडेट कर दी है। इस उद्देश्य से मेल खाती कोई सत्यापित NSFDC योजना अभी पुष्टि नहीं हुई है, इसलिए मैं कोई योजना गढ़ नहीं रहा हूँ।",
+            }
+            return ChatResponse(
+                answer=ack.get(lang, ack["en"]),
+                language=lang,
+                citations=[],
+                grounding_status="GROUNDED",
+                response_source=ResponseSource.CLARIFICATION,
+            )
         profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
         update_session_profile(session_id, profile)
         return _handle_scheme_recommendation(request, profile, session_id, is_transition=True)
@@ -511,6 +557,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     questions_map = {
         "en": {
             "Specific Activity": "Could you tell me what specific kind of work or farming you want to do?",
+            "Course / education level": "Which course or education level is this loan for — for example BTech, medical, nursing, ITI, 12th?",
             "PIN Code": "I need your 6-digit PIN code to find accurate schemes and partners. Please update your PIN in your Profile.",
             "Is this a new business or an existing business?": "Is this a new business or an existing business?",
             "Estimated Project Cost": "What is the estimated total project cost?",
@@ -518,6 +565,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "hi": {
             "Specific Activity": "आप किस प्रकार का काम या खेती शुरू करना चाहते हैं?",
+            "Course / education level": "यह loan किस कोर्स या पढ़ाई के लिए है — जैसे BTech, मेडिकल, नर्सिंग, ITI, 12वीं?",
             "PIN Code": "सटीक योजनाएं और भागीदार खोजने के लिए मुझे आपके 6 अंकों के पिन कोड की आवश्यकता है। कृपया अपने प्रोफाइल में अपना पिन अपडेट करें।",
             "Is this a new business or an existing business?": "क्या यह नया व्यवसाय है या आपका पहले से चल रहा व्यवसाय है?",
             "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?",
@@ -525,6 +573,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "mr": {
             "Specific Activity": "तुम्हाला कोणता विशिष्ट प्रकारचा व्यवसाय किंवा शेती करायची आहे?",
+            "Course / education level": "हे कर्ज कोणत्या कोर्स किंवा शिक्षणासाठी आहे — उदा. BTech, medical, nursing, ITI, 12th?",
             "PIN Code": "अचूक योजना आणि भागीदार शोधण्यासाठी मला तुमचा 6-अंकी पिन कोड आवश्यक आहे. कृपया तुमच्या प्रोफाइलमध्ये तुमचा पिन अपडेट करा.",
             "Is this a new business or an existing business?": "हा नवीन व्यवसाय आहे की जुना?",
             "Estimated Project Cost": "अंदाजित प्रकल्प खर्च किती आहे?",
@@ -532,6 +581,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "bn": {
             "Specific Activity": "আপনি নির্দিষ্ট কি ধরনের কাজ বা চাষাবাদ করতে চান তা কি বলতে পারবেন?",
+            "Course / education level": "এই ঋণ কোন কোর্স বা পড়ার জন্য — যেমন BTech, medical, nursing, ITI, 12th?",
             "PIN Code": "সঠিক স্কিম এবং পার্টনার খুঁজে পেতে আমার আপনার ৬-সংখ্যার পিন কোড দরকার। অনুগ্রহ করে আপনার প্রোফাইলে পিন আপডেট করুন।",
             "Is this a new business or an existing business?": "এটি কি একটি নতুন ব্যবসা না বিদ্যমান ব্যবসা?",
             "Estimated Project Cost": "আনুমানিক প্রকল্প ব্যয় কত?",
@@ -539,6 +589,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "ta": {
             "Specific Activity": "நீங்கள் எந்த வகையான குறிப்பிட்ட வேலை அல்லது விவசாயம் செய்ய விரும்புகிறீர்கள் என்பதை என்னிடம் கூற முடியுமா?",
+            "Course / education level": "இந்த கடன் எந்த பாடம் அல்லது கல்வி நிலைக்காக — உதா. BTech, medical, nursing, ITI, 12th?",
             "PIN Code": "சரியான திட்டங்கள் மற்றும் கூட்டாளர்களைக் கண்டறிய உங்கள் 6 இலக்க பின் குறியீடு எனக்குத் தேவை. தயவுசெய்து உங்கள் சுயவிவரத்தில் உங்கள் பின்னைப் புதுப்பிக்கவும்.",
             "Is this a new business or an existing business?": "இது புதிய தொழிலா அல்லது ஏற்கனவே உள்ள தொழிலா?",
             "Estimated Project Cost": "மதிப்பிடப்பட்ட திட்ட செலவு என்ன?",
@@ -546,6 +597,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "te": {
             "Specific Activity": "మీరు ఏ నిర్దిష్ట రకమైన పని లేదా వ్యవసాయం చేయాలనుకుంటున్నారో నాకు చెప్పగలరా?",
+            "Course / education level": "ఈ రుణం ఏ కోర్సు లేదా చదువు కోసం — ఉదా. BTech, medical, nursing, ITI, 12th?",
             "PIN Code": "ఖచ్చితమైన పథకాలు మరియు భాగస్వాములను కనుగొనడానికి నాకు మీ 6-అంకెల పిన్ కోడ్ కావాలి. దయచేసి మీ ప్రొఫైల్‌లో మీ పిన్‌ను అప్‌డేట్ చేయండి.",
             "Is this a new business or an existing business?": "ఇది కొత్త వ్యాపారమా లేదా ఉన్న వ్యాపారమా?",
             "Estimated Project Cost": "అంచనా ప్రాజెక్ట్ వ్యయం ఎంత?",
@@ -581,6 +633,8 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "Is this a new business or an existing business?": "existingBusiness",
         "Estimated Project Cost": "estimatedProjectCost",
         "Course Fee": "estimatedProjectCost",
+        "Course / education level": "activity",
+        "Specific Activity": "activity",
     }
     expected_field = FIELD_MAP.get(next_question, "general")
         
@@ -652,10 +706,8 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
         
         if any(term in q for term in new_biz):
             updates["existingBusiness"] = False
-            return updates
         if any(term in q for term in old_biz):
             updates["existingBusiness"] = True
-            return updates
 
     # Explicit PIN change intent check
     change_pin_phrases = ["change", "update", "new pin", "instead", "बदलना", "नया पिन", "दूसरा", "बदलकर"]
@@ -663,19 +715,12 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
 
     # Check for PIN code (6-digit number starting with 1-9)
     # Be careful not to match large loan amounts like 500000 as a PIN code.
-    # If the bot was asking for a PIN code, missing_fields would be asking for it.
-    # To be safe, if we see a 6-digit number, we should check if it's explicitly a PIN change,
-    # or if we are actively looking for a PIN code (pinCode is None AND no other large numbers expected).
     if profile.pinCode is None or is_explicit_change:
         pins = _PIN_PATTERN.findall(query_norm)
         if pins:
-            # If it's a multiple of 50000 (like 500000, 150000), it's very likely an amount, not a PIN.
-            # Real PIN codes like 110001, 560001 are rarely perfectly round numbers.
-            # But let's just make sure it's not a round number.
             pin_val = int(pins[0])
             if pin_val % 10000 != 0 or is_explicit_change:
                 updates["pinCode"] = pins[0]
-                return updates
 
     # ── Word-to-number resolver for Hindi/Roman Hindi amounts ──────────────
     # "दो लाख" → 200000, "do lakh" → 200000, "teen lakh" → 300000, etc.
@@ -737,50 +782,81 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
                 break
         if matched_edu:
             updates["activity"] = matched_edu
-            return updates
 
-    # Check for a numeric project cost or requested amount
-    if profile.estimatedProjectCost is None or True: # We should always try to parse amount if the user says it
-        # Try word-number resolution first (e.g. "दो लाख", "do lakh")
+    acre_match = __import__("re").search(
+        r"(\d+(?:\.\d+)?)\s*(acre|acres|एकड़|एकड)\b",
+        query_norm,
+        __import__("re").IGNORECASE,
+    )
+    word_acre = None
+    if not acre_match:
+        for word, num in _WORD_NUMS.items():
+            if __import__("re").search(
+                rf"{__import__('re').escape(word)}\s*(acre|acres|एकड़|एकड)\b",
+                query_norm,
+                __import__("re").IGNORECASE,
+            ):
+                word_acre = float(num)
+                break
+    if acre_match or word_acre is not None:
+        try:
+            updates["landHoldingAcres"] = float(acre_match.group(1)) if acre_match else word_acre
+        except ValueError:
+            pass
+        if profile.activity:
+            updates["activity"] = profile.activity
+
+    looks_like_land = bool(acre_match) or word_acre is not None
+    if not looks_like_land:
         word_amount = _resolve_word_amount(query_norm)
         if word_amount:
             updates["estimatedProjectCost"] = word_amount
-            return updates
 
-        # Strip common prefix words and try to find a number
         stripped = __import__("re").sub(
             r"(?:project cost|cost|estimate|budget|amount|approximately|around|about|लागत|खर्च|budget)\s*[:=]?\s*",
             "",
             query_norm,
             flags=__import__("re").IGNORECASE,
         )
-        
-        # Additional parsing for plain numbers (like "500000") which might not be caught if user just says the number
-        bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
-        if bare_number_match:
-            raw = bare_number_match.group(1).replace(",", "")
-            try:
-                amount = int(raw)
-                if amount >= 1000: # Ensure it's a realistic loan amount
-                    updates["estimatedProjectCost"] = amount
-                    return updates
-            except ValueError:
-                pass
 
-        # Match numbers with optional lakh/thousand suffixes
-        for m in _COST_PATTERN.finditer(stripped):
-            raw = m.group(1).replace(",", "")
-            try:
-                amount = float(raw)
-                suffix_text = m.group(0).lower()
-                if "lakh" in suffix_text or "lac" in suffix_text or "लाख" in suffix_text:
-                    amount *= 100_000
-                elif "thousand" in suffix_text or "हजार" in suffix_text or suffix_text.endswith("k"):
-                    amount *= 1_000
-                updates["estimatedProjectCost"] = int(amount)
-                return updates
-            except ValueError:
-                pass
+        if "estimatedProjectCost" not in updates:
+            bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
+            if bare_number_match:
+                raw = bare_number_match.group(1).replace(",", "")
+                try:
+                    amount = int(raw)
+                    if amount >= 1000:
+                        updates["estimatedProjectCost"] = amount
+                except ValueError:
+                    pass
+
+        if "estimatedProjectCost" not in updates:
+            for m in _COST_PATTERN.finditer(stripped):
+                raw = m.group(1).replace(",", "")
+                try:
+                    amount = float(raw)
+                    suffix_text = m.group(0).lower()
+                    has_scale = any(s in suffix_text for s in ("lakh", "lac", "लाख", "thousand", "हजार")) or suffix_text.endswith("k")
+                    if "lakh" in suffix_text or "lac" in suffix_text or "लाख" in suffix_text:
+                        amount *= 100_000
+                    elif "thousand" in suffix_text or "हजार" in suffix_text or suffix_text.endswith("k"):
+                        amount *= 1_000
+                    if amount < 1000 and not has_scale:
+                        continue
+                    updates["estimatedProjectCost"] = int(amount)
+                    break
+                except ValueError:
+                    pass
+
+    _CITY_HINTS = {
+        "jaipur": ("RJ", "Jaipur"),
+        "जयपुर": ("RJ", "Jaipur"),
+    }
+    for city, (st, district) in _CITY_HINTS.items():
+        if city in q:
+            updates["stateCode"] = st
+            updates["districtCode"] = district
+            break
 
     return updates
 
@@ -877,19 +953,40 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
     }
     
     # 2. Run deterministic engines
-    eval_response = evaluate_all_schemes(user_profile)
-    ranked = generate_recommendations(eval_response)
+    eval_response = evaluate_all_schemes(user_profile, organization="NSFDC")
+    activity_upper = str(purpose or "").upper()
+    if is_edu or "EDUCATION" in activity_upper or activity_upper in {"BTECH", "BE", "MBBS", "BCA", "MCA", "MBA", "ITI", "DIPLOMA"}:
+        domain = "EDUCATION"
+    elif activity_upper in {
+        "RICE_FARMING", "WHEAT_FARMING", "VEGETABLE_FARMING", "HORTICULTURE",
+        "DAIRY_FARMING", "POULTRY", "FISHERY", "GOAT_REARING", "PIG_REARING",
+        "FARMING", "AGRICULTURE",
+    } or any(w in activity_upper for w in ("FARM", "KHETI", "DAIRY", "RICE")):
+        domain = "AGRICULTURE"
+    else:
+        domain = "BUSINESS"
+    amount = profile.estimatedProjectCost
+    ranked = generate_recommendations(
+        eval_response,
+        relevance=RelevanceQuery(
+            assistance_type="LOAN",
+            domain=domain,
+            activity=str(purpose) if purpose else None,
+            amount_inr=float(amount) if amount is not None else None,
+        ),
+    )
     
     top = ranked.top_recommendation
     lang = (request.language or "").strip().lower() or "en"
     
     if not top:
-        profile.conversationState = ConversationState.PARTNER_SEARCH
+        profile.noVerifiedMatch = True
+        profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
         update_session_profile(session_id, profile)
         
         no_scheme_map = {
-            "en": "Based on the information provided, I could not confirm a matching verified scheme yet. Let me help you find a channel partner who can assist you further.",
-            "hi": "दी गई जानकारी के आधार पर, मुझे अभी तक कोई मेल खाने वाली सत्यापित योजना नहीं मिली है। मैं आपको एक चैनल पार्टनर खोजने में मदद करता हूँ जो आपकी आगे की सहायता कर सके।",
+            "en": "Based on the information provided, I could not confirm a matching verified scheme yet. I will not invent a match. You can add more details such as amount or land, or tell me if this is actually a business/self-employment project.",
+            "hi": "दी गई जानकारी के आधार पर, मुझे अभी तक कोई मेल खाने वाली सत्यापित योजना नहीं मिली है। मैं कोई योजना गढ़ नहीं रहा हूँ। अगर आप और जानकारी देना चाहें — जैसे राशि या ज़मीन — तो बताइए।",
             "mr": "दिलेल्या माहितीच्या आधारे, मला अद्याप कोणतीही जुळणारी सत्यापित योजना सापडली नाही. मी तुम्हाला एक चॅनेल भागीदार शोधण्यात मदत करतो जो तुम्हाला पुढील मदत करू शकेल.",
             "bn": "প্রদত্ত তথ্যের উপর ভিত্তি করে, আমি এখনও কোনও যাচাইকৃত স্কিম নিশ্চিত করতে পারিনি। আমি আপনাকে একজন চ্যানেল পার্টনার খুঁজে পেতে সাহায্য করছি যিনি আপনাকে আরও সহায়তা করতে পারবেন।",
             "ta": "வழங்கப்பட்ட தகவலின் அடிப்படையில், பொருத்தமான சரிபார்க்கப்பட்ட திட்டத்தை என்னால் இன்னும் உறுதிப்படுத்த முடியவில்லை. உங்களுக்கு மேலும் உதவக்கூடிய சேனல் பார்ட்னரைக் கண்டறிய நான் உதவுகிறேன்.",
@@ -915,15 +1012,27 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
     profile.recommendedSchemeId = top.scheme_id
     profile.channelPartnerRequired = requires_partner
     
-    reason_map = {
-        "en": "You meet the eligibility criteria for this scheme.",
-        "hi": "आप इस योजना के पात्रता मानदंडों को पूरा करते हैं।",
-        "mr": "तुम्ही या योजनेच्या पात्रतेचे निकष पूर्ण करता.",
-        "bn": "আপনি এই প্রকল্পের যোগ্যতার মানদণ্ড পূরণ করেছেন।",
-        "ta": "நீங்கள் இந்த திட்டத்திற்கான தகுதி அளவுகோல்களை பூர்த்தி செய்கிறீர்கள்.",
-        "te": "మీరు ఈ పథకానికి అర్హత ప్రమాణాలను పూర్తి చేస్తున్నారు."
-    }
-    reason_text = reason_map.get(lang, reason_map["en"])
+    scheme_meta = load_scheme(top.scheme_id)
+    api = scheme_meta.get("api") if isinstance(scheme_meta.get("api"), dict) else {}
+    assistance = str(scheme_meta.get("assistance_type") or "LOAN")
+    scheme_domain = str(scheme_meta.get("domain") or "")
+    min_amt = api.get("minLoanAmount")
+    max_amt = api.get("maxLoanAmount")
+    amount_note = ""
+    if min_amt is not None and max_amt is not None:
+        amount_note = f" Supported loan range in the scheme record: ₹{int(min_amt)}–₹{int(max_amt)}."
+    elif max_amt is not None:
+        amount_note = f" Maximum loan in the scheme record: ₹{int(max_amt)}."
+    if lang == "hi":
+        reason_text = (
+            f"यह NSFDC {assistance} योजना आपके उद्देश्य ({purpose}, {domain}) से मेल खाती है।"
+            + (f" योजना रिकॉर्ड में ऋण सीमा ₹{int(min_amt)}–₹{int(max_amt)} है।" if min_amt is not None and max_amt is not None else "")
+        )
+    else:
+        reason_text = (
+            f"This NSFDC {assistance} product matches your purpose ({purpose}) in the {domain} journey."
+            f"{amount_note}"
+        )
     
     # 3. Generate Scheme Recommendation Card
     ui_cards = [
@@ -987,7 +1096,9 @@ Generate a compact, villager-friendly response in {lang_name} following this EXA
 • Application Process
 
 RULES:
-- Do NOT invent loan amounts, interest rates, or eligibility. If not found in the verified context, explicitly say: "इस योजना के उपलब्ध दस्तावेज़ में यह जानकारी नहीं मिली है।" (or equivalent in {lang_name}).
+- Do NOT invent loan amounts, interest rates, or eligibility. If not found in the verified context, explicitly say so in {lang_name}.
+- Start with why this scheme fits the user's purpose. Do not introduce yourself again.
+- Do NOT recommend scholarships, coaching, or non-loan schemes for a loan request.
 - Do NOT expose internal database fields.
 - Keep it simple and easy to read.
 - Response MUST be entirely in {lang_name}.
@@ -1007,14 +1118,23 @@ RULES:
         logger = __import__("logging").getLogger(__name__)
         logger.warning(f"LLM scheme recommendation generation failed: {e}")
         fallback_map = {
-            "en": f"Based on your profile, the recommended scheme is {top.scheme_name}. For full details, please check the scheme document.",
-            "hi": f"आपकी प्रोफ़ाइल के आधार पर, {top.scheme_name} आपके लिए सबसे उपयुक्त योजना है। पूरी जानकारी के लिए कृपया योजना दस्तावेज़ देखें।",
+            "en": (
+                f"For your purpose ({purpose}), {top.scheme_name} is the NSFDC scheme that currently fits. "
+                f"It is recommended because the assistance type is a loan and it matches this activity. "
+                f"If a figure is not in the scheme record, I will not guess it. "
+                f"Next you can check documents, EMI, or a nearby channel partner."
+            ),
+            "hi": (
+                f"आपके उद्देश्य ({purpose}) और ऋण सहायता के लिए {top.scheme_name} उपयुक्त NSFDC योजना है। "
+                f"जो राशि, ब्याज या पात्रता योजना दस्तावेज़ में नहीं है, वह मैं नहीं बनाऊँगा। "
+                f"आगे आप दस्तावेज़, EMI, या नज़दीकी चैनल पार्टनर देख सकते हैं।"
+            ),
             "mr": f"तुमच्या प्रोफाईलच्या आधारे, {top.scheme_name} ही तुमच्यासाठी सर्वात योग्य योजना आहे.",
             "bn": f"আপনার প্রোফাইলের উপর ভিত্তি করে, {top.scheme_name} আপনার জন্য সবচেয়ে উপযুক্ত স্কিম।",
             "ta": f"உங்கள் சுயவிவரத்தின் அடிப்படையில், {top.scheme_name} உங்களுக்கு மிகவும் பொருத்தமான திட்டம்.",
             "te": f"మీ ప్రొఫైల్ ఆధారంగా, {top.scheme_name} మీకు అత్యంత అనుకూలమైన పథకం.",
         }
-        answer_text = fallback_map.get(lang_name, fallback_map["en"])
+        answer_text = fallback_map.get(lang, fallback_map.get(lang_name, fallback_map["en"]))
 
     
     # Transition State

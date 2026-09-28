@@ -32,6 +32,18 @@ import {
 
 const APP_VERSION = '0.1.0';
 
+const EMPTY_PROFILE = {
+  id: 'pending',
+  user_id: 'pending',
+  savedSchemes: [] as string[],
+  address: {},
+  eligibility: {},
+  business: {},
+  preferences: { language: 'en' },
+  createdAt: new Date(0).toISOString(),
+  updatedAt: new Date(0).toISOString(),
+};
+
 const profileKeys = {
   profile: ['profile'] as const,
   documents: ['profile', 'documents'] as const,
@@ -55,12 +67,15 @@ export default function ProfileScreen() {
   const { data: schemes } = useSchemes();
   const savedSchemes = (schemes?.items ?? []).filter((s) => savedIds.includes(s.id));
 
-  // Persistent profile from backend
-  const { data: persistentProfile, isLoading: profileLoading } = useQuery({
+  // Persistent profile from backend. Keep a skeleton so the user-detail
+  // editor does not disappear when GET is slow, mock, or fails.
+  const { data: persistentProfile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: profileKeys.profile,
     queryFn: getProfile,
-    enabled: !USE_MOCK_API,
+    placeholderData: EMPTY_PROFILE,
+    retry: 1,
   });
+  const displayProfile = persistentProfile ?? EMPTY_PROFILE;
 
   const updateProfileMutation = useMutation({
     mutationFn: updateProfile,
@@ -253,20 +268,16 @@ export default function ProfileScreen() {
       </View>
 
       {/* Primary Location */}
-      {persistentProfile ? (
-        <View style={styles.section}>
-          <Text variant="subheading" style={{ marginBottom: spacing.xs }}>{t('profile.primaryLocation')}</Text>
-          <LocationCard 
-            profile={persistentProfile} 
-            onUpdate={(address) => {
-              console.log('[LOCATION] PROFILE_PAYLOAD:', JSON.stringify(address));
-              updateProfileMutation.mutate({ address });
-            }}
-          />
-        </View>
-      ) : profileLoading ? (
-        <ActivityIndicator color={colors.primary} />
-      ) : null}
+      <View style={styles.section}>
+        <Text variant="subheading" style={{ marginBottom: spacing.xs }}>{t('profile.primaryLocation')}</Text>
+        <LocationCard
+          profile={displayProfile}
+          onUpdate={(address) => {
+            console.log('[LOCATION] PROFILE_PAYLOAD:', JSON.stringify(address));
+            updateProfileMutation.mutate({ address });
+          }}
+        />
+      </View>
 
       {/* Tab navigation */}
       <View style={styles.tabRow}>
@@ -297,18 +308,16 @@ export default function ProfileScreen() {
       {/* Profile tab */}
       {activeTab === 'profile' && (
         <View style={styles.section}>
-          {USE_MOCK_API ? (
-            <Banner
-              tone="info"
-              message={t('profile.requireLiveBackendProfile')}
-            />
-          ) : profileLoading ? (
+          {profileLoading && !persistentProfile ? (
             <ActivityIndicator color={colors.primary} />
-          ) : persistentProfile ? (
+          ) : (
             <View>
+              {profileError ? (
+                <Banner tone="info" message={t('profile.requireLiveBackendProfile')} />
+              ) : null}
               {isEditingProfile ? (
                 <EditProfileForm
-                  initialData={persistentProfile}
+                  initialData={displayProfile}
                   isSaving={updateProfileMutation.isPending}
                   onCancel={() => setIsEditingProfile(false)}
                   onSave={(data) => {
@@ -321,31 +330,31 @@ export default function ProfileScreen() {
                 <View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.xs }}>
                     <Text variant="subheading">{t('profile.personalDetails', 'Profile Details')}</Text>
-                    <Button 
-                      title={persistentProfile.fullName ? t('profile.editProfile', 'Edit Profile') : t('profile.completeProfile', 'Complete Your Profile')}
-                      variant="outline" 
-                      size="sm" 
-                      onPress={() => setIsEditingProfile(true)} 
+                    <Button
+                      title={displayProfile.fullName ? t('profile.editProfile', 'Edit Profile') : t('profile.completeProfile', 'Complete Your Profile')}
+                      variant="outline"
+                      size="sm"
+                      onPress={() => setIsEditingProfile(true)}
                     />
                   </View>
                   <Card variant="glass">
-                    <Row label={t('profile.fullName', 'Full Name')} value={persistentProfile.fullName || 'Not provided'} />
-                    <Row label={t('profile.phoneNumber', 'Mobile Number')} value={persistentProfile.phoneNumber || 'Not provided'} />
-                    <Row label={t('profile.email', 'Email Address')} value={persistentProfile.email || 'Not provided'} />
+                    <Row label={t('profile.fullName', 'Full Name')} value={displayProfile.fullName || 'Not provided'} />
+                    <Row label={t('profile.phoneNumber', 'Mobile Number')} value={displayProfile.phoneNumber || 'Not provided'} />
+                    <Row label={t('profile.email', 'Email Address')} value={displayProfile.email || 'Not provided'} />
                     <Row label={t('profile.address', 'Address')} value={
-                      [persistentProfile.address?.addressLine1, persistentProfile.address?.city, persistentProfile.address?.district, persistentProfile.address?.state, persistentProfile.address?.pinCode]
+                      [displayProfile.address?.addressLine1, displayProfile.address?.city, displayProfile.address?.district, displayProfile.address?.state, displayProfile.address?.pinCode]
                       .filter(Boolean).join(', ') || 'Not provided'
                     } />
-                    <Row label={t('profile.educationLevel', 'Education Level')} value={persistentProfile.educationLevel || 'Not provided'} />
-                    <Row label={t('profile.occupation', 'Occupation')} value={persistentProfile.occupation || 'Not provided'} />
-                    <Row label={t('profile.annualFamilyIncome', 'Family Income')} value={persistentProfile.eligibility?.annualFamilyIncome ? `₹${persistentProfile.eligibility.annualFamilyIncome}` : 'Not provided'} />
-                    <Row label={t('profile.scEligibility', 'SC Category')} value={persistentProfile.eligibility?.scEligibilityStatus ? 'Yes' : 'No'} />
-                    <Row label={t('profile.existingBusiness', 'Existing Business')} value={persistentProfile.business?.existingBusiness ? 'Yes' : 'No'} last />
+                    <Row label={t('profile.educationLevel', 'Education Level')} value={displayProfile.educationLevel || 'Not provided'} />
+                    <Row label={t('profile.occupation', 'Occupation')} value={displayProfile.occupation || 'Not provided'} />
+                    <Row label={t('profile.annualFamilyIncome', 'Family Income')} value={displayProfile.eligibility?.annualFamilyIncome ? `₹${displayProfile.eligibility.annualFamilyIncome}` : 'Not provided'} />
+                    <Row label={t('profile.scEligibility', 'SC Category')} value={displayProfile.eligibility?.scEligibilityStatus ? 'Yes' : 'No'} />
+                    <Row label={t('profile.existingBusiness', 'Existing Business')} value={displayProfile.business?.existingBusiness ? 'Yes' : 'No'} last />
                   </Card>
                 </View>
               )}
             </View>
-          ) : null}
+          )}
 
           {/* Recommender profile */}
           {profile ? (

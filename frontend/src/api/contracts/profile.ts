@@ -40,22 +40,22 @@ export const ProfilePreferencesSchema = z.object({
 });
 
 export const UserProfileSchema = z.object({
-  id: z.string(),
-  user_id: z.string(),
+  id: z.string().optional().default('pending'),
+  user_id: z.string().optional().default('pending'),
   fullName: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   dateOfBirth: z.string().nullable().optional(),
   educationLevel: z.string().nullable().optional(),
   occupation: z.string().nullable().optional(),
-  savedSchemes: z.array(z.string()).default([]),
-  address: ProfileAddressSchema.default({}),
-  eligibility: ProfileEligibilitySchema.default({}),
-  business: ProfileBusinessSchema.default({}),
-  preferences: ProfilePreferencesSchema.default({ language: 'en' }),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+  savedSchemes: z.array(z.string()).optional().default([]),
+  address: ProfileAddressSchema.optional().default({}),
+  eligibility: ProfileEligibilitySchema.optional().default({}),
+  business: ProfileBusinessSchema.optional().default({}),
+  preferences: ProfilePreferencesSchema.optional().default({ language: 'en' }),
+  createdAt: z.string().optional().default(''),
+  updatedAt: z.string().optional().default(''),
+}).passthrough();
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
 export const ProfileUpdateRequestSchema = z.object({

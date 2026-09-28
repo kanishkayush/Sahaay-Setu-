@@ -62,7 +62,7 @@ _ROMAN_HINDI_WORDS = frozenset({
     "mujhe", "chahiye", "chahie", "chaiye", "keliye", "ke", "liye",
     "karna", "hai", "hain", "kaise", "kya", "koi", "yojana",
     "padhai", "padhna", "padna", "shiksha", "vidya",
-    "doodh", "pashupalan", "kheti", "gaay", "bail",
+    "chawal", "kheti",
     "vyapar", "vyapaar", "bijnes", "karobar", "dukaan", "dukan",
     "paisa", "rupaye", "rupay", "paise",
     "loan", "rin", "karz",
@@ -99,7 +99,7 @@ _EDUCATION_KEYWORDS = frozenset({
     "engineering", "medical", "institute", "scholarship",
     "higher education", "bachelors", "admission", "mtech",
     "bca", "mca", "mbbs", "iti", "nursing", "pharmacy", "10th", "12th",
-    "ba", "bsc", "bcom"
+    "ba", "bsc", "bcom",
     # Hindi / Devanagari
     "पढ़ाई", "शिक्षा", "कॉलेज", "स्कूल", "विश्वविद्यालय",
     "कोर्स", "डिग्री", "छात्र", "फीस", "ट्यूशन",
@@ -112,7 +112,7 @@ _AGRICULTURE_KEYWORDS = frozenset({
     # English
     "agriculture", "farming", "farm", "dairy", "cattle", "livestock",
     "poultry", "fishery", "horticulture", "crop", "irrigation",
-    "animal husbandry",
+    "rice", "paddy", "chawal",
     # Hindi / Devanagari
     "खेती", "कृषि", "डेयरी", "पशुपालन", "मछली",
     "गाय", "भैंस", "बकरी", "मुर्गी",

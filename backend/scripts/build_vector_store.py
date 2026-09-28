@@ -1,101 +1,52 @@
-import json
+"""Rebuild the RAG vector index from structured scheme-knowledge chunks.
+
+Production (Render) must run this during build with Hugging Face inference:
+  BUILDING_VECTOR_STORE=1 python3 scripts/build_vector_store.py
+
+That uses the existing HF feature-extraction path. It does not load the
+local SentenceTransformer weights on Render.
+"""
+
 import os
+import sys
 from pathlib import Path
 
-# Fix python path
-import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.rag.chunker import Chunk
+from app.rag.scheme_knowledge import load_knowledge_chunks
 from app.rag.vector_store import build_store
 from app.rag.embeddings import embed
 
-BACKEND_SCHEMES_DIR = "/Users/kanishkshahi/SIH_2026_RAG/backend/data/schemes"
-STORE_PATH = Path("/Users/kanishkshahi/SIH_2026_RAG/backend/data/rag/vector_store.npz")
+STORE_PATH = Path(__file__).resolve().parent.parent / "data" / "rag" / "vector_store.npz"
+
 
 def main():
-    chunks = []
-    
-    for filename in os.listdir(BACKEND_SCHEMES_DIR):
-        if not filename.endswith(".json"):
-            continue
-            
-        path = os.path.join(BACKEND_SCHEMES_DIR, filename)
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            
-        scheme_id = data.get("scheme_id", "")
-        api_block = data.get("api", {})
-        
-        name_en = api_block.get("name", {}).get("en", "")
-        desc_en = api_block.get("shortDescription", {}).get("en", "")
-        cat = api_block.get("officialCategory", "")
-        
-        if not name_en:
-            continue
-            
-        org = data.get("organization", "UNKNOWN")
-        domain = data.get("domain", "OTHER")
-        scheme_type = data.get("scheme_type", "OTHER_FINANCIAL_ASSISTANCE")
-        purpose = data.get("purpose", "GENERAL")
-        assistance_type = data.get("assistance_type", "OTHER")
-            
-        # Create an overview chunk
-        chunk = Chunk(
-            chunk_id=f"{scheme_id}__overview__0",
-            scheme_id=scheme_id,
-            scheme_name=name_en,
-            section="overview",
-            language="en",
-            source_id=scheme_id,
-            source_priority="1",
-            financial_terms_status="AVAILABLE",
-            last_verified="2026-09-08",
-            text=f"Scheme Name: {name_en}\nDescription: {desc_en}\nCategory: {cat}",
-            organization=org,
-            domain=domain,
-            scheme_type=scheme_type,
-            purpose=purpose,
-            assistance_type=assistance_type
-        )
-        chunks.append(chunk)
-        
-        # Create a financial terms chunk
-        min_loan = api_block.get("minLoanAmount", "")
-        max_loan = api_block.get("maxLoanAmount", "")
-        int_min = api_block.get("interestRateMinPct", "")
-        int_max = api_block.get("interestRateMaxPct", "")
-        
-        if max_loan:
-            fin_chunk = Chunk(
-                chunk_id=f"{scheme_id}__financial_terms__0",
-                scheme_id=scheme_id,
-                scheme_name=name_en,
-                section="financial_terms",
-                language="en",
-                source_id=scheme_id,
-                source_priority="1",
-                financial_terms_status="AVAILABLE",
-                last_verified="2026-09-08",
-                text=f"Financial Terms for {name_en}: Loan Amount is {min_loan} to {max_loan}. Interest Rate is {int_min}% to {int_max}%.",
-                organization=org,
-                domain=domain,
-                scheme_type=scheme_type,
-                purpose=purpose,
-                assistance_type=assistance_type
-            )
-            chunks.append(fin_chunk)
+    chunks = load_knowledge_chunks()
+    if not chunks:
+        raise RuntimeError("No RAG chunks were produced from the scheme catalogue")
+    missing_meta = [
+        c.chunk_id for c in chunks
+        if not c.scheme_id or not c.organization or not c.assistance_type
+    ]
+    if missing_meta:
+        raise RuntimeError(f"Chunks missing required metadata: {missing_meta[:5]}")
 
     print(f"Total chunks created: {len(chunks)}")
-    
-    # We must use SAARTHI_MOCK_EMBEDDING=1 for testing if huggingface isn't available, but let's try standard embed
-    if "SAARTHI_MOCK_EMBEDDING" not in os.environ:
-        os.environ["SAARTHI_MOCK_EMBEDDING"] = "0"
-    
+    schemes = {c.scheme_id for c in chunks}
+    orgs: dict[str, int] = {}
+    for c in chunks:
+        orgs[c.organization] = orgs.get(c.organization, 0) + 1
+    print(f"Schemes indexed: {len(schemes)}")
+    print(f"Chunks by org: {orgs}")
     print("Building vector store...")
     store = build_store(chunks, embed)
+    if store.embeddings.ndim != 2 or store.embeddings.shape[0] != len(chunks):
+        raise RuntimeError(f"Embedding/chunk mismatch: {store.embeddings.shape} vs {len(chunks)} chunks")
+    if store.embeddings.shape[1] != 384:
+        raise RuntimeError(f"Unexpected embedding dimension: {store.embeddings.shape[1]}")
     store.save(STORE_PATH)
-    print(f"Vector store saved to {STORE_PATH}")
+    print(f"Saved {store.embeddings.shape} embeddings to {STORE_PATH}")
+
 
 if __name__ == "__main__":
     main()

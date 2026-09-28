@@ -56,36 +56,46 @@ class VectorStore(VectorStoreProtocol):
             metadata=metadata_json,
         )
 
-    def search(self, query_vec: np.ndarray, top_k: int = 5) -> list[tuple[Chunk, float]]:
+    def search(
+        self,
+        query_vec: np.ndarray,
+        top_k: int = 5,
+        keep: Any = None,
+    ) -> list[tuple[Chunk, float]]:
         """
         Returns top_k chunks sorted by cosine similarity descending.
         query_vec should be shape (384,).
+        keep: optional callable Chunk -> bool applied BEFORE top-k selection.
         """
         if len(self.embeddings) == 0:
             return []
             
-        # Cosine similarity: dot(A, B) / (norm(A) * norm(B))
         query_norm = np.linalg.norm(query_vec)
         if query_norm == 0:
             query_norm = 1.0
             
         dot_products = np.dot(self.embeddings, query_vec)
         similarities = dot_products / (self.norms.squeeze() * query_norm)
-        
-        # Get top_k indices
-        k = min(top_k, len(self.chunks))
-        # argpartition is faster than argsort for finding top k, but doesn't sort them
-        if k < len(similarities):
-            top_k_idx = np.argpartition(similarities, -k)[-k:]
-            # Sort just the top k
-            top_k_idx = top_k_idx[np.argsort(-similarities[top_k_idx], kind="stable")]
+
+        if keep is None:
+            indices = np.arange(len(self.chunks))
         else:
-            top_k_idx = np.argsort(-similarities, kind="stable")
-            
+            indices = np.array([i for i, c in enumerate(self.chunks) if keep(c)], dtype=int)
+            if indices.size == 0:
+                return []
+
+        subset = similarities[indices]
+        k = min(top_k, len(indices))
+        if k < len(subset):
+            local = np.argpartition(subset, -k)[-k:]
+            local = local[np.argsort(-subset[local], kind="stable")]
+        else:
+            local = np.argsort(-subset, kind="stable")
+
         results = []
-        for idx in top_k_idx:
+        for loc in local:
+            idx = int(indices[loc])
             results.append((self.chunks[idx], float(similarities[idx])))
-            
         return results
 
 def build_store(chunks: list[Chunk], embed_fn) -> VectorStore:

@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -9,6 +10,7 @@ from app.eligibility_engine import (
     EvaluateAllResponse,
     SchemeEvaluationResult,
     evaluate_all_schemes,
+    load_scheme,
 )
 
 STATUS_TIER = {
@@ -57,6 +59,215 @@ class ScoredScheme(BaseModel):
 class RankedRecommendations(BaseModel):
     top_recommendation: Optional[ScoredScheme]
     alternatives: List[ScoredScheme]
+
+
+@dataclass
+class RelevanceQuery:
+    """Optional conversational relevance gate. Check Eligibility omits this."""
+    assistance_type: str = "LOAN"
+    domain: Optional[str] = None
+    activity: Optional[str] = None
+    amount_inr: Optional[float] = None
+
+
+_LOAN_SCHEME_TYPES = frozenset({
+    "TERM_LOAN", "MICRO_FINANCE", "BUSINESS_LOAN", "EDUCATION_LOAN",
+})
+_NON_LOAN_ASSISTANCE = frozenset({
+    "SCHOLARSHIP", "OTHER_FINANCIAL_ASSISTANCE", "GRANT", "COACHING",
+})
+_NON_LOAN_SCHEME_TYPES = frozenset({
+    "EDUCATION_SCHOLARSHIP", "OTHER_FINANCIAL_ASSISTANCE",
+})
+_EXCLUSIVE_NON_LOAN = (
+    "scholarship", "coaching", "fellowship", "free coaching", "stipend",
+)
+_EXCLUSIVE_EDUCATION = ("educational loan", "education loan", "शैक्षिक ऋण")
+_EXCLUSIVE_GREEN_ASSET = ("e-rickshaw", "e rickshaw", "solar", "clean-energy", "ई-रिक्शा", "सौर")
+_EXPLICIT_AGRICULTURE = (
+    "agriculture", "agricultural", "farming", "farm ", " farm",
+    "kheti", "कृषि", "खेती", "dairy", "poultry", "paddy", "rice",
+    "धान", "horticulture", "fishery", "allied agriculture", "crop",
+)
+
+
+def _explicit_agriculture_support(scheme: dict) -> bool:
+    """True only if name/description actually mentions agriculture or allied activity.
+
+    Classified domain/purpose tags are not enough: some NSFDC files were
+    auto-tagged AGRICULTURE/FARMING while the scheme text is about other assets.
+    """
+    desc = _description_text(scheme)
+    if not desc:
+        return False
+    if any(marker in desc for marker in _EXCLUSIVE_GREEN_ASSET) and not any(
+        w in desc for w in ("farm", "kheti", "कृषि", "agriculture", "dairy", "धान", "खेती")
+    ):
+        return False
+    return any(marker in desc for marker in _EXPLICIT_AGRICULTURE)
+
+
+def _description_text(scheme: dict) -> str:
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
+    parts: list[str] = []
+    for key in ("name", "shortDescription"):
+        val = api.get(key)
+        if isinstance(val, dict):
+            parts.extend(str(v) for v in val.values())
+        elif isinstance(val, str):
+            parts.append(val)
+    return " ".join(parts).lower()
+
+
+def _scheme_text(scheme: dict) -> str:
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
+    parts: list[str] = [
+        str(scheme.get("scheme_id") or ""),
+        str(scheme.get("scheme_type") or ""),
+        str(scheme.get("domain") or ""),
+        str(scheme.get("purpose") or ""),
+        str(scheme.get("assistance_type") or ""),
+    ]
+    name = api.get("name")
+    if isinstance(name, dict):
+        parts.extend(str(v) for v in name.values())
+    elif isinstance(name, str):
+        parts.append(name)
+    desc = api.get("shortDescription")
+    if isinstance(desc, dict):
+        parts.extend(str(v) for v in desc.values())
+    elif isinstance(desc, str):
+        parts.append(desc)
+    return " ".join(parts).lower()
+
+
+def _api_amount_bounds(scheme: dict) -> tuple[Optional[float], Optional[float]]:
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
+    mn = api.get("minLoanAmount")
+    mx = api.get("maxLoanAmount")
+    try:
+        mn_f = float(mn) if mn is not None else None
+    except (TypeError, ValueError):
+        mn_f = None
+    try:
+        mx_f = float(mx) if mx is not None else None
+    except (TypeError, ValueError):
+        mx_f = None
+    return mn_f, mx_f
+
+
+def _is_loan_product(scheme: dict) -> bool:
+    assistance = str(scheme.get("assistance_type") or "").upper()
+    scheme_type = str(scheme.get("scheme_type") or "").upper()
+    if assistance == "LOAN" or scheme_type in _LOAN_SCHEME_TYPES:
+        return True
+    return False
+
+
+def _has_sufficient_metadata(scheme: dict) -> bool:
+    assistance = str(scheme.get("assistance_type") or "").upper()
+    scheme_type = str(scheme.get("scheme_type") or "").upper()
+    domain = str(scheme.get("domain") or "").upper()
+    mn, mx = _api_amount_bounds(scheme)
+    if assistance in _NON_LOAN_ASSISTANCE and scheme_type in _NON_LOAN_SCHEME_TYPES:
+        if domain in {"OTHER", "GENERAL", ""} and mn is None and mx is None:
+            return False
+        if not _is_loan_product(scheme):
+            return False
+    if not scheme.get("domain") and not assistance and mn is None:
+        return False
+    return True
+
+
+def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
+    """0 = not relevant enough to recommend. Higher is a better metadata match."""
+    if not _has_sufficient_metadata(scheme):
+        return 0
+    text = _scheme_text(scheme)
+    assistance = str(scheme.get("assistance_type") or "").upper()
+    scheme_type = str(scheme.get("scheme_type") or "").upper()
+    domain = str(scheme.get("domain") or "").upper()
+    wanted = (query.assistance_type or "LOAN").upper()
+    user_domain = (query.domain or "").upper()
+
+    if wanted == "LOAN":
+        if assistance in {"SCHOLARSHIP", "GRANT", "COACHING"}:
+            return 0
+        if scheme_type in {"EDUCATION_SCHOLARSHIP"}:
+            return 0
+        if any(marker in text for marker in _EXCLUSIVE_NON_LOAN):
+            return 0
+        if not _is_loan_product(scheme):
+            return 0
+
+    mn, mx = _api_amount_bounds(scheme)
+    amount = query.amount_inr
+    if amount is not None:
+        if mx is not None and amount > mx:
+            return 0
+        if mn is not None and amount < mn:
+            return 0
+
+    if user_domain == "EDUCATION":
+        if domain == "EDUCATION" and _is_loan_product(scheme) and scheme_type == "EDUCATION_LOAN":
+            return 4
+        if domain == "EDUCATION" and _is_loan_product(scheme):
+            return 3
+        return 0
+
+    if user_domain == "AGRICULTURE":
+        if domain == "EDUCATION" or any(marker in text for marker in _EXCLUSIVE_EDUCATION):
+            return 0
+        if not _explicit_agriculture_support(scheme):
+            return 0
+        if not _is_loan_product(scheme):
+            return 0
+        if domain == "AGRICULTURE":
+            return 4
+        return 3
+
+    if user_domain == "BUSINESS":
+        if domain == "EDUCATION":
+            return 0
+        if scheme_type == "MICRO_FINANCE" and (amount is None or amount <= 125000):
+            return 4
+        if scheme_type == "TERM_LOAN" and (amount is None or amount > 125000):
+            return 4
+        if scheme_type in {"BUSINESS_LOAN", "TERM_LOAN", "MICRO_FINANCE"}:
+            return 3
+        if domain == "BUSINESS" and _is_loan_product(scheme):
+            return 2
+        return 0
+
+    if _is_loan_product(scheme) and domain not in {"EDUCATION"}:
+        return 1
+    return 0
+
+
+def apply_relevance_gate(
+    eval_response: EvaluateAllResponse,
+    query: Optional[RelevanceQuery],
+) -> tuple[EvaluateAllResponse, Dict[str, int]]:
+    if query is None:
+        return eval_response, {}
+    kept: List[SchemeEvaluationResult] = []
+    priorities: Dict[str, int] = {}
+    for res in eval_response.evaluated_schemes:
+        try:
+            scheme = load_scheme(res.scheme_id)
+        except Exception:
+            continue
+        priority = scheme_relevance_priority(scheme, query)
+        if priority <= 0:
+            continue
+        kept.append(res)
+        priorities[res.scheme_id] = priority
+    filtered = EvaluateAllResponse(
+        user_profile_summary=eval_response.user_profile_summary,
+        evaluated_schemes=kept,
+        summary=eval_response.summary,
+    )
+    return filtered, priorities
 
 
 def get_status_tier(status: str) -> int:
@@ -158,21 +369,19 @@ def _score_scheme(eval_res: SchemeEvaluationResult, scheme_rules: List[dict]) ->
 def generate_recommendations(
     eval_response: EvaluateAllResponse,
     rules: Optional[List[dict]] = None,
+    relevance: Optional[RelevanceQuery] = None,
 ) -> RankedRecommendations:
     """Rank schemes from eligibility-engine output. Does not recompute eligibility facts.
 
-    Ranking:
-      1. Drop not_eligible schemes
-      2. Compute normalized recommendation_score from positive reason-code weights
-      3. Assign status_tier (eligible=1, potentially_eligible=2, manual_verification_required=3)
-      4. Sort by status_tier ASC, recommendation_score DESC, scheme_id ASC
-      5. First result is top_recommendation; the rest are alternatives
+    When relevance is provided, incompatible or under-specified schemes are
+    removed before score/UUID tie-breaking. Check Eligibility omits relevance.
     """
+    gated, priorities = apply_relevance_gate(eval_response, relevance)
     loaded_rules = rules if rules is not None else load_recommendation_rules()
     rules_by_scheme = {r["scheme_id"]: r.get("scoring_rules", []) for r in loaded_rules}
 
     scored_schemes: List[ScoredScheme] = []
-    for eval_res in eval_response.evaluated_schemes:
+    for eval_res in gated.evaluated_schemes:
         if eval_res.eligibility_status == "not_eligible":
             continue
         scored_schemes.append(
@@ -180,7 +389,12 @@ def generate_recommendations(
         )
 
     scored_schemes.sort(
-        key=lambda s: (s.status_tier, -s.recommendation_score, s.scheme_id)
+        key=lambda s: (
+            s.status_tier,
+            -s.recommendation_score,
+            -priorities.get(s.scheme_id, 0),
+            s.scheme_id,
+        )
     )
 
     top = scored_schemes[0] if scored_schemes else None

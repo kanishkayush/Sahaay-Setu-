@@ -122,22 +122,28 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
             logger.info(f"[CHAT] conversation_id={request.conversation_id} language={request.language} query_length={len(request.query)} response_source={resp.response_source.value} total_ms={int((time.time()-start_time)*1000)}")
             return resp
 
-        # Step 2: Context Resolution for Retrieval
-        recent_turns = memory.get_recent_turns(request.conversation_id) if request.conversation_id else []
-        retrieval_query = normalized_query
-        if recent_turns and len(normalized_query.split()) <= 6:
-            # If the current query is very short and we have history, prepend the last query for context
-            retrieval_query = f"{recent_turns[-1]['query']} {normalized_query}"
+        # Step 2: Conversation-aware retrieval query (short answers merge into state)
+        profile_for_rag = None
+        if request.conversation_id:
+            profile_for_rag = memory.get_session_profile(request.conversation_id)
+        from app.rag.query_context import build_retrieval_query
+        retrieval_spec = build_retrieval_query(
+            request.query,
+            profile=profile_for_rag,
+            detection=detection,
+            language=request.language,
+        )
 
-        # Step 3: Retrieve context
+        # Step 3: Retrieve context (org/domain/assistance filters before ranking)
         retrieval_start = time.time()
         retrieved_chunks = retrieve(
-            query=retrieval_query,
+            query=retrieval_spec.search_text,
             scheme_id_filter=request.scheme_id_filter,
-            min_similarity=0.08,
-            organization_filter=detection.organization,
-            domain_filter=detection.domain,
-            assistance_type_filter=detection.assistance_type,
+            min_similarity=None,
+            organization_filter=retrieval_spec.organization_scope,
+            domain_filter=retrieval_spec.domain,
+            assistance_type_filter=retrieval_spec.assistance_type,
+            retrieval_query=retrieval_spec,
         )
         retrieval_ms = int((time.time() - retrieval_start) * 1000)
         

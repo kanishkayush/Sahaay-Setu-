@@ -48,6 +48,8 @@ class ChatProfile(BaseModel):
     channelPartnerRequired: Optional[bool] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    landHoldingAcres: Optional[float] = None
+    noVerifiedMatch: Optional[bool] = None
 
 class ChatRequest(BaseModel):
     model_config = {"populate_by_name": True}

@@ -113,6 +113,14 @@ const PATHS: Record<string, El[]> = {
     { t: 'path', p: { d: 'M13.4 3.6v5.2h5.3' } },
     { t: 'path', p: { d: 'M8.4 13.3h7M8.4 16.6h4.6' } },
   ],
+  document: [
+    {
+      t: 'path',
+      p: { d: 'M13.5 3.4H7a2 2 0 0 0-2 2v13.2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.9l-5.5-5.5Z' },
+    },
+    { t: 'path', p: { d: 'M13.4 3.6v5.2h5.3' } },
+    { t: 'path', p: { d: 'M8.4 13.3h7M8.4 16.6h4.6' } },
+  ],
   bank: [
     { t: 'path', p: { d: 'M3.6 9.6 12 4.4l8.4 5.2' } },
     { t: 'path', p: { d: 'M5.8 10.6v7.9M10 10.6v7.9M14 10.6v7.9M18.2 10.6v7.9' } },
@@ -150,8 +158,11 @@ export type IconProps = {
   strokeWidth?: number;
 };
 
+const ICON_ALIASES: Record<string, IconName> = { document: 'doc' };
+
 export function Icon({ name, size = 24, color = colors.text, strokeWidth = 1.7 }: IconProps) {
-  const els = PATHS[name] ?? [];
+  const resolved = (ICON_ALIASES[name] ?? name) as IconName;
+  const els = PATHS[resolved] ?? PATHS.doc ?? [];
   return (
     <Svg
       width={size}

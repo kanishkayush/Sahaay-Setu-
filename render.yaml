@@ -5,7 +5,7 @@ services:
     repo: https://github.com/kanishkayush/Sahaay-Setu-
     branch: main
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && python3 scripts/download_model.py
+    buildCommand: pip install -r requirements.txt && BUILDING_VECTOR_STORE=1 python3 scripts/build_vector_store.py
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
