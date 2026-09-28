@@ -82,7 +82,10 @@ export function useSpeechInput(
         if (generation.current !== mine) return;
         clearTimeout(safetyTimer);
         setIsListening(false);
-        session.current?.stop();
+        // With continuous=false in speechToText.ts, the recognition
+        // automatically stops after the first final result.
+        // Do NOT call session.current?.stop() here — it causes an
+        // InvalidStateError because the recognition is already stopped.
         handlers.current.onFinal(text);
       },
       onError: (reason, raw) => {

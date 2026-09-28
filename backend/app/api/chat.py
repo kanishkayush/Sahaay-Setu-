@@ -37,15 +37,22 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
         # Step 0: Language detection + intent extraction (deterministic, no LLM)
         detection = detect_language_and_intent(request.query)
         
-        # Override language ONLY if we successfully detected it, and respect stickiness
+        # Override language ONLY if we successfully detected it, and respect stickiness.
+        # RULE: If the user has already established a language preference (request.language is set)
+        # and the current query is short (≤3 words) or numeric (like "200000", "2 lakh", "rice"),
+        # NEVER override the language — these are contextual answers, not language switches.
         if detection.detected_language:
-            # If detected as English but user wants another language,
-            # only switch if it's a longer query (not a short 1-2 word context answer).
-            if detection.detected_language == "en" and request.language and request.language != "en":
-                if len(request.query.split()) > 3:
-                    request.language = detection.detected_language
-            else:
+            has_existing_lang = bool(request.language and request.language != "en")
+            is_short_query = len(request.query.strip().split()) <= 4
+            # Only upgrade to a detected non-English language, or switch if we don't have one yet.
+            if detection.detected_language != "en":
+                # Confidently detected as non-English (script-based): always trust this.
                 request.language = detection.detected_language
+            elif not has_existing_lang and not is_short_query:
+                # No prior language and query is long enough to be reliable.
+                request.language = detection.detected_language
+            # else: keep the existing language preference — short English/neutral words
+            # like "rice", "dairy", "200000", "BTech" inside a Hindi session stay Hindi.
         
         normalized_query = detection.translated_query_en
         is_low_info = detection.is_low_info
@@ -58,6 +65,26 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
                 gj_resp = process_guided_journey(request)
                 if gj_resp:
                     return gj_resp
+                # guided_journey returned None (exception / unhandled state)
+                # Do NOT fall through to generic RAG — that produces "मैं सारथी हूँ" mid-conversation.
+                # Instead, provide a minimal context-aware reply to keep the conversation going.
+                lang = request.language or "en"
+                _GJ_RECOVERY_MAP = {
+                    "en": "I'm sorry, I didn't quite understand. Could you please rephrase your answer?",
+                    "hi": "माफ़ करें, मैं समझ नहीं पाया। क्या आप अपना उत्तर दोबारा बता सकते हैं?",
+                    "mr": "माफ करा, मला नीट समजले नाही. तुम्ही तुमचे उत्तर पुन्हा सांगू शकाल का?",
+                    "bn": "ক্ষমা করবেন, আমি ঠিকমতো বুঝতে পারিনি। আপনি কি আপনার উত্তর আবার বলতে পারবেন?",
+                    "ta": "மன்னிக்கவும், எனக்கு சரியாக புரியவில்லை. உங்கள் பதிலை மீண்டும் சொல்ல முடியுமா?",
+                    "te": "క్షమించండి, నాకు సరిగ్గా అర్థం కాలేదు. మీ జవాబును మళ్ళీ చెప్పగలరా?",
+                }
+                return ChatResponse(
+                    answer=_GJ_RECOVERY_MAP.get(lang, _GJ_RECOVERY_MAP["en"]),
+                    language=lang,
+                    citations=[],
+                    grounding_status="GROUNDED",
+                    related_scheme_ids=[],
+                    response_source=ResponseSource.CLARIFICATION,
+                )
 
         # Step 0.6: If guideMe is requested and we detected a loan intent,
         # start the guided journey — but with intent context
@@ -68,6 +95,7 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
             gj_resp = process_guided_journey(request)
             if gj_resp:
                 return gj_resp
+
 
         # Step 1: Low-information query guard
         if is_low_info:

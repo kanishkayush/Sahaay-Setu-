@@ -452,11 +452,44 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         # Update session profile with extracted data before checking missing fields
         update_session_profile(session_id, profile)
         
+    # ── Resolve short one-word activity answers BEFORE checking missing fields ──
+    # If activity is still vague and user just answered, try to refine it from the query.
+    _VAGUE_ACTIVITIES = {"BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING", "GENERAL", None}
+    _ACTIVITY_SHORT_MAP = {
+        # Agriculture / Allied
+        "rice": "RICE_FARMING", "paddy": "RICE_FARMING", "धान": "RICE_FARMING",
+        "wheat": "WHEAT_FARMING", "गेहूं": "WHEAT_FARMING", "gehun": "WHEAT_FARMING",
+        "vegetable": "VEGETABLE_FARMING", "vegetables": "VEGETABLE_FARMING",
+        "सब्जी": "VEGETABLE_FARMING", "sabji": "VEGETABLE_FARMING",
+        "fruit": "HORTICULTURE", "fruits": "HORTICULTURE", "फल": "HORTICULTURE", "horticulture": "HORTICULTURE",
+        "dairy": "DAIRY_FARMING", "milk": "DAIRY_FARMING", "डेयरी": "DAIRY_FARMING", "दूध": "DAIRY_FARMING",
+        "poultry": "POULTRY", "murgi": "POULTRY", "मुर्गी": "POULTRY",
+        "fish": "FISHERY", "fishing": "FISHERY", "मछली": "FISHERY",
+        "goat": "GOAT_REARING", "sheep": "GOAT_REARING", "बकरी": "GOAT_REARING",
+        "pig": "PIG_REARING", "सूअर": "PIG_REARING",
+        # Business / Trade
+        "shop": "SMALL_RETAIL", "dukaan": "SMALL_RETAIL", "दुकान": "SMALL_RETAIL",
+        "tailoring": "TAILORING", "silai": "TAILORING", "सिलाई": "TAILORING",
+        "handicraft": "HANDICRAFT", "craft": "HANDICRAFT", "हस्तशिल्प": "HANDICRAFT",
+        "beauty": "BEAUTY_PARLOUR", "salon": "BEAUTY_PARLOUR",
+        "transport": "TRANSPORT", "auto": "TRANSPORT", "cab": "TRANSPORT",
+        "repair": "REPAIR_WORKSHOP", "mechanic": "REPAIR_WORKSHOP",
+        "catering": "CATERING", "food": "FOOD_PROCESSING",
+    }
+    if profile.activity in _VAGUE_ACTIVITIES and not is_transition:
+        q_low = request.query.strip().lower()
+        for kw, mapped in _ACTIVITY_SHORT_MAP.items():
+            if kw in q_low:
+                profile.activity = mapped
+                update_session_profile(session_id, profile)
+                print(f"[Guided] Resolved short activity answer '{kw}' → {mapped}")
+                break
+
     # Check what is missing
     missing_fields = []
     if profile.pinCode is None and (profile.stateCode is None or profile.districtCode is None):
         missing_fields.append("PIN Code")
-    elif profile.projectType != "EDUCATION" and (profile.activity is None or profile.activity in ["BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING"]):
+    elif profile.projectType != "EDUCATION" and (profile.activity is None or profile.activity in _VAGUE_ACTIVITIES):
         missing_fields.append("Specific Activity")
     elif profile.projectType != "EDUCATION" and profile.existingBusiness is None:
         missing_fields.append("Is this a new business or an existing business?")
@@ -636,8 +669,76 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
             updates["pinCode"] = pins[0]
             return updates
 
+    # ── Word-to-number resolver for Hindi/Roman Hindi amounts ──────────────
+    # "दो लाख" → 200000, "do lakh" → 200000, "teen lakh" → 300000, etc.
+    _WORD_NUMS = {
+        # Hindi Devanagari
+        "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पाँच": 5, "पांच": 5,
+        "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+        "बीस": 20, "पचास": 50, "सौ": 100,
+        # Roman Hindi
+        "ek": 1, "do": 2, "teen": 3, "char": 4, "panch": 5,
+        "chhe": 6, "saat": 7, "aath": 8, "nau": 9, "das": 10,
+        "bis": 20, "pachas": 50, "sau": 100,
+        # English
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+        "twenty": 20, "fifty": 50, "hundred": 100,
+    }
+    def _resolve_word_amount(text: str) -> int | None:
+        import re as _re
+        for word, num in _WORD_NUMS.items():
+            # Match "<word> lakh/लाख"
+            if _re.search(rf"\b{_re.escape(word)}\s+(?:lakh|lac|लाख)\b", text, _re.IGNORECASE):
+                return int(num * 100_000)
+            # Match "<word> thousand/हजार/k"
+            if _re.search(rf"\b{_re.escape(word)}\s+(?:thousand|हजार|k)\b", text, _re.IGNORECASE):
+                return int(num * 1_000)
+        return None
+
+    # ── Education level / course detection ─────────────────────────────────
+    # If profile has no activity or is still vague, and user answers with a course name,
+    # map it directly without the LLM.
+    _EDU_LEVEL_MAP = {
+        "5th": "CLASS_5", "5वीं": "CLASS_5",
+        "8th": "CLASS_8", "8वीं": "CLASS_8",
+        "10th": "CLASS_10", "10वीं": "CLASS_10", "दसवीं": "CLASS_10", "matric": "CLASS_10",
+        "12th": "CLASS_12", "12वीं": "CLASS_12", "बारहवीं": "CLASS_12",
+        "intermediate": "CLASS_12", "higher secondary": "CLASS_12",
+        "iti": "ITI_DIPLOMA", "polytechnic": "DIPLOMA",
+        "btech": "BTECH", "b.tech": "BTECH", "b tech": "BTECH", "बीटेक": "BTECH",
+        "be": "BE", "b.e.": "BE",
+        "bca": "BCA", "mca": "MCA", "mtech": "MTECH", "m.tech": "MTECH",
+        "mbbs": "MBBS", "bds": "BDS", "bams": "BAMS", "bhms": "BHMS",
+        "medical": "MEDICAL_GENERAL", "मेडिकल": "MEDICAL_GENERAL",
+        "nursing": "NURSING", "नर्सिंग": "NURSING", "gnm": "NURSING", "anm": "NURSING",
+        "pharmacy": "PHARMACY", "b.pharm": "PHARMACY", "फार्मेसी": "PHARMACY",
+        "mba": "MBA", "bba": "BBA",
+        "bsc": "BSC", "msc": "MSC", "bcom": "BCOM", "mcom": "MCOM",
+        "ba": "BA", "ma": "MA",
+        "llb": "LLB", "law": "LLB",
+        "diploma": "DIPLOMA", "graduation": "GRADUATION",
+        "engineering": "ENGINEERING_GENERAL", "इंजीनियरिंग": "ENGINEERING_GENERAL",
+    }
+    if profile.projectType == "EDUCATION":
+        matched_edu = None
+        q_lower_edu = q.strip()
+        for keyword, edu_val in _EDU_LEVEL_MAP.items():
+            if keyword in q_lower_edu:
+                matched_edu = edu_val
+                break
+        if matched_edu:
+            updates["activity"] = matched_edu
+            return updates
+
     # Check for a numeric project cost
     if profile.estimatedProjectCost is None:
+        # Try word-number resolution first (e.g. "दो लाख", "do lakh")
+        word_amount = _resolve_word_amount(query_norm)
+        if word_amount:
+            updates["estimatedProjectCost"] = word_amount
+            return updates
+
         # Strip common prefix words and try to find a number
         stripped = __import__("re").sub(
             r"(?:project cost|cost|estimate|budget|amount|approximately|around|about|लागत|खर्च|budget)\s*[:=]?\s*",

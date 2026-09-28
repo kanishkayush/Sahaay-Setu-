@@ -262,7 +262,9 @@ export function startListening(language: LanguageCode, handlers: SttHandlers): S
 
   const recognition = new Ctor();
   recognition.lang = speechLocaleFor(language);
-  recognition.continuous = true;
+  // continuous=false: mic stops automatically after first final result.
+  // This is the key guard against TTS output being fed back into STT.
+  recognition.continuous = false;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
@@ -282,7 +284,9 @@ export function startListening(language: LanguageCode, handlers: SttHandlers): S
     }
     if (finalText) {
       settled = true;
-      recognition.stop();
+      // Do NOT call recognition.stop() here — with continuous=false the
+      // recognition automatically stops after the first final result.
+      // Calling stop() here causes an InvalidStateError on Firefox/Safari.
       handlers.onFinal(finalText.trim());
     } else if (interim) {
       bestPartial = interim;
