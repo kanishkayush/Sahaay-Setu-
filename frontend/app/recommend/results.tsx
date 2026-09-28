@@ -12,6 +12,7 @@ import { pickLocalized } from '@/i18n/localized';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, spacing } from '@/theme';
 import { formatCompactCurrency, formatCurrency, formatPercent } from '@/utils/format';
+import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 export default function ResultsScreen() {
   const { t } = useTranslation();
@@ -26,6 +27,7 @@ export default function ResultsScreen() {
 
   // Every hook must run on each render — these sit above the early return below.
   const all = useMemo(() => data?.recommendations ?? [], [data]);
+  const related = useMemo(() => data?.relatedOptions ?? [], [data]);
 
   /** Only offer a filter for categories actually present in these results. */
   const categories = useMemo(() => [...new Set(all.map((r) => r.scheme.officialCategory))], [all]);
@@ -116,9 +118,11 @@ export default function ResultsScreen() {
 
           {recommendations.length === 0 ? (
             <Card>
-              <Text variant="subheading">{t('recommender.noResults')}</Text>
+              <Text variant="subheading">
+                {related.length > 0 ? t('recommender.noDedicatedMatch') : t('recommender.noResults')}
+              </Text>
               <Text variant="caption" color={colors.textSecondary} style={styles.gap}>
-                {t('recommender.noResultsBody')}
+                {related.length > 0 ? t('recommender.noDedicatedMatchBody') : t('recommender.noResultsBody')}
               </Text>
             </Card>
           ) : null}
@@ -140,7 +144,7 @@ export default function ResultsScreen() {
                   language={language}
                   recommendation={recommendation}
                   rank={index + 1}
-                  onPress={() => router.push(`/scheme/${recommendation.scheme.id}`)}
+                  onPress={() => router.push(schemeDetailPath(recommendation.scheme.id))}
                 />
 
                 <Card variant="glass">
@@ -208,6 +212,40 @@ export default function ResultsScreen() {
               </View>
             )})}
           </View>
+
+          {related.length > 0 ? (
+            <View style={styles.list}>
+              <Text variant="subheading" style={{ marginTop: spacing.xl, marginBottom: spacing.xs }}>
+                {t('recommender.relatedOptions')}
+              </Text>
+              {related.map((recommendation) => (
+                <View key={recommendation.scheme.id} style={styles.resultBlock}>
+                  <SchemeCard
+                    scheme={recommendation.scheme}
+                    language={language}
+                    recommendation={recommendation}
+                    onPress={() => router.push(schemeDetailPath(recommendation.scheme.id))}
+                  />
+                  <Card variant="glass">
+                    <Text variant="subheading">{t('recommender.whyRelated')}</Text>
+                    <View style={styles.gap}>
+                      <ReasonList reasons={recommendation.reasons} language={language} />
+                    </View>
+                    <View style={styles.actions}>
+                      <Button
+                        title={t('recommender.viewDetails')}
+                        variant="primary"
+                        size="sm"
+                        fullWidth={false}
+                        style={styles.action}
+                        onPress={() => router.push(schemeDetailPath(recommendation.scheme.id))}
+                      />
+                    </View>
+                  </Card>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {data.nearMisses.length > 0 ? (
             <View style={styles.section}>

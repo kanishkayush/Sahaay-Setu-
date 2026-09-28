@@ -22,7 +22,7 @@ def _rank(profile: dict, domain: str, amount: Optional[float], organization: Opt
     return evaluated, ranked
 
 
-def test_agriculture_two_lakh_uses_officially_supported_term_finance():
+def test_agriculture_two_lakh_does_not_promote_term_loan():
     _, ranked = _rank(
         {
             "purpose": "RICE_FARMING",
@@ -33,25 +33,30 @@ def test_agriculture_two_lakh_uses_officially_supported_term_finance():
         domain="AGRICULTURE",
         amount=200000,
     )
-    assert ranked.top_recommendation is not None
-    assert ranked.top_recommendation.scheme_id == "nsfdc-term-loan"
+    assert ranked.top_recommendation is None or ranked.top_recommendation.scheme_id != "nsfdc-term-loan"
+    assert all(a.scheme_id != "nsfdc-term-loan" for a in ranked.alternatives)
     assert all(a.scheme_id != FREE_COACHING_ID for a in ranked.alternatives)
     assert all("coach" not in a.scheme_name.lower() for a in ranked.alternatives)
     assert all("scholarship" not in a.scheme_name.lower() for a in ranked.alternatives)
+    related_ids = [s.scheme_id for s in ranked.related]
+    if "nsfdc-term-loan" in related_ids:
+        assert ranked.top_recommendation is None or ranked.top_recommendation.scheme_id != "nsfdc-term-loan"
 
 
-def test_term_loan_has_verified_agriculture_support_from_catalogue():
+def test_term_loan_is_related_not_primary_for_agriculture():
     scheme = load_scheme("nsfdc-term-loan")
     assert scheme.get("domain") == "BUSINESS"
     assert scheme.get("purpose") == "SELF_EMPLOYMENT"
     desc = ((scheme.get("api") or {}).get("shortDescription") or {}).get("en", "").lower()
     assert "manufacturing" in desc or "transport" in desc or "service" in desc
     assert "agricultur" in desc or "farm" in desc
+    from app.recommendation_engine import agriculture_fit_role
+    assert agriculture_fit_role(scheme, "RICE_FARMING", "AGRICULTURE") == "related"
     priority = scheme_relevance_priority(
         scheme,
-        RelevanceQuery(assistance_type="LOAN", domain="AGRICULTURE", amount_inr=200000),
+        RelevanceQuery(assistance_type="LOAN", domain="AGRICULTURE", activity="RICE_FARMING", amount_inr=200000),
     )
-    assert priority > 0
+    assert 0 < priority < 4
     biz = scheme_relevance_priority(
         scheme,
         RelevanceQuery(assistance_type="LOAN", domain="BUSINESS", amount_inr=200000),

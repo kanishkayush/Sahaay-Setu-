@@ -19,6 +19,8 @@ def test_extract_specific_activity_evidence_only():
     assert extract_specific_activity("मुझे खेती के लिए लोन चाहिए") is None
     assert extract_specific_activity("Rice farming") == "RICE_FARMING"
     assert extract_specific_activity("Dairy farming") == "DAIRY_FARMING"
+    assert extract_specific_activity("I need a livestock loan") == "LIVESTOCK"
+    assert extract_specific_activity("मुझे पशुपालन के लिए लोन चाहिए") == "LIVESTOCK"
     assert extract_specific_activity("मुझे चावल की खेती के लिए लोन चाहिए") == "RICE_FARMING"
 
 
@@ -55,7 +57,7 @@ def test_farming_does_not_invent_rice():
     assert profile.activity is None
 
 
-def test_farming_fallback_asks_for_activity_not_rice():
+def test_farming_fallback_does_not_invent_rice_or_force_term_loan():
     clear_session("sess-farm-fb")
     req = ChatRequest(query="Farming", language="en", conversation_id="sess-farm-fb", guideMe=True)
     with (
@@ -65,7 +67,10 @@ def test_farming_fallback_asks_for_activity_not_rice():
         resp = process_chat_request(req)
     text = (resp.answer or "").lower()
     assert "rice" not in text
-    assert "specific farming activity" in text or "crop cultivation" in text
+    assert "dedicated" in text or "catalogue" in text or "could not find" in text
+    assert "recommended" not in text
+    profile = get_session_profile("sess-farm-fb")
+    assert profile.recommendedSchemeId != "nsfdc-term-loan"
 
 
 def test_rice_farming_sets_rice_activity():

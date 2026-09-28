@@ -125,6 +125,10 @@
     "resultsSubtitle_other": "{{count}} திட்டங்கள் உங்கள் விவரங்களுடன் பொருந்தின",
     "noResults": "எந்தத் திட்டமும் பொருந்தவில்லை",
     "noResultsBody": "பொதுவாக இதற்குக் காரணம் குடும்ப வருமானம் ₹5 லட்ச வரம்பை மீறியிருப்பதுதான். கீழே உள்ள காரணங்களைப் பாருங்கள்.",
+    "noDedicatedMatch": "அர்ப்பணிக்கப்பட்ட சரிபார்க்கப்பட்ட திட்டம் இல்லை",
+    "noDedicatedMatchBody": "தற்போதைய பட்டியலில் இந்தச் செயலுக்கான அர்ப்பணிக்கப்பட்ட சரிபார்க்கப்பட்ட திட்டம் இல்லை.",
+    "relatedOptions": "தொடர்புடைய விருப்பங்கள்",
+    "whyRelated": "இது தொடர்புடைய விருப்பம் மட்டும் ஏன்",
     "nearMisses": "அருகில், ஆனால் தகுதியில்லை",
     "whyThisScheme": "இந்தத் திட்டம் ஏன்?",
     "matchScore": "{{score}}% பொருத்தம்",
@@ -487,7 +491,8 @@
   },
   "uiCards": {
     "requiredDocuments": "தேவையான ஆவணங்கள்",
-    "recommended": "பரிந்துரைக்கப்படுகிறது",
+    "recommended": "Suggested documents",
+    "suggestedDocuments": "Suggested documents",
     "noPartnerSelected": "கூட்டாளர் யாரும் தேர்ந்தெடுக்கப்படவில்லை",
     "away": "கி.மீ. தொலைவு",
     "selectPartner": "இந்த கூட்டாளரைத் தேர்ந்தெடுக்கவும்",
@@ -509,6 +514,14 @@
     "fitOutside": "வரம்புக்கு வெளியே",
     "fitAbove": "மேலே",
     "fitNotALoan": "கடன் அல்ல",
-    "fitUnknown": "தெரியாது"
+    "fitUnknown": "தெரியாது",
+    "matchesDetails": "உங்கள் விவரங்களுடன் பொருந்துகிறது",
+    "mostRelevant": "கொடுக்கப்பட்ட தகவலின் அடிப்படையில் மிகவும் பொருத்தமானது",
+    "otherRelevantOptions": "பிற தொடர்புடைய விருப்பங்கள்",
+    "relatedOption": "தொடர்புடைய விருப்பம்",
+    "whyThisScheme": "இந்தத் திட்டம் ஏன்?",
+    "maxAssistance": "அதிகபட்ச உதவி",
+    "repaymentPeriod": "திருப்பிச் செலுத்தும் காலம்",
+    "viewSchemeDetails": "திட்ட விவரங்களைப் பார்க்கவும் →"
   }
 }

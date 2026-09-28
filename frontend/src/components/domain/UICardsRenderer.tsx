@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, Chip, Icon, Button } from '@/components/ui';
-import { AssistantUICard } from '@/api/contracts';
+import { Card, Text, Chip, Icon, Button, StatRow } from '@/components/ui';
+import { AssistantUICard, SchemeFitReason } from '@/api/contracts';
 import { colors, spacing } from '@/theme';
 import { useTranslation } from 'react-i18next';
+import { formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
 
 function verificationTone(status?: string): 'success' | 'warning' | 'danger' | 'neutral' {
   if (status === 'VERIFIED') return 'success';
@@ -11,6 +12,12 @@ function verificationTone(status?: string): 'success' | 'warning' | 'danger' | '
   if (status === 'UNVERIFIED') return 'danger';
   return 'neutral';
 }
+
+const REASON_MARK: Record<string, { glyph: string; color: string }> = {
+  MATCH: { glyph: '✓', color: colors.successText },
+  MISMATCH: { glyph: '✕', color: colors.dangerText },
+  INFO: { glyph: 'ℹ', color: colors.infoText },
+};
 
 export function UICardsRenderer({
   cards,
@@ -40,67 +47,135 @@ export function UICardsRenderer({
     if (value === 'UNKNOWN') return t('uiCards.fitUnknown');
     return value;
   };
+  const fitChip = (status?: string) => {
+    if (status === 'MOST_RELEVANT' || status === 'MATCH') return t('uiCards.mostRelevant');
+    if (status === 'RELATED') return t('uiCards.relatedOption');
+    if (status === 'MATCHES_DETAILS') return t('uiCards.matchesDetails');
+    return null;
+  };
 
-  const schemeCards = cards.filter((card) => card.type === 'SCHEME_CARD');
+  const schemeCards = cards.filter((card): card is Extract<AssistantUICard, { type: 'SCHEME_CARD' }> => card.type === 'SCHEME_CARD');
   const otherCards = cards.filter((card) => card.type !== 'SCHEME_CARD');
-  const educationSet = schemeCards.some((card) => Boolean(card.assistanceType));
+  const educationSet = schemeCards.some((card) => card.domain === 'EDUCATION' || Boolean(card.assistanceType));
+  const primaryCards = schemeCards.filter((card) => card.isPrimary && card.fitStatus !== 'RELATED');
+  const otherSchemeCards = schemeCards.filter((card) => !primaryCards.includes(card));
+  const grouped = primaryCards.length > 0 && otherSchemeCards.length > 0;
+  const onlyRelated = schemeCards.length > 0 && primaryCards.length === 0 && schemeCards.every((card) => card.fitStatus === 'RELATED');
+
+  const renderSchemeCard = (card: Extract<AssistantUICard, { type: 'SCHEME_CARD' }>, idx: number) => {
+    const why: SchemeFitReason[] = card.whySelected ?? card.fitReasons ?? [];
+    const stats = [
+      card.verificationStatus === 'VERIFIED' && card.maxLoanAmount != null
+        ? { value: formatStatCurrency(card.maxLoanAmount), label: t('uiCards.maxAssistance') }
+        : null,
+      card.verificationStatus === 'VERIFIED' && card.interestRatePct != null
+        ? { value: formatPercent(card.interestRatePct), label: t('schemes.interestRate') }
+        : null,
+      card.verificationStatus === 'VERIFIED' && card.maxTenureMonths != null
+        ? {
+            value: formatMonths(card.maxTenureMonths, t('common.months'), t('common.years')),
+            label: t('uiCards.repaymentPeriod'),
+          }
+        : null,
+    ].filter(Boolean) as { value: string; label: string }[];
+    const open = card.schemeId && onSelectScheme ? () => onSelectScheme(card.schemeId as string) : undefined;
+    const chip = fitChip(card.fitStatus);
+
+    return (
+      <Card
+        key={card.schemeId || `scheme-${idx}`}
+        style={[
+          styles.schemeCard,
+          card.verificationStatus === 'UNVERIFIED' ? styles.unverifiedCard : null,
+        ]}
+        onPress={open}
+        accessibilityLabel={card.schemeName}
+      >
+        <View style={styles.headerRow}>
+          <Icon name="doc" size={20} color={colors.primary} />
+          <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
+        </View>
+        {card.organization ? (
+          <Text variant="caption" color={colors.textSecondary}>{card.organization}</Text>
+        ) : null}
+        <View style={styles.badgeRow}>
+          {chip ? <Chip label={chip} tone={card.fitStatus === 'RELATED' ? 'neutral' : 'info'} /> : null}
+          {card.assistanceType ? (
+            <Chip label={card.assistanceType.replace(/_/g, ' ')} tone="info" />
+          ) : null}
+          {card.verificationStatus ? (
+            <Chip
+              label={verifyLabel(card.verificationStatus)}
+              tone={verificationTone(card.verificationStatus)}
+            />
+          ) : null}
+        </View>
+        {card.reason ? (
+          <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
+        ) : null}
+        {stats.length > 0 ? <StatRow stats={stats} /> : null}
+        {card.verificationStatus === 'UNVERIFIED' ? (
+          <Text variant="caption" color={colors.warningText} style={{ marginTop: spacing.xs }}>
+            {t('uiCards.verificationRequired')}
+          </Text>
+        ) : null}
+        {why.length > 0 ? (
+          <View style={styles.whyBlock}>
+            <Text variant="label">{t('uiCards.whyThisScheme')}</Text>
+            {why.map((item: SchemeFitReason, reasonIdx: number) => {
+              const mark = REASON_MARK[item.kind] ?? { glyph: 'ℹ', color: colors.infoText };
+              return (
+                <View key={`${item.kind}-${reasonIdx}`} style={styles.whyRow}>
+                  <Text style={{ color: mark.color, fontWeight: 'bold' }}>{mark.glyph}</Text>
+                  <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+                    {item.text}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+        {open ? (
+          <View style={{ marginTop: spacing.sm }}>
+            <Button
+              title={
+                card.verificationStatus === 'UNVERIFIED'
+                  ? t('uiCards.viewAvailableInfo')
+                  : t('uiCards.viewSchemeDetails')
+              }
+              variant="outline"
+              size="sm"
+              onPress={open}
+            />
+          </View>
+        ) : null}
+      </Card>
+    );
+  };
 
   return (
     <View style={styles.container}>
       {schemeCards.length > 0 ? (
         <View style={styles.schemeGroup}>
-          <Text variant="label">
-            {educationSet ? t('uiCards.relatedEducationOptions') : t('uiCards.relevantOptions')}
-          </Text>
-          {schemeCards.map((card, idx) => (
-            <Card
-              key={card.schemeId || `scheme-${idx}`}
-              style={[
-                styles.schemeCard,
-                card.verificationStatus === 'UNVERIFIED' ? styles.unverifiedCard : null,
-              ]}
-              onPress={
-                card.schemeId && onSelectScheme
-                  ? () => onSelectScheme(card.schemeId as string)
-                  : undefined
-              }
-              accessibilityLabel={card.schemeName}
-            >
-              <View style={styles.headerRow}>
-                <Icon name="doc" size={20} color={colors.primary} />
-                <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
-              </View>
-              {card.organization ? (
-                <Text variant="caption" color={colors.textSecondary}>{card.organization}</Text>
-              ) : null}
-              <View style={styles.badgeRow}>
-                {card.assistanceType ? (
-                  <Chip label={card.assistanceType.replace(/_/g, ' ')} tone="info" />
-                ) : null}
-                {card.verificationStatus ? (
-                  <Chip
-                    label={verifyLabel(card.verificationStatus)}
-                    tone={verificationTone(card.verificationStatus)}
-                  />
-                ) : null}
-              </View>
-              {card.verificationStatus === 'UNVERIFIED' ? (
-                <Text variant="caption" color={colors.warningText} style={{ marginTop: spacing.xs }}>
-                  {t('uiCards.verificationRequired')}
-                </Text>
-              ) : null}
-              {card.reason ? (
-                <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
-              ) : null}
-              {card.schemeId && onSelectScheme ? (
-                <Text variant="caption" color={colors.primary} style={{ marginTop: spacing.xs }}>
-                  {card.verificationStatus === 'UNVERIFIED'
-                    ? t('uiCards.viewAvailableInfo')
-                    : t('uiCards.viewDetails')}
-                </Text>
-              ) : null}
-            </Card>
-          ))}
+          {grouped ? (
+            <>
+              <Text variant="label">{t('uiCards.mostRelevant')}</Text>
+              {primaryCards.map(renderSchemeCard)}
+              <Text variant="label" style={{ marginTop: spacing.sm }}>{t('uiCards.otherRelevantOptions')}</Text>
+              {otherSchemeCards.map(renderSchemeCard)}
+            </>
+          ) : (
+            <>
+              <Text variant="label">
+                {onlyRelated
+                  ? t('uiCards.relatedOption')
+                  : educationSet
+                    ? t('uiCards.relatedEducationOptions')
+                    : t('uiCards.relevantOptions')}
+              </Text>
+              {schemeCards.map(renderSchemeCard)}
+            </>
+          )}
         </View>
       ) : null}
       {otherCards.map((card, idx) => {
@@ -140,7 +215,7 @@ export function UICardsRenderer({
             );
           case 'DOCUMENT_CHECKLIST':
             return (
-              <Card key={idx} style={styles.checklistCard}>
+              <Card key={`docs-${idx}`} style={styles.checklistCard}>
                 <View style={styles.headerRow}>
                   <Icon name="doc" size={20} color={colors.text} />
                   <Text variant="label">{t('uiCards.requiredDocuments')}</Text>
@@ -153,7 +228,7 @@ export function UICardsRenderer({
                 ))}
                 {card.recommended?.length ? (
                   <>
-                    <Text variant="label" style={{ marginTop: spacing.sm }}>{t('uiCards.recommended')}</Text>
+                    <Text variant="label" style={{ marginTop: spacing.sm }}>{t('uiCards.suggestedDocuments')}</Text>
                     {card.recommended.map(doc => (
                       <Text key={doc} variant="body">・ {doc}</Text>
                     ))}
@@ -163,7 +238,7 @@ export function UICardsRenderer({
             );
           case 'PARTNER_CARD':
             return (
-              <Card key={idx} style={styles.partnerCard}>
+              <Card key={`partner-${idx}`} style={styles.partnerCard}>
                 <View style={styles.headerRow}>
                   <Icon name="pin" size={20} color={colors.primary} />
                   <Text variant="label">{card.name || t('uiCards.noPartnerSelected')}</Text>
@@ -187,7 +262,7 @@ export function UICardsRenderer({
             );
           case 'WARNING_CARD':
             return (
-              <Card key={idx} style={styles.warningCard}>
+              <Card key={`warn-${idx}`} style={styles.warningCard}>
                 <View style={styles.headerRow}>
                   <Icon name="alert" size={20} color={colors.danger} />
                   <Text variant="bodyStrong" color={colors.danger}>{card.message}</Text>
@@ -210,6 +285,8 @@ const styles = StyleSheet.create({
   schemeGroup: { gap: spacing.sm },
   schemeCard: { borderColor: colors.primary, borderWidth: 1 },
   unverifiedCard: { borderColor: colors.warningText, borderWidth: 1 },
+  whyBlock: { gap: spacing.xs, marginTop: spacing.sm },
+  whyRow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-start' },
   questionCard: { backgroundColor: colors.surface },
   checklistCard: { backgroundColor: colors.surface },
   partnerCard: { borderColor: colors.primary, borderWidth: 1 },

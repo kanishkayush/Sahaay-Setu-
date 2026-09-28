@@ -120,6 +120,10 @@
     "resultsSubtitle_other": "{{count}} schemes matched your details",
     "noResults": "No scheme matched your details",
     "noResultsBody": "This usually means your family income is above the ₹5 lakh ceiling. Check the reasons below.",
+    "noDedicatedMatch": "No dedicated verified scheme was found",
+    "noDedicatedMatchBody": "No dedicated verified scheme was found for this specific activity in the current catalogue.",
+    "relatedOptions": "Related options",
+    "whyRelated": "Why this is only a related option",
     "nearMisses": "Close, but not eligible",
     "whyThisScheme": "Why this scheme?",
     "matchScore": "{{score}}% match",
@@ -482,15 +486,17 @@
     "pleaseWait": "Please wait...",
     "disclaimer": "By continuing, you agree to the Terms of Service and Privacy Policy of this portal."
   },
-  "uiCards": {
+    "uiCards": {
     "requiredDocuments": "Required Documents",
-    "recommended": "Recommended",
+    "recommended": "Suggested documents",
+    "suggestedDocuments": "Suggested documents",
     "noPartnerSelected": "No partner selected",
     "away": "km away",
     "selectPartner": "Select this Partner",
-    "relevantOptions": "Relevant NSFDC options",
+    "relevantOptions": "Matching options based on your details",
     "relatedEducationOptions": "Related education options",
     "viewDetails": "View scheme details →",
+    "viewSchemeDetails": "View scheme details →",
     "viewAvailableInfo": "View available information →",
     "verified": "VERIFIED",
     "partial": "PARTIAL",
@@ -506,6 +512,13 @@
     "fitOutside": "Outside",
     "fitAbove": "Above",
     "fitNotALoan": "Not a loan",
-    "fitUnknown": "Unknown"
+    "fitUnknown": "Unknown",
+    "matchesDetails": "Matches your details",
+    "mostRelevant": "Most relevant based on the information provided",
+    "otherRelevantOptions": "Other relevant options",
+    "relatedOption": "Related option",
+    "whyThisScheme": "Why this scheme?",
+    "maxAssistance": "Maximum assistance",
+    "repaymentPeriod": "Repayment period"
   }
 }

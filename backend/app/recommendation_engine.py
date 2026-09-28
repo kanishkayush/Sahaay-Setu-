@@ -60,11 +60,12 @@ class ScoredScheme(BaseModel):
 class RankedRecommendations(BaseModel):
     top_recommendation: Optional[ScoredScheme]
     alternatives: List[ScoredScheme]
+    related: List[ScoredScheme] = []
 
 
 @dataclass
 class RelevanceQuery:
-    """Optional conversational relevance gate. Check Eligibility omits this."""
+    """Relevance gate applied before eligibility ranking. eligible != relevant."""
     assistance_type: str = "LOAN"
     domain: Optional[str] = None
     activity: Optional[str] = None
@@ -86,39 +87,139 @@ _EXCLUSIVE_NON_LOAN = (
 )
 _EXCLUSIVE_EDUCATION = ("educational loan", "education loan", "शैक्षिक ऋण")
 _EXCLUSIVE_GREEN_ASSET = ("e-rickshaw", "e rickshaw", "solar", "clean-energy", "ई-रिक्शा", "सौर")
-_EXPLICIT_AGRICULTURE = (
+_GENERIC_AGRI_MARKERS = (
     "agriculture", "agricultural", "farming", "farm ", " farm",
-    "kheti", "कृषि", "खेती", "dairy", "poultry", "paddy", "rice",
-    "धान", "horticulture", "fishery", "allied agriculture", "crop",
+    "kheti", "कृषि", "खेती", "allied agriculture", "allied activit",
 )
+_CROP_MARKERS = (
+    "crop", "paddy", "rice", "wheat", "fasal", "horticulture", "vegetable",
+    "फसल", "धान", "चावल", "गेहूं",
+)
+_DAIRY_MARKERS = ("dairy", "milk", "डेयरी", "दूध")
+_POULTRY_MARKERS = ("poultry", "chicken", "मुर्गी", "murgi")
+_LIVESTOCK_MARKERS = (
+    "livestock", "cattle", "goat", "sheep", "fishery", "fish",
+    "पशु", " bakri", "बकरी", "animal husbandry",
+)
+_OTHER_IGA_MARKERS = ("manufactur", "service", "shop", "transport", "retail", "vending")
+_CROP_ACTIVITIES = {
+    "CROP_FARMING", "RICE_FARMING", "WHEAT_FARMING", "VEGETABLE_FARMING",
+    "HORTICULTURE", "FASAL",
+}
+_DAIRY_ACTIVITIES = {"DAIRY_FARMING", "DAIRY"}
+_POULTRY_ACTIVITIES = {"POULTRY"}
+_LIVESTOCK_ACTIVITIES = {
+    "LIVESTOCK", "GOAT_REARING", "PIG_REARING", "FISHERY", "ANIMAL_HUSBANDRY",
+}
 
 
-def _explicit_agriculture_support(scheme: dict) -> bool:
-    """True only if name/description actually mentions agriculture or allied activity.
+def agriculture_activity_family(activity: Optional[str], domain: Optional[str] = None) -> str:
+    """Normalize parser output to a recommendation family. Language-independent."""
+    act = str(activity or "").upper().replace(" ", "_")
+    if act in _CROP_ACTIVITIES or any(tok in act for tok in ("CROP", "RICE", "WHEAT", "FASAL")):
+        return "CROP_FARMING"
+    if act in _DAIRY_ACTIVITIES or "DAIRY" in act:
+        return "DAIRY_FARMING"
+    if act in _POULTRY_ACTIVITIES or "POULTRY" in act:
+        return "POULTRY"
+    if act in _LIVESTOCK_ACTIVITIES or "LIVESTOCK" in act:
+        return "LIVESTOCK"
+    if (domain or "").upper() in {"AGRICULTURE", "ANIMAL_HUSBANDRY"}:
+        if (domain or "").upper() == "ANIMAL_HUSBANDRY":
+            return "LIVESTOCK"
+        return "AGRICULTURE"
+    if act in {"FARMING", "AGRICULTURE", "KHETI"}:
+        return "AGRICULTURE"
+    return "OTHER_AGRICULTURAL_ACTIVITY"
 
-    Classified domain/purpose tags are not enough: some NSFDC files were
-    auto-tagged AGRICULTURE/FARMING while the scheme text is about other assets.
-    """
-    supported = {
-        str(value).upper()
-        for value in (
-            list(scheme.get("supported_domains") or [])
-            + list(scheme.get("supported_purposes") or [])
-        )
-    }
-    if supported & {
-        "AGRICULTURE", "LIVESTOCK", "FARMING", "CROP_CULTIVATION",
-        "DAIRY", "POULTRY",
-    }:
-        return True
+
+def _mentions_agriculture_in_text(scheme: dict) -> bool:
+    """Description/name evidence only. Auto-tags are ignored."""
+    desc = _description_text(scheme)
+    if not desc:
+        return False
+    return any(marker in desc for marker in _GENERIC_AGRI_MARKERS + _CROP_MARKERS + _DAIRY_MARKERS + _POULTRY_MARKERS + _LIVESTOCK_MARKERS)
+
+
+def _is_mis_tagged_green_asset(scheme: dict) -> bool:
     desc = _description_text(scheme)
     if not desc:
         return False
     if any(marker in desc for marker in _EXCLUSIVE_GREEN_ASSET) and not any(
-        w in desc for w in ("farm", "kheti", "कृषि", "agriculture", "dairy", "धान", "खेती")
+        w in desc for w in ("farm", "kheti", "कृषि", "agriculture", "dairy", "धान", "खेती", "crop")
     ):
+        return True
+    return False
+
+
+def _is_broad_iga_with_agriculture(scheme: dict) -> bool:
+    """General income-generation product that lists agriculture among other sectors."""
+    desc = _description_text(scheme)
+    if not desc or not _mentions_agriculture_in_text(scheme):
         return False
-    return any(marker in desc for marker in _EXPLICIT_AGRICULTURE)
+    other = sum(1 for marker in _OTHER_IGA_MARKERS if marker in desc)
+    canonical = str(scheme.get("domain") or "").upper()
+    if other >= 2:
+        return True
+    if canonical == "BUSINESS" and _mentions_agriculture_in_text(scheme):
+        return True
+    return False
+
+
+def _dedicated_agriculture_scheme(scheme: dict) -> bool:
+    """PRIMARY agriculture evidence: canonical domain, not auto-tags, not a broad IGA."""
+    if str(scheme.get("domain") or "").upper() != "AGRICULTURE":
+        return False
+    if _is_mis_tagged_green_asset(scheme):
+        return False
+    if _is_broad_iga_with_agriculture(scheme):
+        return False
+    return _mentions_agriculture_in_text(scheme)
+
+
+def _blob(scheme: dict) -> str:
+    purpose = str(scheme.get("purpose") or "").lower()
+    return f"{_description_text(scheme)} {purpose}"
+
+
+def _supports_activity_family(scheme: dict, family: str) -> bool:
+    """Specific activities need specific catalogue evidence, not a generic agri word."""
+    blob = _blob(scheme)
+    if family == "CROP_FARMING":
+        return any(m in blob for m in _CROP_MARKERS)
+    if family == "DAIRY_FARMING":
+        return any(m in blob for m in _DAIRY_MARKERS)
+    if family == "POULTRY":
+        return any(m in blob for m in _POULTRY_MARKERS)
+    if family == "LIVESTOCK":
+        return any(m in blob for m in _LIVESTOCK_MARKERS + _DAIRY_MARKERS + _POULTRY_MARKERS)
+    return any(m in blob for m in _GENERIC_AGRI_MARKERS)
+
+
+def agriculture_fit_role(scheme: dict, activity: Optional[str] = None, domain: Optional[str] = None) -> str:
+    """Catalogue-backed agriculture fit: match | related | none.
+
+    Auto-tagged supported_domains / supported_purposes are not PRIMARY evidence.
+    A broad IGA sentence that happens to list agriculture is RELATED only.
+    """
+    if not _is_loan_product(scheme):
+        return "none"
+    family = agriculture_activity_family(activity, domain)
+    if _dedicated_agriculture_scheme(scheme) and _supports_activity_family(scheme, family):
+        return "match"
+    if _is_broad_iga_with_agriculture(scheme) or (
+        str(scheme.get("domain") or "").upper() == "BUSINESS" and _mentions_agriculture_in_text(scheme)
+    ):
+        return "related"
+    return "none"
+
+
+def _explicit_agriculture_support(scheme: dict) -> bool:
+    """True if the scheme is agriculture-related at all (match or related).
+
+    Not a PRIMARY ranking signal. Use agriculture_fit_role() for selection.
+    """
+    return agriculture_fit_role(scheme) != "none"
 
 
 def _description_text(scheme: dict) -> str:
@@ -234,13 +335,15 @@ def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
     if user_domain == "AGRICULTURE":
         if domain == "EDUCATION" or any(marker in text for marker in _EXCLUSIVE_EDUCATION):
             return 0
-        if not _explicit_agriculture_support(scheme):
-            return 0
         if not _is_loan_product(scheme):
             return 0
-        if domain == "AGRICULTURE":
+        role = agriculture_fit_role(scheme, query.activity, user_domain)
+        if role == "match":
             return 4
-        return 3
+        if role == "related":
+            # Retrievable as RELATED, never a MATCH-tier primary score.
+            return 1
+        return 0
 
     if user_domain == "BUSINESS":
         if domain in {"EDUCATION", "AGRICULTURE"}:
@@ -389,8 +492,8 @@ def generate_recommendations(
 ) -> RankedRecommendations:
     """Rank schemes from eligibility-engine output. Does not recompute eligibility facts.
 
-    When relevance is provided, incompatible or under-specified schemes are
-    removed before score/UUID tie-breaking. Check Eligibility omits relevance.
+    Relevance is applied before score/UUID tie-breaking. eligible != relevant.
+    Agriculture RELATED schemes are returned separately and cannot become PRIMARY.
     """
     gated, priorities = apply_relevance_gate(eval_response, relevance)
     loaded_rules = rules if rules is not None else load_recommendation_rules()
@@ -413,12 +516,31 @@ def generate_recommendations(
         )
     )
 
+    related_scored: List[ScoredScheme] = []
+    if relevance and (relevance.domain or "").upper() == "AGRICULTURE":
+        match_only: List[ScoredScheme] = []
+        for scored in scored_schemes:
+            try:
+                scheme = load_scheme(scored.scheme_id)
+            except Exception:
+                continue
+            role = agriculture_fit_role(scheme, relevance.activity, relevance.domain)
+            if role == "related":
+                related_scored.append(scored)
+            elif role == "match":
+                match_only.append(scored)
+        scored_schemes = match_only
+        related_scored.sort(
+            key=lambda s: (s.status_tier, -s.recommendation_score, s.scheme_id)
+        )
+
     top = scored_schemes[0] if scored_schemes else None
     alternatives = scored_schemes[1:] if len(scored_schemes) > 1 else []
 
     return RankedRecommendations(
         top_recommendation=top,
         alternatives=alternatives,
+        related=related_scored,
     )
 
 

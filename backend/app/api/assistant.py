@@ -130,7 +130,7 @@ from app.api.auth import get_current_user_id
 logger = logging.getLogger(__name__)
 from app.api.chat import process_chat_request
 from app.schemas.chat import ChatRequest, ResponseSource, ChatProfile
-from app.schemas.assistant import AssistantQueryRequest, AssistantQueryResponse
+from app.schemas.assistant import AssistantQueryRequest, AssistantQueryResponse, AssistantAction, AssistantActionType
 
 @assistant_router.post("/assistant/query", response_model=AssistantQueryResponse)
 def assistant_query_adapter(
@@ -173,14 +173,35 @@ def assistant_query_adapter(
     raw_expected_field = getattr(chat_response, 'expected_field', None)
     expected_field = raw_expected_field if isinstance(raw_expected_field, str) else None
 
+    ui_cards = [
+        card.model_dump(exclude_none=True) if hasattr(card, 'model_dump') else card
+        for card in getattr(chat_response, 'ui_cards', [])
+    ]
+    suggested: list[AssistantAction] = []
+    seen_ids: set[str] = set()
+    for card in ui_cards:
+        if not isinstance(card, dict) or card.get("type") != "SCHEME_CARD":
+            continue
+        sid = card.get("schemeId")
+        if not sid or sid in seen_ids:
+            continue
+        seen_ids.add(sid)
+        suggested.append(AssistantAction(
+            type=AssistantActionType.OPEN_SCHEME,
+            schemeId=sid,
+            label=card.get("schemeName") or "View scheme details",
+        ))
+        if len(suggested) >= 1:
+            break
+
     return AssistantQueryResponse(
         messageId=str(uuid.uuid4()),
         answer=chat_response.answer,
         answerLanguage=chat_response.language,
         detectedQueryLanguage=chat_request.language or request.responseLanguage,
         citations=chat_response.citations,
-        suggestedActions=[],
-        uiCards=[card.model_dump(exclude_none=True) if hasattr(card, 'model_dump') else card for card in getattr(chat_response, 'ui_cards', [])],
+        suggestedActions=suggested,
+        uiCards=ui_cards,
         followUpQuestions=getattr(chat_response, "follow_ups", None) or [],
         grounded=grounded,
         sessionId=request.sessionId,

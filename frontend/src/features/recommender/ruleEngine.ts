@@ -51,7 +51,37 @@ type Scored = {
   reasons: MatchReason[];
   /** Non-empty → the applicant is NOT eligible; used to build "near misses". */
   blockers: MatchReason[];
+  fitStatus?: 'MATCH' | 'RELATED';
 };
+
+function agricultureFitRole(
+  scheme: Scheme,
+  projectType: string,
+): 'match' | 'related' | 'none' | null {
+  if (projectType !== 'AGRICULTURE' && projectType !== 'ANIMAL_HUSBANDRY') return null;
+  const desc = `${scheme.shortDescription?.en ?? ''} ${scheme.shortDescription?.hi ?? ''} ${scheme.name?.en ?? ''}`.toLowerCase();
+  if (scheme.officialCategory === 'EDUCATION') return 'none';
+  const green = ['e-rickshaw', 'solar', 'clean-energy', 'ई-रिक्शा'].some((m) => desc.includes(m));
+  if (green) return 'none';
+  const agri = [
+    'agriculture',
+    'farming',
+    'crop',
+    'dairy',
+    'livestock',
+    'poultry',
+    'कृषि',
+    'खेती',
+    'फसल',
+    'डेयरी',
+  ].some((m) => desc.includes(m));
+  const otherCount = ['manufactur', 'service', 'shop', 'transport', 'retail', 'vending'].filter((m) =>
+    desc.includes(m),
+  ).length;
+  if (agri && otherCount >= 2) return 'related';
+  if (agri && otherCount === 0) return 'match';
+  return 'none';
+}
 
 function reason(kind: MatchReason['kind'], en: string, hi: string): MatchReason {
   return { kind, text: { en, hi } };
@@ -217,19 +247,47 @@ function scoreScheme(scheme: Scheme, profile: ApplicantProfile): Scored {
   }
 
   // ---- Soft signal: category matches the stated project type -----------
-  const preferred = CATEGORY_BY_PROJECT_TYPE[profile.projectType] ?? [];
-  const categoryIndex = preferred.indexOf(scheme.officialCategory);
-  if (categoryIndex === 0) {
+  const agriRole = agricultureFitRole(scheme, profile.projectType);
+  if (agriRole === 'none') {
+    blockers.push(
+      reason(
+        'MISMATCH',
+        'Verified records do not support this agricultural activity',
+        'सत्यापित रिकॉर्ड इस कृषि गतिविधि का समर्थन नहीं करते',
+      ),
+    );
+  } else if (agriRole === 'related') {
+    reasons.push(
+      reason(
+        'INFO',
+        'This scheme supports broader income-generation activities. Verified information does not specifically confirm this agricultural activity.',
+        'यह योजना व्यापक आय-सृजन गतिविधियों का समर्थन करती है। सत्यापित जानकारी इस कृषि गतिविधि की विशिष्ट पुष्टि नहीं करती।',
+      ),
+    );
+  } else if (agriRole === 'match') {
     score += 20;
     reasons.push(
       reason(
         'MATCH',
-        'Designed exactly for this kind of activity',
-        'ठीक इसी प्रकार की गतिविधि के लिए बनाई गई',
+        'Activity matches the published scheme purpose',
+        'गतिविधि योजना के प्रकाशित उद्देश्य से मेल खाती है',
       ),
     );
-  } else if (categoryIndex > 0) {
-    score += 10;
+  } else {
+    const preferred = CATEGORY_BY_PROJECT_TYPE[profile.projectType] ?? [];
+    const categoryIndex = preferred.indexOf(scheme.officialCategory);
+    if (categoryIndex === 0) {
+      score += 20;
+      reasons.push(
+        reason(
+          'MATCH',
+          'Designed exactly for this kind of activity',
+          'ठीक इसी प्रकार की गतिविधि के लिए बनाई गई',
+        ),
+      );
+    } else if (categoryIndex > 0) {
+      score += 10;
+    }
   }
 
   // ---- Soft signal: cheaper money wins ---------------------------------
@@ -242,7 +300,9 @@ function scoreScheme(scheme: Scheme, profile: ApplicantProfile): Scored {
     score += Math.round(Math.max(0, (15 - rate) / 15) * 20);
   }
 
-  return { scheme, score: Math.min(100, score), reasons, blockers };
+  const fitStatus: Scored['fitStatus'] =
+    agriRole === 'related' ? 'RELATED' : blockers.length === 0 ? 'MATCH' : undefined;
+  return { scheme, score: Math.min(100, score), reasons, blockers, fitStatus };
 }
 
 /** Women's concessional rate where the scheme offers one, else the floor rate. */
@@ -274,6 +334,7 @@ function toRecommendation(scored: Scored, profile: ApplicantProfile): SchemeReco
     reasons: [...scored.blockers, ...scored.reasons],
     citations: [],
     source: 'RULE_ENGINE',
+    fitStatus: scored.fitStatus,
   };
 }
 
@@ -290,7 +351,13 @@ export function recommendSchemes(
   const scored = schemes.map((scheme) => scoreScheme(scheme, profile));
 
   const eligible = scored
-    .filter((s) => s.blockers.length === 0)
+    .filter((s) => s.blockers.length === 0 && s.fitStatus !== 'RELATED')
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((s) => toRecommendation(s, profile));
+
+  const relatedOptions = scored
+    .filter((s) => s.blockers.length === 0 && s.fitStatus === 'RELATED')
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((s) => toRecommendation(s, profile));
@@ -303,6 +370,7 @@ export function recommendSchemes(
 
   return {
     recommendations: eligible,
+    relatedOptions,
     nearMisses,
     generatedAt: new Date().toISOString(),
     offline: true,

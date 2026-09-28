@@ -227,10 +227,28 @@ def _build_reasons(scored: ScoredScheme) -> list[dict]:
     return reasons
 
 
-def _to_scheme_recommendation(scored: ScoredScheme) -> dict[str, Any]:
+def _to_scheme_recommendation(scored: ScoredScheme, fit_status: str = "MATCH") -> dict[str, Any]:
     scheme = get_scheme_by_internal_id(scored.scheme_id) or {}
     loan_amount = _eligible_loan_amount(scored.scheme_id, scored.financial_assessment)
     interest_rate = _applicable_interest_rate(scored.scheme_id)
+    reasons = _build_reasons(scored)
+    if fit_status == "RELATED":
+        reasons = [
+            {
+                "kind": "INFO",
+                "text": {
+                    "en": "This is a related general NSFDC credit product. Verified records do not specifically confirm this agricultural activity.",
+                    "hi": "यह एक संबंधित सामान्य NSFDC ऋण उत्पाद है। सत्यापित रिकॉर्ड इस कृषि गतिविधि की पुष्टि विशिष्ट रूप से नहीं करते।",
+                },
+            },
+            {
+                "kind": "INFO",
+                "text": {
+                    "en": "Verify applicability with the implementing agency before applying.",
+                    "hi": "आवेदन से पहले लागू एजेंसी से प्रासंगिकता की पुष्टि करें।",
+                },
+            },
+        ] + reasons
 
     return {
         "scheme": scheme,
@@ -240,8 +258,9 @@ def _to_scheme_recommendation(scored: ScoredScheme) -> dict[str, Any]:
         "applicableInterestRatePct": interest_rate,
         "suggestedTenureMonths": scheme.get("maxTenureMonths", 0),
         "suggestedMoratoriumMonths": scheme.get("moratoriumMinMonths", 0),
-        "reasons": _build_reasons(scored),
+        "reasons": reasons,
         "citations": scheme.get("citations", []),
+        "fitStatus": fit_status,
         # source: "RULE_ENGINE" — deterministic eligibility + deterministic
         # scoring. No AI component is involved. Update to "HYBRID" only once
         # the RAG pipeline is wired into this response path.
@@ -289,10 +308,15 @@ def build_response(
     """
     recommendations = []
     if ranked.top_recommendation and get_scheme_by_internal_id(ranked.top_recommendation.scheme_id):
-        recommendations.append(_to_scheme_recommendation(ranked.top_recommendation))
+        recommendations.append(_to_scheme_recommendation(ranked.top_recommendation, "MATCH"))
     for alt in ranked.alternatives:
         if get_scheme_by_internal_id(alt.scheme_id):
-            recommendations.append(_to_scheme_recommendation(alt))
+            recommendations.append(_to_scheme_recommendation(alt, "MATCH"))
+
+    related_options = []
+    for item in ranked.related:
+        if get_scheme_by_internal_id(item.scheme_id):
+            related_options.append(_to_scheme_recommendation(item, "RELATED"))
 
     near_miss_candidates = [
         s for s in not_eligible_schemes if get_scheme_by_internal_id(s.scheme_id)
@@ -304,6 +328,7 @@ def build_response(
 
     return {
         "recommendations": recommendations,
+        "relatedOptions": related_options,
         "nearMisses": near_misses,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "offline": False,

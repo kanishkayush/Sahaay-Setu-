@@ -165,9 +165,12 @@ def _adviser_chat_response(
         retrieved_ids=retrieved_ids,
         income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
         query=request.query,
+        sc_status=profile.scEligibilityStatus,
     )
     if brief.primary:
         profile.recommendedSchemeId = brief.primary.facts.scheme_id
+    elif (domain or "").upper() == "AGRICULTURE":
+        profile.recommendedSchemeId = None
     profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
     if (domain or "").upper() == "EDUCATION":
         expected_field = _education_expected_field(brief.missing, expected_field)
@@ -455,7 +458,7 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
         if restarted is not None:
             return restarted
         mode, _named = detect_adviser_mode(request.query)
-        if mode in {EXPLAIN, COMPARE, OPTIONS} and profile.projectType != "AGRICULTURE":
+        if mode in {EXPLAIN, COMPARE, OPTIONS}:
             _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
             if not profile.projectType and (
                 (_named and _named[0] == "nsfdc-education")
@@ -664,43 +667,30 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             retrieved_schemes = _unique_retrieved_schemes(retrieved_chunks)
             retrieved_ids = [c.scheme_id for c in retrieved_schemes]
             is_agriculture = (profile.projectType or domain) == "AGRICULTURE"
-            if not is_agriculture:
-                mode, named = detect_adviser_mode(request.query)
-                brief = build_brief(
-                    domain=profile.projectType or domain,
-                    amount=float(_conversation_amount(profile)) if _conversation_amount(profile) is not None else None,
-                    activity=_education_course(profile) if (profile.projectType or domain) == "EDUCATION" else profile.activity,
-                    lang=lang,
-                    mode=mode,
-                    named_ids=named,
-                    retrieved_ids=retrieved_ids,
-                    income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
-                    query=request.query,
-                )
-                answer_text = brief.answer
-                if brief.primary:
-                    profile.recommendedSchemeId = brief.primary.facts.scheme_id
-                elif retrieved_ids:
-                    profile.recommendedSchemeId = retrieved_ids[0]
-                profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
-                adviser_cards = adviser_ui_cards(brief, lang)
-                related_ids = brief.related_ids or retrieved_ids[:4]
-                follow_ups = [brief.next_question] if brief.next_question else []
-            else:
-                answer_text = _build_conversational_first_response(
-                    activity=activity,
-                    is_education=is_education,
-                    retrieved_chunks=retrieved_chunks,
-                    lang=lang,
-                    user_query=request.query,
-                    domain=profile.projectType or domain,
-                    profile=profile,
-                )
-                adviser_cards = []
-                follow_ups = []
-                related_ids = retrieved_ids[:3]
-                if retrieved_schemes:
-                    profile.recommendedSchemeId = retrieved_schemes[0].scheme_id
+            mode, named = detect_adviser_mode(request.query)
+            brief = build_brief(
+                domain=profile.projectType or domain,
+                amount=float(_conversation_amount(profile)) if _conversation_amount(profile) is not None else None,
+                activity=_education_course(profile) if (profile.projectType or domain) == "EDUCATION" else profile.activity,
+                lang=lang,
+                mode=mode,
+                named_ids=named,
+                retrieved_ids=retrieved_ids,
+                income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
+                query=request.query,
+                sc_status=profile.scEligibilityStatus,
+            )
+            answer_text = brief.answer
+            if brief.primary:
+                profile.recommendedSchemeId = brief.primary.facts.scheme_id
+            elif is_agriculture:
+                profile.recommendedSchemeId = None
+            elif retrieved_ids:
+                profile.recommendedSchemeId = retrieved_ids[0]
+            profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
+            adviser_cards = adviser_ui_cards(brief, lang)
+            related_ids = brief.related_ids or retrieved_ids[:4]
+            follow_ups = [brief.next_question] if brief.next_question else []
 
             if profile.recommendedSchemeId:
                 from app.api.scheme_loader import get_scheme_by_internal_id
@@ -888,21 +878,21 @@ def _build_conversational_first_response(
         purpose_desc = "business/self-employment"
     
     named_activity = bool(activity and str(activity).upper() not in {"FARMING", "AGRICULTURE", "GENERAL"})
-    if not is_agriculture:
-        retrieved_ids = [c.scheme_id for c in _unique_retrieved_schemes(retrieved_chunks)]
-        brief = build_brief(
-            domain="EDUCATION" if is_education else "BUSINESS",
-            amount=float(_conversation_amount(profile)) if profile and _conversation_amount(profile) is not None else None,
-            activity=_education_course(profile) if is_education and profile else activity,
-            lang=lang,
-            mode=detect_adviser_mode(user_query)[0],
-            named_ids=detect_adviser_mode(user_query)[1],
-            retrieved_ids=retrieved_ids,
-            income=float(profile.annualFamilyIncome) if profile and profile.annualFamilyIncome is not None else None,
-            query=user_query,
-        )
-        if brief.answer:
-            return brief.answer
+    retrieved_ids = [c.scheme_id for c in _unique_retrieved_schemes(retrieved_chunks)]
+    brief = build_brief(
+        domain="EDUCATION" if is_education else ("AGRICULTURE" if is_agriculture else "BUSINESS"),
+        amount=float(_conversation_amount(profile)) if profile and _conversation_amount(profile) is not None else None,
+        activity=_education_course(profile) if is_education and profile else activity,
+        lang=lang,
+        mode=detect_adviser_mode(user_query)[0],
+        named_ids=detect_adviser_mode(user_query)[1],
+        retrieved_ids=retrieved_ids,
+        income=float(profile.annualFamilyIncome) if profile and profile.annualFamilyIncome is not None else None,
+        query=user_query,
+        sc_status=profile.scEligibilityStatus if profile else None,
+    )
+    if brief.answer:
+        return brief.answer
     grounded = _deterministic_scheme_reply(
         retrieved_chunks, lang, is_education, is_agriculture, activity, profile
     )
@@ -1062,8 +1052,6 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     # Conversation must not become a profile form. Profile owns income/SC.
     # Education retrieval is not gated on course, fee, or income.
     missing_fields = []
-    if profile.projectType != "EDUCATION" and profile.activity in _AGRI_GENERIC:
-        missing_fields.append("Specific Activity")
 
     if _is_document_request(request.query) and profile.recommendedSchemeId:
         profile.conversationState = ConversationState.DOCUMENT_PREPARATION
@@ -1204,62 +1192,11 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
 
 def _acknowledge_follow_up(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
     """Keep conversation context and re-score NSFDC options from verified facts."""
-    if profile.projectType != "AGRICULTURE":
-        return _adviser_chat_response(
-            request,
-            profile,
-            session_id,
-            retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
-            expected_field="general",
-        )
-    lang = request.language or "en"
-    scheme_id = profile.recommendedSchemeId
-    scheme_name = scheme_id
-    if scheme_id:
-        try:
-            meta = load_scheme(scheme_id)
-            api = meta.get("api") if isinstance(meta.get("api"), dict) else {}
-            name = api.get("name") or {}
-            scheme_name = name.get(lang) or name.get("en") or meta.get("scheme_id") or scheme_id
-        except Exception:
-            scheme_name = scheme_id
-    facts = []
-    if profile.activity and str(profile.activity).upper() not in {
-        "EDUCATION_LOAN", "EDUCATION", "FARMING", "AGRICULTURE", "BUSINESS", "GENERAL",
-        "GENERAL_BUSINESS",
-    }:
-        facts.append(str(profile.activity).replace("_", " "))
-    amount = profile.requestedLoanAmount if profile.projectType == "EDUCATION" else profile.estimatedProjectCost
-    if amount is not None:
-        facts.append(f"₹{int(amount)}")
-    if profile.districtCode:
-        facts.append(str(profile.districtCode))
-    fact_text = ", ".join(facts)
-    income_note = _profile_income_note(profile, lang)
-    if lang == "hi":
-        answer = (
-            f"{scheme_name} आपके वर्तमान अनुरोध से मेल खाती है."
-            + (f" मैंने यह जानकारी नोट कर ली है: {fact_text}." if fact_text else "")
-            + income_note
-            + " आगे आप दस्तावेज़, चैनल पार्टनर, या कोई और जानकारी बता सकते हैं."
-        )
-    else:
-        answer = (
-            f"{scheme_name} remains the relevant scheme for this request."
-            + (f" I noted: {fact_text}." if fact_text else "")
-            + income_note
-            + " Next you can ask about documents, a channel partner, or share another detail."
-        )
-    profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
-    _set_expected_field(profile, session_id, "general")
-    add_turn(session_id, request.query, answer)
-    return ChatResponse(
-        answer=answer,
-        language=lang,
-        citations=[],
-        grounding_status="GROUNDED",
-        related_scheme_ids=[scheme_id] if scheme_id else [],
-        response_source=ResponseSource.RAG_LLM,
+    return _adviser_chat_response(
+        request,
+        profile,
+        session_id,
+        retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
         expected_field="general",
     )
 
@@ -1702,242 +1639,16 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
         if profile.recommendedSchemeId:
             return _acknowledge_follow_up(request, profile, session_id)
 
-    purpose = profile.activity or "BUSINESS"
-    is_edu = profile.projectType == "EDUCATION"
-    
-    # 1. Map to Eligibility Engine format
-    user_profile = {
-        "purpose": purpose,
-        "family_income_inr": float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
-        "project_cost_inr": None if is_edu else (
-            float(profile.estimatedProjectCost) if profile.estimatedProjectCost is not None else None
-        ),
-        "course_cost_inr": (
-            float(profile.estimatedProjectCost) if is_edu and profile.estimatedProjectCost is not None else None
-        ),
-        "beneficiary_category_verified": profile.scEligibilityStatus,
-        "education_status": "admission_secured" if is_edu else None
-    }
-    
-    # 2. Run deterministic engines
-    eval_response = evaluate_all_schemes(user_profile, organization="NSFDC")
-    activity_upper = str(purpose or "").upper()
-    if is_edu or "EDUCATION" in activity_upper or activity_upper in {"BTECH", "BE", "MBBS", "BCA", "MCA", "MBA", "ITI", "DIPLOMA"}:
-        domain = "EDUCATION"
-    elif activity_upper in {
-        "RICE_FARMING", "WHEAT_FARMING", "VEGETABLE_FARMING", "HORTICULTURE",
-        "DAIRY_FARMING", "POULTRY", "FISHERY", "GOAT_REARING", "PIG_REARING",
-        "CROP_FARMING", "FARMING", "AGRICULTURE",
-    } or any(w in activity_upper for w in ("FARM", "KHETI", "CROP", "DAIRY", "RICE")):
-        domain = "AGRICULTURE"
-    else:
-        domain = "BUSINESS"
-    amount = profile.requestedLoanAmount if is_edu else profile.estimatedProjectCost
-    lang = (request.language or "").strip().lower() or "en"
-    retrieval_spec = build_retrieval_query(request.query, profile=profile, language=lang)
-    ranked_ret = retrieve_ranked_schemes(
-        query=retrieval_spec.search_text,
-        organization_filter="NSFDC",
-        domain_filter=domain,
-        assistance_type_filter="LOAN",
-        retrieval_query=retrieval_spec,
-        top_k=10,
-    )
-    ranked = generate_recommendations(
-        eval_response,
-        relevance=RelevanceQuery(
-            assistance_type="LOAN",
-            domain=domain,
-            activity=str(purpose) if purpose else None,
-            amount_inr=float(amount) if amount is not None else None,
-        ),
-    )
-
-    top = ranked.top_recommendation
-    if domain in {"EDUCATION", "AGRICULTURE"}:
-        if ranked_ret:
-            retrieved_ids = {s.scheme_id for s in ranked_ret}
-            if not top or top.scheme_id not in retrieved_ids:
-                chosen = ranked_ret[0]
-                if chosen.assistance_type == "LOAN" and chosen.domain == domain:
-                    top = SimpleNamespace(scheme_id=chosen.scheme_id, scheme_name=chosen.scheme_name)
-                else:
-                    top = None
-        else:
-            top = None
-    elif not top and ranked_ret:
-        chosen = ranked_ret[0]
-        if chosen.assistance_type == "LOAN" and chosen.domain == "BUSINESS":
-            top = SimpleNamespace(scheme_id=chosen.scheme_id, scheme_name=chosen.scheme_name)
-    
-    if not top:
-        profile.noVerifiedMatch = True
-        profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
-        update_session_profile(session_id, profile)
-        answer_text = _exhausted_no_match_answer(lang, domain, purpose)
-        return ChatResponse(
-            answer=answer_text,
-            language=lang,
-            citations=[],
-            ui_cards=[AssistantUICard(type=AssistantUICardType.WARNING_CARD, message="No eligible scheme found.")],
-            grounding_status="GROUNDED",
-            response_source=ResponseSource.RAG_LLM,
-        )
-
-    profile.noVerifiedMatch = False
-        
-    # Look up the scheme from the loader
-    from app.api.scheme_loader import get_scheme_by_internal_id
-    scheme_api = get_scheme_by_internal_id(top.scheme_id)
-    requires_partner = scheme_api.get("channelPartnerRequired", False) if scheme_api else False
-    
-    # Store in profile
-    profile.recommendedSchemeId = top.scheme_id
-    profile.channelPartnerRequired = requires_partner
-    
-    scheme_meta = load_scheme(top.scheme_id)
-    api = scheme_meta.get("api") if isinstance(scheme_meta.get("api"), dict) else {}
-    assistance = str(scheme_meta.get("assistance_type") or "LOAN")
-    scheme_domain = str(scheme_meta.get("domain") or "")
-    min_amt = api.get("minLoanAmount")
-    max_amt = api.get("maxLoanAmount")
-    amount_note = ""
-    if min_amt is not None and max_amt is not None:
-        amount_note = f" Supported loan range in the scheme record: ₹{int(min_amt)}–₹{int(max_amt)}."
-    elif max_amt is not None:
-        amount_note = f" Maximum loan in the scheme record: ₹{int(max_amt)}."
-    scheme_org = str(scheme_meta.get("organization") or "NSFDC")
-    if lang == "hi":
-        reason_text = (
-            f"यह {scheme_org} {assistance} योजना आपके उद्देश्य ({purpose}, {domain}) से मेल खाती है।"
-            + (f" योजना रिकॉर्ड में ऋण सीमा ₹{int(min_amt)}–₹{int(max_amt)} है।" if min_amt is not None and max_amt is not None else "")
-        )
-    else:
-        reason_text = (
-            f"This {scheme_org} {assistance} product matches your purpose ({purpose}) in the {domain} journey."
-            f"{amount_note}"
-        )
-    
-    # 3. Generate Scheme Recommendation Card
-    ui_cards = [
-        AssistantUICard(
-            type=AssistantUICardType.SCHEME_CARD,
-            schemeId=scheme_api.get("id") if scheme_api else top.scheme_id,
-            schemeName=top.scheme_name,
-            reason=reason_text,
-            eligible=profile.annualFamilyIncome is not None and profile.scEligibilityStatus is True
-        ),
-        AssistantUICard(
-            type=AssistantUICardType.NEXT_QUESTION_CARD,
-            question="What would you like to do next?" if lang == "en" else "आप आगे क्या करना चाहेंगे?",
-            options=["Find Channel Partners", "View Required Documents"] if lang == "en" else ["चैनल पार्टनर खोजें", "आवश्यक दस्तावेज़ देखें"]
-        )
-    ]
-    
-    # 4. Retrieve context for the recommended scheme
-    from app.rag.retriever import retrieve_scheme_context
-    retrieved_chunks = retrieve_scheme_context(top.scheme_id, max_chunks=3)
-    context_text = "\n\n".join([rc.chunk.text for rc in retrieved_chunks])
-    
-    # 5. Generate LLM Explanation
-    lang_names = {"hi": "Hindi", "en": "English", "mr": "Marathi", "bn": "Bengali", "ta": "Tamil", "te": "Telugu"}
-    lang_name = lang_names.get(request.language, "English")
-    system_prompt = f"""You are SAARTHI, an NSFDC assistance assistant.
-Based on the user's profile and query context, the deterministic engine recommended the scheme: {top.scheme_name}.
-
-User profile summary:
-Purpose/Activity: {purpose}
-Project Cost / Course Fee: {profile.estimatedProjectCost}
-Requested loan amount: {profile.requestedLoanAmount}
-Family Income: {profile.annualFamilyIncome}
-Location/PIN: {profile.pinCode}
-
-Here is the verified context for this scheme:
-{context_text}
-
-Generate a compact, villager-friendly response in {lang_name} following this EXACT structure:
-
-━━━━━━━━━━━━━━━━
-आपके लिए उपयुक्त योजना (Translate header to {lang_name})
-━━━━━━━━━━━━━━━━
-
-{top.scheme_name}
-
-क्यों? / Why this scheme? (Translate to {lang_name})
-• [Point 1: e.g. You mentioned you want to do {purpose}]
-• [Point 2: e.g. This scheme supports the relevant income-generating activity]
-• [Point 3: e.g. Your project cost/needs match the scheme criteria]
-
-योजना की जानकारी / Scheme Details: (Translate to {lang_name})
-• Loan / वित्तीय सहायता: [Extract from context]
-• Interest / ब्याज: [Extract from context]
-• Repayment / भुगतान अवधि: [Extract from context]
-• Eligibility / पात्रता: [Extract from context]
-
-आप क्या करना चाहते हैं? / What would you like to do next? (Translate to {lang_name})
-• Check EMI
-• Find Channel Partners
-• View Documents
-• Application Process
-
-RULES:
-- Do NOT invent loan amounts, interest rates, or eligibility. If not found in the verified context, explicitly say so in {lang_name}.
-- Start with why this scheme fits the user's purpose. Do not introduce yourself again.
-- Do NOT recommend scholarships, coaching, or non-loan schemes for a loan request.
-- Do NOT expose internal database fields.
-- Keep it simple and easy to read.
-- Response MUST be entirely in {lang_name}.
-"""
-    try:
-        model = _llm_model()
-        response = litellm.completion(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": "Please give me the scheme recommendation."}
-            ],
-            temperature=0.1
-        )
-        answer_text = response.choices[0].message.content or "Here is the recommended scheme."
-    except Exception as e:
-        logger = __import__("logging").getLogger(__name__)
-        logger.warning(f"LLM scheme recommendation generation failed: {e}")
-        fallback_map = {
-            "en": (
-                f"For your purpose ({purpose}), {top.scheme_name} is the NSFDC scheme that currently fits. "
-                f"It is recommended because the assistance type is a loan and it matches this activity. "
-                f"If a figure is not in the scheme record, I will not guess it. "
-                f"Next you can check documents, EMI, or a nearby channel partner."
-            ),
-            "hi": (
-                f"आपके उद्देश्य ({purpose}) और ऋण सहायता के लिए {top.scheme_name} उपयुक्त NSFDC योजना है। "
-                f"जो राशि, ब्याज या पात्रता योजना दस्तावेज़ में नहीं है, वह मैं नहीं बनाऊँगा। "
-                f"आगे आप दस्तावेज़, EMI, या नज़दीकी चैनल पार्टनर देख सकते हैं।"
-            ),
-            "mr": f"तुमच्या प्रोफाईलच्या आधारे, {top.scheme_name} ही तुमच्यासाठी सर्वात योग्य योजना आहे.",
-            "bn": f"আপনার প্রোফাইলের উপর ভিত্তি করে, {top.scheme_name} আপনার জন্য সবচেয়ে উপযুক্ত স্কিম।",
-            "ta": f"உங்கள் சுயவிவரத்தின் அடிப்படையில், {top.scheme_name} உங்களுக்கு மிகவும் பொருத்தமான திட்டம்.",
-            "te": f"మీ ప్రొఫైల్ ఆధారంగా, {top.scheme_name} మీకు అత్యంత అనుకూలమైన పథకం.",
-        }
-        answer_text = fallback_map.get(lang, fallback_map.get(lang_name, fallback_map["en"]))
-
-    answer_text = (answer_text or "") + _profile_income_note(profile, lang)
-
-    
-    # Stay on recommendation so follow-ups (amount, course, city) are not treated as a form.
     profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
-    _set_expected_field(profile, session_id, "general")
-    
-    return ChatResponse(
-        answer=answer_text,
-        language=request.language or "en",
-        citations=[],
-        ui_cards=ui_cards,
-        grounding_status="GROUNDED",
-        related_scheme_ids=[top.scheme_id],
-        response_source=ResponseSource.RAG_LLM,
+    update_session_profile(session_id, profile)
+    return _adviser_chat_response(
+        request,
+        profile,
+        session_id,
+        retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
         expected_field="general",
     )
+
 
 def _handle_document_preparation(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
     lang = (request.language or "").strip().lower() or "en"

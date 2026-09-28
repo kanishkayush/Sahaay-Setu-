@@ -73,6 +73,12 @@ export const AssistantActionSchema = z.discriminatedUnion('type', [
 ]);
 export type AssistantAction = z.infer<typeof AssistantActionSchema>;
 
+export const SchemeFitReasonSchema = z.object({
+  kind: z.enum(['MATCH', 'MISMATCH', 'INFO']),
+  text: z.string(),
+});
+export type SchemeFitReason = z.infer<typeof SchemeFitReasonSchema>;
+
 export const AssistantUICardSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('SCHEME_CARD'),
@@ -81,10 +87,21 @@ export const AssistantUICardSchema = z.discriminatedUnion('type', [
     reason: z.string().optional(),
     eligible: z.boolean().optional(),
     organization: z.string().optional(),
+    domain: z.string().optional(),
     assistanceType: z.string().optional(),
     verificationStatus: z.enum(['VERIFIED', 'PARTIAL', 'UNVERIFIED']).optional(),
+    fitStatus: z.string().optional(),
+    fitReasons: z.array(SchemeFitReasonSchema).optional(),
+    whySelected: z.array(SchemeFitReasonSchema).optional(),
     amountFit: z.string().optional(),
     incomeFit: z.string().optional(),
+    courseFit: z.string().optional(),
+    eligibilityNotes: z.string().optional(),
+    maxLoanAmount: z.number().optional(),
+    interestRatePct: z.number().optional(),
+    maxTenureMonths: z.number().optional(),
+    isPrimary: z.boolean().optional(),
+    action: z.literal('VIEW_DETAILS').optional(),
   }),
   z.object({
     type: z.literal('COMPARISON_CARD'),

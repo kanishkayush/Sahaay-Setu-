@@ -62,10 +62,23 @@ def test_hindi_agriculture_rice_then_two_lakh():
     assert profile.estimatedProjectCost == 200000
     assert profile.activity == "RICE_FARMING"
     _assert_nsfdc_loan_answer(r2, profile)
-    # Current NSFDC FAQ explicitly includes agriculture/allied activities in
-    # Term Loan. This is a general IGA match, not a rice-specific product.
-    assert profile.recommendedSchemeId == "nsfdc-term-loan"
-    assert "free coaching" not in (r2.answer or "").lower()
+    answer = r2.answer or ""
+    assert "सावधि ऋण आपके वर्तमान अनुरोध से मेल खाता" not in answer
+    assert "recommended" not in answer.lower()
+    assert any(
+        token in answer
+        for token in ("मेल खाने वाली योजना नहीं", "समर्पित", "catalogue", "फसल")
+    )
+    cards = [c for c in (r2.ui_cards or []) if getattr(c, "type", None) and c.type.value == "SCHEME_CARD"]
+    for card in cards:
+        assert "Recommended" not in (card.reason or "")
+        if card.schemeId == "nsfdc-term-loan":
+            assert card.isPrimary is not True
+            assert card.fitStatus == "RELATED"
+            assert card.schemeId == "nsfdc-term-loan"
+            assert card.action == "VIEW_DETAILS"
+    assert profile.recommendedSchemeId != "nsfdc-term-loan"
+    assert "free coaching" not in answer.lower()
     assert r2.language == "hi"
 
 
@@ -78,7 +91,10 @@ def test_english_agriculture_rice_then_amount():
     )
     assert profile.estimatedProjectCost == 200000
     assert profile.activity == "RICE_FARMING"
-    assert profile.recommendedSchemeId == "nsfdc-term-loan"
+    assert profile.recommendedSchemeId != "nsfdc-term-loan"
+    answer = (r2.answer or "").lower()
+    assert "recommended" not in answer
+    assert "dedicated crop" in answer or "could not find" in answer or "catalogue" in answer
     assert r2.language == "en"
 
 
@@ -206,7 +222,8 @@ def test_context_acre_and_city_do_not_reset_rice_profile():
     assert profile.estimatedProjectCost == 200000
     assert profile.districtCode == "Jaipur"
     assert profile.landHoldingAcres == 3
-    assert profile.recommendedSchemeId == "nsfdc-term-loan"
+    assert profile.recommendedSchemeId != "nsfdc-term-loan"
+    assert "सावधि ऋण आपके वर्तमान अनुरोध से मेल खाता" not in (r4.answer or "")
     assert r4.language == "hi"
 
 
@@ -405,6 +422,27 @@ def test_education_then_farming_switches_topic():
     assert profile.projectType == "AGRICULTURE"
     assert profile.recommendedSchemeId != "nsfdc-education"
     assert "Educational Loan" not in (resp.answer or "") or profile.projectType == "AGRICULTURE"
+
+
+def test_kheti_loan_is_honest_and_does_not_force_term_loan():
+    session = "sess-kheti-honest"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("मुझे खेती के लिए लोन चाहिए", session, "hi"))
+    profile = get_session_profile(session)
+    assert profile.projectType == "AGRICULTURE"
+    assert profile.recommendedSchemeId != "nsfdc-term-loan"
+    answer = resp.answer or ""
+    assert "सावधि ऋण आपके वर्तमान अनुरोध से मेल खाता" not in answer
+    assert "recommended" not in answer.lower()
+    assert any(tok in answer for tok in ("मेल खाने वाली योजना नहीं", "समर्पित", "catalogue"))
+    cards = [c for c in (resp.ui_cards or []) if getattr(c, "type", None) and c.type.value == "SCHEME_CARD"]
+    for card in cards:
+        assert card.action == "VIEW_DETAILS"
+        assert card.schemeId
+        assert "Recommended" not in (card.reason or "")
+        if card.schemeId == "nsfdc-term-loan":
+            assert card.fitStatus == "RELATED"
 
 
 def test_farming_then_education_switches_topic():

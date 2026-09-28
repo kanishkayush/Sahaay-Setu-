@@ -81,6 +81,8 @@ export const SchemeRecommendationSchema = z.object({
   reasons: z.array(MatchReasonSchema),
   /** Present only when the answer came from the RAG pipeline. */
   citations: z.array(CitationSchema).default([]),
+  /** MATCH can be primary. RELATED is never a primary eligibility match. */
+  fitStatus: z.enum(['MATCH', 'RELATED', 'MISMATCH', 'UNKNOWN']).optional(),
   /** 'RULE_ENGINE' when computed on-device, 'AI' when the backend answered. */
   source: z.enum(['RULE_ENGINE', 'AI', 'HYBRID']),
 });
@@ -88,6 +90,8 @@ export type SchemeRecommendation = z.infer<typeof SchemeRecommendationSchema>;
 
 export const RecommendationResponseSchema = z.object({
   recommendations: z.array(SchemeRecommendationSchema),
+  /** Broad related products that must not be ranked as primary matches. */
+  relatedOptions: z.array(SchemeRecommendationSchema).default([]),
   /** Schemes the applicant narrowly missed, with the blocking reason. */
   nearMisses: z.array(SchemeRecommendationSchema).default([]),
   generatedAt: z.string(),

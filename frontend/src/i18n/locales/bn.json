@@ -125,6 +125,10 @@
     "resultsSubtitle_other": "{{count}}টি প্রকল্প আপনার তথ্যের সঙ্গে মিলেছে",
     "noResults": "কোনো প্রকল্প মেলেনি",
     "noResultsBody": "সাধারণত এর কারণ পারিবারিক আয় ₹৫ লাখের সীমার বেশি। নিচের কারণগুলি দেখুন।",
+    "noDedicatedMatch": "কোনো নিবেদিত যাচাইকৃত প্রকল্প পাওয়া যায়নি",
+    "noDedicatedMatchBody": "বর্তমান ক্যাটালগে এই নির্দিষ্ট কাজের জন্য কোনো নিবেদিত যাচাইকৃত প্রকল্প পাওয়া যায়নি।",
+    "relatedOptions": "সম্পর্কিত বিকল্প",
+    "whyRelated": "এটি কেবল সম্পর্কিত বিকল্প কেন",
     "nearMisses": "কাছাকাছি, কিন্তু যোগ্য নয়",
     "whyThisScheme": "এই প্রকল্প কেন?",
     "matchScore": "{{score}}% মিল",
@@ -487,7 +491,8 @@
   },
   "uiCards": {
     "requiredDocuments": "প্রয়োজনীয় নথি",
-    "recommended": "প্রস্তাবিত",
+    "recommended": "Suggested documents",
+    "suggestedDocuments": "Suggested documents",
     "noPartnerSelected": "কোনো অংশীদার নির্বাচিত হয়নি",
     "away": "কি.মি. দূরে",
     "selectPartner": "এই অংশীদার নির্বাচন করুন",
@@ -509,6 +514,14 @@
     "fitOutside": "সীমার বাইরে",
     "fitAbove": "উপরে",
     "fitNotALoan": "ঋণ নয়",
-    "fitUnknown": "অজানা"
+    "fitUnknown": "অজানা",
+    "matchesDetails": "আপনার তথ্যের সাথে মিলে",
+    "mostRelevant": "প্রদত্ত তথ্যের ভিত্তিতে সবচেয়ে প্রাসঙ্গিক",
+    "otherRelevantOptions": "অন্যান্য প্রাসঙ্গিক বিকল্প",
+    "relatedOption": "সম্পর্কিত বিকল্প",
+    "whyThisScheme": "এই প্রকল্প কেন?",
+    "maxAssistance": "সর্বোচ্চ সহায়তা",
+    "repaymentPeriod": "পরিশোধের মেয়াদ",
+    "viewSchemeDetails": "প্রকল্পের বিবরণ দেখুন →"
   }
 }

@@ -72,6 +72,8 @@ class SchemeFacts:
     channeling_agency: Optional[str]
     source_url: str
     verified: bool
+    income_max: Optional[int] = None
+    max_tenure_months: Optional[int] = None
 
 
 @dataclass
@@ -79,6 +81,7 @@ class SchemeFit:
     facts: SchemeFacts
     status: str  # relevant | out_of_range | unknown
     why: str
+    fit_role: str = "candidate"  # primary | related | candidate
 
 
 @dataclass
@@ -92,6 +95,11 @@ class AdviserBrief:
     confidence: str
     answer: str
     related_ids: list[str] = field(default_factory=list)
+    amount: Optional[float] = None
+    income: Optional[float] = None
+    activity: Optional[str] = None
+    domain: Optional[str] = None
+    sc_status: Optional[bool] = None
 
 
 @lru_cache(maxsize=1)
@@ -157,6 +165,22 @@ def load_scheme_facts(scheme_id: str) -> Optional[SchemeFacts]:
         repayment = f"within {faq['repayment_years']} years"
     elif faq.get("repayment_years_min") and faq.get("repayment_years_max"):
         repayment = f"up to {faq['repayment_years_min']}–{faq['repayment_years_max']} years"
+    interest = faq.get("interest_rate_pct")
+    if interest is None and api.get("interestRateMinPct") is not None:
+        try:
+            interest = float(api.get("interestRateMinPct"))
+        except (TypeError, ValueError):
+            interest = None
+    income_max = api.get("maxAnnualFamilyIncome")
+    tenure = api.get("maxTenureMonths")
+    try:
+        income_max_i = int(income_max) if income_max is not None else None
+    except (TypeError, ValueError):
+        income_max_i = None
+    try:
+        tenure_i = int(tenure) if tenure is not None else None
+    except (TypeError, ValueError):
+        tenure_i = None
     return SchemeFacts(
         scheme_id=scheme_id,
         names={str(k): str(v) for k, v in names.items()},
@@ -172,13 +196,15 @@ def load_scheme_facts(scheme_id: str) -> Optional[SchemeFacts]:
         project_cost_max=int(project_max) if project_max is not None else None,
         loan_amount_min=int(loan_min) if loan_min is not None else None,
         loan_amount_max=int(loan_max) if loan_max is not None else None,
-        interest_rate_pct=faq.get("interest_rate_pct"),
+        interest_rate_pct=interest,
         interest_rate_note=faq.get("interest_rate_note"),
         repayment=repayment,
         repayment_hi=faq.get("repayment_hi"),
         channeling_agency=faq.get("channeling_agency"),
         source_url=str(_faq().get("source_url") or raw.get("source_url") or "https://nsfdc.nic.in/faqs"),
         verified=bool(raw.get("verified")),
+        income_max=income_max_i,
+        max_tenure_months=tenure_i,
     )
 
 
@@ -307,9 +333,386 @@ def _fit(scheme_id: str, amount: Optional[float], lang: str) -> Optional[SchemeF
     return SchemeFit(facts=facts, status=status, why=_why(facts, status, amount, lang))
 
 
+def _verification_status(facts: SchemeFacts) -> str:
+    if facts.scheme_id in FAQ_CREDIT_IDS and facts.verified:
+        return "VERIFIED"
+    if facts.verified:
+        return "PARTIAL"
+    return "UNVERIFIED"
+
+
+def _income_fit_code(income: Optional[float], income_max: Optional[int]) -> str:
+    if income is None or income_max is None:
+        return "UNKNOWN"
+    return "WITHIN_LIMIT" if income <= income_max else "ABOVE_LIMIT"
+
+
+def _amount_fit_code(status: str, assistance_type: str) -> str:
+    if (assistance_type or "").upper() != "LOAN":
+        return "NOT_A_LOAN"
+    if status == "relevant":
+        return "WITHIN_RANGE"
+    if status == "out_of_range":
+        return "OUTSIDE_RANGE"
+    return "UNKNOWN"
+
+
+def _reason(kind: str, en: str, hi: str, lang: str) -> dict:
+    return {"kind": kind, "text": hi if lang == "hi" else en}
+
+
+def structured_why_selected(
+    *,
+    facts: SchemeFacts,
+    status: str,
+    lang: str,
+    amount: Optional[float] = None,
+    income: Optional[float] = None,
+    activity: Optional[str] = None,
+    domain: Optional[str] = None,
+    sc_status: Optional[bool] = None,
+    course_fit: Optional[str] = None,
+    related_agriculture: bool = False,
+) -> list[dict]:
+    """Deterministic fit reasons. UNKNOWN stays UNKNOWN — never coerced to MATCH."""
+    hi = lang == "hi"
+    reasons: list[dict] = []
+    income_fit = _income_fit_code(income, facts.income_max)
+    if income_fit == "WITHIN_LIMIT" and facts.income_max is not None:
+        reasons.append(_reason(
+            "MATCH",
+            f"Your family income is within the published ceiling of {_inr(facts.income_max)}.",
+            f"आपकी पारिवारिक आय {_inr(facts.income_max)} की प्रकाशित सीमा के भीतर है।",
+            lang,
+        ))
+    elif income_fit == "ABOVE_LIMIT" and facts.income_max is not None:
+        reasons.append(_reason(
+            "MISMATCH",
+            f"Your family income is above the published ceiling of {_inr(facts.income_max)}.",
+            f"आपकी पारिवारिक आय {_inr(facts.income_max)} की प्रकाशित सीमा से अधिक है।",
+            lang,
+        ))
+    elif income is None:
+        reasons.append(_reason(
+            "INFO",
+            "Family income confirmation is required.",
+            "पारिवारिक आय की पुष्टि आवश्यक है।",
+            lang,
+        ))
+
+    amount_fit = _amount_fit_code(status, facts.assistance_type)
+    if amount_fit == "WITHIN_RANGE" and amount is not None:
+        reasons.append(_reason(
+            "MATCH",
+            f"Your stated amount {_inr(int(amount))} is within the scheme limit.",
+            f"आपकी परियोजना लागत योजना की सीमा में है ({_inr(int(amount))})।",
+            lang,
+        ))
+    elif amount_fit == "OUTSIDE_RANGE" and amount is not None:
+        reasons.append(_reason(
+            "MISMATCH",
+            f"Your stated amount {_inr(int(amount))} is outside the scheme limit.",
+            f"आपकी परियोजना लागत योजना की सीमा से बाहर है ({_inr(int(amount))})।",
+            lang,
+        ))
+    elif amount is None:
+        reasons.append(_reason(
+            "INFO",
+            "Project or loan amount confirmation is required.",
+            "परियोजना/ऋण राशि की पुष्टि आवश्यक है।",
+            lang,
+        ))
+
+    vague = {"", "BUSINESS", "GENERAL_BUSINESS", "GENERAL", "FARMING", "AGRICULTURE", "EDUCATION_LOAN", "EDUCATION"}
+    act = str(activity or "").upper()
+    domain_u = (domain or "").upper()
+    if related_agriculture:
+        reasons.append(_reason(
+            "INFO",
+            "The scheme record lists agriculture and allied work among many income-generating activities. It is not a dedicated crop-farming product.",
+            "योजना विवरण में कृषि व संबद्ध गतिविधियाँ कई आय-सृजन कामों में शामिल हैं। यह समर्पित फसल ऋण नहीं है।",
+            lang,
+        ))
+    elif domain_u == "EDUCATION" and (facts.domain or "").upper() == "EDUCATION":
+        if course_fit == "MATCH" and act and act not in vague:
+            reasons.append(_reason(
+                "MATCH",
+                f"Your course ({act.replace('_', ' ').title()}) matches this education product.",
+                f"आपका कोर्स ({act.replace('_', ' ')}) इस शिक्षा योजना से मेल खाता है।",
+                lang,
+            ))
+        elif act in vague or not act:
+            reasons.append(_reason(
+                "INFO",
+                "Course confirmation is required.",
+                "कोर्स की पुष्टि आवश्यक है।",
+                lang,
+            ))
+        else:
+            reasons.append(_reason(
+                "INFO",
+                "Course fit could not be confirmed from the scheme record.",
+                "कोर्स मेल की पुष्टि योजना रिकॉर्ड से नहीं हो सकी।",
+                lang,
+            ))
+    elif act and act not in vague and not related_agriculture:
+        purpose = (facts.purpose or "") + " " + " ".join(facts.short.values())
+        blob = purpose.lower()
+        token = act.replace("_", " ").lower()
+        if token in blob or any(part in blob for part in token.split() if len(part) > 3):
+            reasons.append(_reason(
+                "MATCH",
+                f"Your activity ({token}) matches the scheme objectives in the record.",
+                f"आपकी गतिविधि योजना के उद्देश्यों से मेल खाती है।",
+                lang,
+            ))
+        else:
+            reasons.append(_reason(
+                "INFO",
+                f"Activity ({token}) fit needs confirmation against the scheme record.",
+                "गतिविधि के मेल की पुष्टि आवश्यक है।",
+                lang,
+            ))
+    elif domain_u == "BUSINESS" and (facts.domain or "").upper() == "BUSINESS":
+        reasons.append(_reason(
+            "INFO",
+            "This is an NSFDC income-generating credit product. Confirm the exact activity with a channel partner.",
+            "यह NSFDC की आय-सृजन ऋण योजना है। सटीक गतिविधि की पुष्टि चैनल पार्टनर से करें।",
+            lang,
+        ))
+
+    if sc_status is True:
+        reasons.append(_reason(
+            "MATCH",
+            "Scheduled Caste status is recorded in your profile.",
+            "आपकी प्रोफ़ाइल में अनुसूचित जाति की जानकारी दर्ज है।",
+            lang,
+        ))
+    elif sc_status is False:
+        reasons.append(_reason(
+            "INFO",
+            "NSFDC credit is for Scheduled Caste applicants — confirmation is required.",
+            "NSFDC ऋण अनुसूचित जाति के आवेदकों के लिए है — पुष्टि आवश्यक है।",
+            lang,
+        ))
+    else:
+        reasons.append(_reason(
+            "INFO",
+            "SC/ST certificate confirmation is required.",
+            "SC/ST प्रमाण-पत्र की पुष्टि आवश्यक है।",
+            lang,
+        ))
+
+    verify = _verification_status(facts)
+    if verify != "VERIFIED":
+        reasons.append(_reason(
+            "INFO",
+            "Verification required. Current details could not be confirmed.",
+            "सत्यापन आवश्यक है। वर्तमान विवरण की पुष्टि नहीं हो सकी।",
+            lang,
+        ))
+    return reasons
+
+
+def make_scheme_card(
+    *,
+    fit: SchemeFit,
+    lang: str,
+    is_primary: bool,
+    amount: Optional[float] = None,
+    income: Optional[float] = None,
+    activity: Optional[str] = None,
+    domain: Optional[str] = None,
+    sc_status: Optional[bool] = None,
+    course_fit: Optional[str] = None,
+    eligibility_notes: Optional[str] = None,
+) -> AssistantUICard:
+    facts = fit.facts
+    related = fit.fit_role == "related"
+    verify = _verification_status(facts)
+    why = structured_why_selected(
+        facts=facts,
+        status=fit.status,
+        lang=lang,
+        amount=amount,
+        income=income,
+        activity=activity,
+        domain=domain,
+        sc_status=sc_status,
+        course_fit=course_fit,
+        related_agriculture=related and (domain or "").upper() == "AGRICULTURE",
+    )
+    if related:
+        fit_status = "RELATED"
+    elif is_primary:
+        fit_status = "MATCH"
+    elif fit.status == "relevant":
+        fit_status = "MATCH"
+    else:
+        fit_status = "UNKNOWN"
+    caption = (
+        "आपकी जानकारी के आधार पर मेल खाता विकल्प"
+        if lang == "hi" and not related
+        else (
+            "Matches your details"
+            if not related
+            else (
+                "Related general NSFDC credit — not a dedicated crop scheme"
+                if lang != "hi"
+                else "संबंधित सामान्य NSFDC ऋण — समर्पित फसल योजना नहीं"
+            )
+        )
+    )
+    if related:
+        caption = (
+            "संबंधित विकल्प — फसल ऋण होने का दावा नहीं"
+            if lang == "hi"
+            else "Related option — not claimed as a crop loan"
+        )
+    elif is_primary:
+        caption = (
+            "दी गई जानकारी के आधार पर सबसे संबंधित"
+            if lang == "hi"
+            else "Most relevant based on the information provided"
+        )
+    verified_financials = verify == "VERIFIED"
+    return AssistantUICard(
+        type=AssistantUICardType.SCHEME_CARD,
+        schemeId=facts.scheme_id,
+        schemeName=_name(facts, lang),
+        reason=caption,
+        eligible=None,
+        organization=facts.organization,
+        domain=facts.domain or domain,
+        assistanceType=facts.assistance_type,
+        verificationStatus=verify,
+        fitStatus=fit_status,
+        fitReasons=why,
+        whySelected=why,
+        amountFit=_amount_fit_code(fit.status, facts.assistance_type),
+        incomeFit=_income_fit_code(income, facts.income_max),
+        courseFit=course_fit,
+        eligibilityNotes=eligibility_notes,
+        maxLoanAmount=float(facts.loan_amount_max) if verified_financials and facts.loan_amount_max is not None else None,
+        interestRatePct=float(facts.interest_rate_pct) if verified_financials and facts.interest_rate_pct is not None else None,
+        maxTenureMonths=facts.max_tenure_months if verified_financials else None,
+        isPrimary=bool(is_primary and not related),
+        action="VIEW_DETAILS",
+    )
+
+
+def _agriculture_incidental(scheme: dict) -> bool:
+    from app.recommendation_engine import agriculture_fit_role
+    return agriculture_fit_role(scheme) == "related"
+
+
+def _build_agriculture_brief(
+    *,
+    amount: Optional[float],
+    activity: Optional[str],
+    lang: str,
+    income: Optional[float],
+    query: Optional[str],
+    sc_status: Optional[bool],
+    mode: str,
+) -> AdviserBrief:
+    hi = lang == "hi"
+    related_fits: list[SchemeFit] = []
+    dedicated_fits: list[SchemeFit] = []
+    from app.recommendation_engine import agriculture_fit_role
+    from app.rag.scheme_knowledge import iter_schemes
+
+    seen: set[str] = set()
+    for raw in iter_schemes():
+        sid = str(raw.get("scheme_id") or "")
+        if not sid or sid in seen:
+            continue
+        seen.add(sid)
+        role = agriculture_fit_role(raw, activity, "AGRICULTURE")
+        if role == "none":
+            continue
+        fit = _fit(sid, amount, lang)
+        if not fit:
+            continue
+        if role == "related":
+            fit.fit_role = "related"
+            related_fits.append(fit)
+        else:
+            dedicated_fits.append(fit)
+
+    primary = dedicated_fits[0] if dedicated_fits else None
+    alts = [f for f in (related_fits if not primary else dedicated_fits[1:] + related_fits)][:4]
+    cropish = str(activity or "").upper() in {
+        "CROP_FARMING", "RICE_FARMING", "WHEAT_FARMING", "VEGETABLE_FARMING",
+        "HORTICULTURE", "FASAL",
+    } or any(
+        tok in (query or "").lower()
+        for tok in ("फसल", "fasal", "crop", "rice", "chawal", "paddy", "धान", "चावल")
+    )
+    if primary is None:
+        if cropish:
+            answer = (
+                "आपकी फसल खेती के लिए मुझे वर्तमान सत्यापित NSFDC catalogue में स्पष्ट रूप से मेल खाने वाली योजना नहीं मिली। "
+                "मैं उपलब्ध विकल्पों और verification-required schemes भी दिखा सकता हूँ। "
+                "सावधि ऋण एक सामान्य आय-सृजन ऋण है जिसमें कृषि व संबद्ध गतिविधियाँ कई कामों के साथ लिखी हैं — यह समर्पित फसल ऋण नहीं है।"
+                if hi else
+                "I could not find a clearly matching crop-farming scheme in the current verified NSFDC catalogue. "
+                "I can still show related options and schemes that require verification. "
+                "Term Loan is general NSFDC term finance that lists agriculture and allied activities among many income-generating uses — it is not a dedicated crop loan."
+            )
+        else:
+            answer = (
+                "कृषि/खेती के लिए वर्तमान सत्यापित NSFDC catalogue में मुझे कोई समर्पित कृषि ऋण योजना नहीं मिली। "
+                "कुछ सामान्य NSFDC ऋण योजनाओं के विवरण में कृषि व संबद्ध गतिविधियाँ अन्य आय-सृजन कामों के साथ लिखी हैं। "
+                "मैं उन्हें संबंधित विकल्प के रूप में दिखा सकता हूँ — यह फसल ऋण होने का दावा नहीं है।"
+                if hi else
+                "The current verified NSFDC catalogue does not contain a dedicated agriculture or crop-farming loan. "
+                "Some general NSFDC credit products mention agriculture and allied activities among other income-generating uses. "
+                "I can show those as related options — not as a dedicated crop loan."
+            )
+        if amount is None:
+            answer += (
+                " अगर आप अनुमानित राशि बताएँ, तो मैं सीमा के हिसाब से विकल्प छांट सकता हूँ।"
+                if hi else
+                " If you share an approximate amount, I can narrow the related options."
+            )
+        confidence = "low"
+    else:
+        answer = (
+            f"आपकी जानकारी के आधार पर {_name(primary.facts, lang)} संबंधित लगता है। मैंने नीचे इसकी जानकारी दी है।"
+            if hi else
+            f"Based on the information provided, {_name(primary.facts, lang)} appears relevant. Details are below."
+        )
+        confidence = "medium"
+    related_ids = []
+    if primary:
+        related_ids.append(primary.facts.scheme_id)
+    related_ids.extend(f.facts.scheme_id for f in alts if f.facts.scheme_id not in related_ids)
+    return AdviserBrief(
+        mode=mode,
+        primary=primary,
+        alternatives=alts,
+        comparison=([primary] if primary else []) + alts,
+        missing=[] if amount is not None else ["project_cost"],
+        next_question=None if amount is not None else (
+            "आपकी परियोजना की अनुमानित लागत लगभग कितनी है?" if hi else "Approximately how much will your project cost?"
+        ),
+        confidence=confidence,
+        answer=answer,
+        related_ids=related_ids,
+        amount=amount,
+        income=income,
+        activity=activity,
+        domain="AGRICULTURE",
+        sc_status=sc_status,
+    )
+
+
 def _universe(domain: Optional[str]) -> tuple[str, ...]:
     if (domain or "").upper() == "EDUCATION":
         return EDUCATION_CREDIT_IDS
+    if (domain or "").upper() == "AGRICULTURE":
+        return ()
     return BUSINESS_CREDIT_IDS
 
 
@@ -324,10 +727,21 @@ def build_brief(
     retrieved_ids: Optional[list[str]] = None,
     income: Optional[float] = None,
     query: Optional[str] = None,
+    sc_status: Optional[bool] = None,
 ) -> AdviserBrief:
     lang = "hi" if lang == "hi" else "en"
     named_ids = named_ids or []
     retrieved_ids = retrieved_ids or []
+    if (domain or "").upper() == "AGRICULTURE" and mode != EXPLAIN:
+        return _build_agriculture_brief(
+            amount=amount,
+            activity=activity,
+            lang=lang,
+            income=income,
+            query=query,
+            sc_status=sc_status,
+            mode=mode,
+        )
     if (domain or "").upper() == "EDUCATION" and mode != EXPLAIN:
         from app.rag.education_advisor import (
             build_education_brief,
@@ -384,6 +798,11 @@ def build_brief(
             confidence="medium" if primary else "low",
             answer=edu.answer,
             related_ids=edu.related_ids,
+            amount=amount,
+            income=income,
+            activity=activity,
+            domain="EDUCATION",
+            sc_status=sc_status,
         )
         brief._education_cards = education_ui_cards(edu, lang)  # type: ignore[attr-defined]
         return brief
@@ -484,6 +903,11 @@ def build_brief(
         confidence=confidence,
         answer=answer,
         related_ids=related,
+        amount=amount,
+        income=income,
+        activity=activity,
+        domain=domain,
+        sc_status=sc_status,
     )
 
 
@@ -597,9 +1021,14 @@ def render_answer(
         else:
             if primary:
                 lines.append(
-                    f"आपकी बताई राशि {_inr(int(amount))} के आधार पर {_name(primary.facts, lang)} एक relevant NSFDC option लगती है."
+                    "आपकी जानकारी के आधार पर एक संबंधित विकल्प मिला है। मैंने नीचे इसकी जानकारी दी है।"
                     if hi
-                    else f"Based on the amount you mentioned ({_inr(int(amount))}), {_name(primary.facts, lang)} appears to be a relevant NSFDC option."
+                    else "A relevant option based on your details is below."
+                )
+                lines.append(
+                    f"आपकी बताई राशि {_inr(int(amount))} के आधार पर {_name(primary.facts, lang)} मेल खाता NSFDC विकल्प है।"
+                    if hi
+                    else f"Based on the amount you mentioned ({_inr(int(amount))}), {_name(primary.facts, lang)} matches your details."
                 )
                 lines.append(_scheme_blurb(primary, lang))
                 lines.append(primary.why)
@@ -633,31 +1062,29 @@ def ui_cards(brief: AdviserBrief, lang: str) -> list[AssistantUICard]:
     if extra:
         return list(extra)
     cards: list[AssistantUICard] = []
-    seen = set()
-    ordered = []
+    seen: set[str] = set()
+    ordered: list[SchemeFit] = []
     if brief.primary:
         ordered.append(brief.primary)
     ordered.extend(brief.alternatives)
-    for fit in ordered[:4]:
+    primary_id = brief.primary.facts.scheme_id if brief.primary else None
+    for fit in ordered[:6]:
         if fit.status == "out_of_range":
             continue
         sid = fit.facts.scheme_id
         if sid in seen:
             continue
         seen.add(sid)
-        facts = fit.facts
-        blurb = (
-            facts.purpose_hi
-            if lang == "hi" and facts.purpose_hi
-            else facts.purpose
-        ) or (facts.short.get(lang) or facts.short.get("en") or "")
         cards.append(
-            AssistantUICard(
-                type=AssistantUICardType.SCHEME_CARD,
-                schemeId=sid,
-                schemeName=_name(facts, lang),
-                reason=blurb or fit.why,
-                eligible=None,
+            make_scheme_card(
+                fit=fit,
+                lang=lang,
+                is_primary=bool(primary_id and sid == primary_id and fit.fit_role != "related"),
+                amount=brief.amount,
+                income=brief.income,
+                activity=brief.activity,
+                domain=brief.domain,
+                sc_status=brief.sc_status,
             )
         )
     return cards

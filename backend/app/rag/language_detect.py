@@ -217,11 +217,15 @@ _INTENT_TO_RETRIEVAL_QUERY = {
 # "fasal/crop farming" is crop cultivation, not rice and not dairy.
 _RICE_MARKERS = ("rice farming", "rice", "paddy", "chawal", "धान", "चावल")
 _DAIRY_MARKERS = (
-    "dairy farming", "dairy farm", "dairy", "livestock", "cattle",
-    "डेयरी फार्मिंग", "डेयरी फार्म", "डेयरी", "दूध", "पशुपालन", "doodh",
+    "dairy farming", "dairy farm", "dairy",
+    "डेयरी फार्मिंग", "डेयरी फार्म", "डेयरी", "दूध", "doodh",
 )
 _POULTRY_MARKERS = ("poultry", "murgi", "मुर्गी पालन", "मुर्गी")
 _GOAT_MARKERS = ("goat farming", "goat", "bakri", "बकरी पालन", "बकरी")
+_LIVESTOCK_MARKERS = (
+    "livestock", "animal husbandry", "cattle", "pashupalan",
+    "पशुपालन", "पशुधन",
+)
 _CROP_MARKERS = (
     "crop farming", "crop cultivation", "crop loan", "crops",
     "fasal ki kheti", "fasal kheti", "fasal",
@@ -254,6 +258,8 @@ def extract_specific_activity(text: str) -> Optional[str]:
         return "POULTRY"
     if _has_marker(t, _GOAT_MARKERS):
         return "GOAT_REARING"
+    if _has_marker(t, _LIVESTOCK_MARKERS):
+        return "LIVESTOCK"
     if _has_marker(t, _CROP_MARKERS):
         return "CROP_FARMING"
     return None

@@ -125,6 +125,10 @@
     "resultsSubtitle_other": "{{count}} పథకాలు మీ వివరాలతో సరిపోలాయి",
     "noResults": "ఏ పథకమూ సరిపోలలేదు",
     "noResultsBody": "సాధారణంగా దీనికి కారణం కుటుంబ ఆదాయం ₹5 లక్షల పరిమితిని మించడం. కింది కారణాలను చూడండి.",
+    "noDedicatedMatch": "ప్రత్యేక ధృవీకరించిన పథకం దొరకలేదు",
+    "noDedicatedMatchBody": "ప్రస్తుత కేటలాగ్‌లో ఈ నిర్దిష్ట కార్యకలాపానికి ప్రత్యేక ధృవీకరించిన పథకం లేదు.",
+    "relatedOptions": "సంబంధిత ఎంపికలు",
+    "whyRelated": "ఇది కేవలం సంబంధిత ఎంపిక ఎందుకు",
     "nearMisses": "దగ్గరగా, కానీ అర్హత లేదు",
     "whyThisScheme": "ఈ పథకం ఎందుకు?",
     "matchScore": "{{score}}% సరిపోలిక",
@@ -487,7 +491,8 @@
   },
   "uiCards": {
     "requiredDocuments": "అవసరమైన పత్రాలు",
-    "recommended": "సిఫార్సు చేయబడినవి",
+    "recommended": "Suggested documents",
+    "suggestedDocuments": "Suggested documents",
     "noPartnerSelected": "ఏ భాగస్వామి ఎంపిక చేయబడలేదు",
     "away": "కి.మీ. దూరం",
     "selectPartner": "ఈ భాగస్వామిని ఎంచుకోండి",
@@ -509,6 +514,14 @@
     "fitOutside": "పరిధి బయట",
     "fitAbove": "పైన",
     "fitNotALoan": "రుణం కాదు",
-    "fitUnknown": "తెలియదు"
+    "fitUnknown": "తెలియదు",
+    "matchesDetails": "మీ వివరాలకు సరిపోతుంది",
+    "mostRelevant": "ఇచ్చిన సమాచారం ఆధారంగా అత్యంత సంబంధితం",
+    "otherRelevantOptions": "ఇతర సంబంధిత ఎంపికలు",
+    "relatedOption": "సంబంధిత ఎంపిక",
+    "whyThisScheme": "ఈ పథకం ఎందుకు?",
+    "maxAssistance": "గరిష్ట సహాయం",
+    "repaymentPeriod": "తిరిగి చెల్లింపు కాలం",
+    "viewSchemeDetails": "పథకం వివరాలు చూడండి →"
   }
 }

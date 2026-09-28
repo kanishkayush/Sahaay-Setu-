@@ -12,7 +12,11 @@ describe('education adviser cards', () => {
       verificationStatus: 'VERIFIED',
       amountFit: 'WITHIN_RANGE',
       incomeFit: 'WITHIN_LIMIT',
-      reason: 'Up to ₹40 lakh*',
+      courseFit: 'MATCH',
+      whySelected: [{ kind: 'MATCH', text: 'Your family income is within the published ceiling.' }],
+      isPrimary: true,
+      action: 'VIEW_DETAILS',
+      reason: 'Most relevant based on the information provided',
     });
     expect(verified.verificationStatus).toBe('VERIFIED');
 
@@ -64,5 +68,51 @@ describe('education adviser cards', () => {
       ],
     });
     expect(parsed.uiCards).toHaveLength(1);
+  });
+
+  it('accepts the canonical VIEW_DETAILS scheme-card contract', () => {
+    const card = AssistantUICardSchema.parse({
+      type: 'SCHEME_CARD',
+      schemeId: 'nsfdc-term-loan',
+      schemeName: 'Term Loan',
+      organization: 'NSFDC',
+      domain: 'BUSINESS',
+      assistanceType: 'LOAN',
+      verificationStatus: 'VERIFIED',
+      fitStatus: 'MOST_RELEVANT',
+      whySelected: [
+        { kind: 'MATCH', text: 'Your family income is within the published ceiling of ₹5 lakh.' },
+        { kind: 'INFO', text: 'SC/ST certificate confirmation is required.' },
+      ],
+      amountFit: 'WITHIN_RANGE',
+      incomeFit: 'WITHIN_LIMIT',
+      maxLoanAmount: 4500000,
+      interestRatePct: 8,
+      maxTenureMonths: 84,
+      isPrimary: true,
+      action: 'VIEW_DETAILS',
+    });
+    expect(card.schemeId).toBe('nsfdc-term-loan');
+    expect(card.action).toBe('VIEW_DETAILS');
+    expect(card.whySelected?.[0]?.kind).toBe('MATCH');
+  });
+
+  it('accepts RELATED scheme cards that are not primary', () => {
+    const card = AssistantUICardSchema.parse({
+      type: 'SCHEME_CARD',
+      schemeId: 'nsfdc-term-loan',
+      schemeName: 'Term Loan',
+      organization: 'NSFDC',
+      domain: 'BUSINESS',
+      assistanceType: 'LOAN',
+      verificationStatus: 'VERIFIED',
+      fitStatus: 'RELATED',
+      isPrimary: false,
+      action: 'VIEW_DETAILS',
+      whySelected: [{ kind: 'INFO', text: 'This is a related general NSFDC credit product.' }],
+    });
+    expect(card.fitStatus).toBe('RELATED');
+    expect(card.isPrimary).toBe(false);
+    expect(card.action).toBe('VIEW_DETAILS');
   });
 });

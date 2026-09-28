@@ -125,6 +125,10 @@
     "resultsSubtitle_other": "{{count}} योजना तुमच्या तपशिलाशी जुळल्या",
     "noResults": "कोणतीही योजना जुळली नाही",
     "noResultsBody": "याचे कारण सहसा असे असते की कौटुंबिक उत्पन्न ₹५ लाखांच्या मर्यादेपेक्षा जास्त आहे. खालील कारणे पहा.",
+    "noDedicatedMatch": "समर्पित पडताळलेली योजना सापडली नाही",
+    "noDedicatedMatchBody": "सध्याच्या कॅटलॉगमध्ये या विशिष्ट कामासाठी समर्पित पडताळलेली योजना सापडली नाही.",
+    "relatedOptions": "संबंधित पर्याय",
+    "whyRelated": "हे केवळ संबंधित पर्याय का आहे",
     "nearMisses": "जवळपास, पण पात्र नाही",
     "whyThisScheme": "ही योजना का?",
     "matchScore": "{{score}}% जुळणी",
@@ -487,7 +491,8 @@
   },
   "uiCards": {
     "requiredDocuments": "आवश्यक कागदपत्रे",
-    "recommended": "शिफारस केलेले",
+    "recommended": "इतर उपयुक्त कागदपत्रे",
+    "suggestedDocuments": "इतर उपयुक्त कागदपत्रे",
     "noPartnerSelected": "कोणताही भागीदार निवडलेला नाही",
     "away": "कि.मी. दूर",
     "selectPartner": "हा भागीदार निवडा",
@@ -509,6 +514,14 @@
     "fitOutside": "मर्यादेबाहेर",
     "fitAbove": "वर",
     "fitNotALoan": "कर्ज नाही",
-    "fitUnknown": "अज्ञात"
+    "fitUnknown": "अज्ञात",
+    "matchesDetails": "तुमच्या माहितीनुसार जुळणारा पर्याय",
+    "mostRelevant": "दिलेल्या माहितीनुसार सर्वाधिक संबंधित",
+    "otherRelevantOptions": "इतर संबंधित पर्याय",
+    "relatedOption": "संबंधित पर्याय",
+    "whyThisScheme": "ही योजना का?",
+    "maxAssistance": "कमाल सहाय्य",
+    "repaymentPeriod": "मुदत",
+    "viewSchemeDetails": "योजना तपशील पहा →"
   }
 }

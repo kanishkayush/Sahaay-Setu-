@@ -583,6 +583,7 @@ def education_ui_cards(brief: EducationBrief, lang: str) -> list[AssistantUICard
     ordered = list(brief.primary_loan_options) + list(brief.other_education_support)
     seen: set[str] = set()
     hi = lang == "hi"
+    primary_id = next((o.scheme_id for o in brief.primary_loan_options), None)
     for opt in ordered:
         if opt.scheme_id in seen:
             continue
@@ -592,33 +593,109 @@ def education_ui_cards(brief: EducationBrief, lang: str) -> list[AssistantUICard
                 1 for c in cards if (c.assistanceType or "") == ASSISTANCE_SCHOLARSHIP
             ) >= 2:
                 continue
-        reason_parts: list[str] = []
-        if opt.verification_status == VERIFIED:
-            if opt.loan_amount_max:
-                reason_parts.append(
-                    f"अधिकतम {_inr(opt.loan_amount_max)}*" if hi else f"Up to {_inr(opt.loan_amount_max)}*"
+        why: list[dict] = []
+        if opt.income_fit == WITHIN_LIMIT and opt.income_limit:
+            why.append({
+                "kind": "MATCH",
+                "text": (
+                    f"आपकी पारिवारिक आय {_inr(opt.income_limit)} की प्रकाशित सीमा के भीतर है।"
+                    if hi else
+                    f"Your family income is within the published ceiling of {_inr(opt.income_limit)}."
+                ),
+            })
+        elif opt.income_fit == ABOVE_LIMIT and opt.income_limit:
+            why.append({
+                "kind": "MISMATCH",
+                "text": (
+                    f"आपकी पारिवारिक आय {_inr(opt.income_limit)} की प्रकाशित सीमा से अधिक है।"
+                    if hi else
+                    f"Your family income is above the published ceiling of {_inr(opt.income_limit)}."
+                ),
+            })
+        elif opt.income_fit == INCOME_UNKNOWN:
+            why.append({
+                "kind": "INFO",
+                "text": "पारिवारिक आय की पुष्टि आवश्यक है।" if hi else "Family income confirmation is required.",
+            })
+        if opt.amount_fit == WITHIN_RANGE:
+            why.append({
+                "kind": "MATCH",
+                "text": "आपकी बताई राशि योजना की सीमा में है।" if hi else "Your stated amount is within the scheme limit.",
+            })
+        elif opt.amount_fit == OUTSIDE_RANGE:
+            why.append({
+                "kind": "MISMATCH",
+                "text": "आपकी बताई राशि योजना की सीमा से बाहर है।" if hi else "Your stated amount is outside the scheme limit.",
+            })
+        elif opt.amount_fit == AMOUNT_UNKNOWN:
+            why.append({
+                "kind": "INFO",
+                "text": "राशि की पुष्टि आवश्यक है।" if hi else "Amount confirmation is required.",
+            })
+        elif opt.amount_fit == NOT_A_LOAN:
+            why.append({
+                "kind": "INFO",
+                "text": "यह ऋण उत्पाद नहीं है।" if hi else "This is not a loan product.",
+            })
+        if opt.course_fit == COURSE_MATCH:
+            why.append({
+                "kind": "MATCH",
+                "text": "आपका कोर्स योजना के उद्देश्यों से मेल खाता है।" if hi else "Your course matches this education product.",
+            })
+        elif opt.course_fit == COURSE_UNKNOWN:
+            why.append({
+                "kind": "INFO",
+                "text": "कोर्स की पुष्टि आवश्यक है।" if hi else "Course confirmation is required.",
+            })
+        if opt.requires_verification or opt.verification_status != VERIFIED:
+            why.append({
+                "kind": "INFO",
+                "text": opt.why_not or ("सत्यापन आवश्यक है।" if hi else "Verification required."),
+            })
+        is_primary = bool(primary_id and opt.scheme_id == primary_id and opt.assistance_type == ASSISTANCE_LOAN)
+        caption = (
+            "दी गई जानकारी के आधार पर सबसे संबंधित"
+            if hi and is_primary
+            else (
+                "Most relevant based on the information provided"
+                if is_primary
+                else (
+                    "आपकी जानकारी के आधार पर मेल खाता विकल्प"
+                    if hi
+                    else "Matches your details"
                 )
-            if opt.income_limit:
-                reason_parts.append(
-                    f"आय सीमा: {_inr(opt.income_limit)}*" if hi else f"Income ceiling: {_inr(opt.income_limit)}*"
-                )
-        reason_parts.append(opt.why_relevant)
-        if opt.requires_verification:
-            reason_parts.append(
-                opt.why_not or ("Verification required" if not hi else "सत्यापन आवश्यक")
             )
+        )
+        if opt.assistance_type != ASSISTANCE_LOAN:
+            caption = opt.why_relevant
+            if opt.requires_verification:
+                extra = opt.why_not or ("Verification required" if not hi else "सत्यापन आवश्यक")
+                if extra.lower() not in caption.lower():
+                    caption = f"{caption}. {extra}"
+        elif opt.requires_verification or opt.verification_status != VERIFIED:
+            caption = opt.why_not or ("Verification required" if not hi else "सत्यापन आवश्यक")
+        verified_financials = opt.verification_status == VERIFIED and opt.assistance_type == ASSISTANCE_LOAN
         cards.append(
             AssistantUICard(
                 type=AssistantUICardType.SCHEME_CARD,
                 schemeId=opt.scheme_id,
                 schemeName=opt.scheme_name,
-                reason=". ".join(p for p in reason_parts if p),
+                reason=caption,
                 eligible=None,
                 organization=opt.organization,
+                domain="EDUCATION",
                 assistanceType=opt.assistance_type,
                 verificationStatus=opt.verification_status,
+                fitStatus="MOST_RELEVANT" if is_primary else ("RELATED" if opt.assistance_type != ASSISTANCE_LOAN else "MATCHES_DETAILS"),
+                fitReasons=why,
+                whySelected=why,
                 amountFit=opt.amount_fit,
                 incomeFit=opt.income_fit,
+                courseFit=opt.course_fit,
+                eligibilityNotes=opt.why_not if opt.requires_verification else None,
+                maxLoanAmount=float(opt.loan_amount_max) if verified_financials and opt.loan_amount_max else None,
+                isPrimary=is_primary,
+                action="VIEW_DETAILS",
             )
         )
         if len(cards) >= 8:

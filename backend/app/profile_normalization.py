@@ -36,10 +36,13 @@ def relevance_from_project_type(
     activity: Optional[str] = None,
 ) -> RelevanceQuery:
     domain = PROJECT_TYPE_TO_DOMAIN.get(project_type or "", None)
+    mapped_activity = activity
+    if mapped_activity is None and project_type == "ANIMAL_HUSBANDRY":
+        mapped_activity = "LIVESTOCK"
     return RelevanceQuery(
         assistance_type="LOAN",
         domain=domain,
-        activity=activity,
+        activity=mapped_activity,
         amount_inr=amount_inr,
     )
 

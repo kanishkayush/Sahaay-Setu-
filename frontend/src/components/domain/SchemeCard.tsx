@@ -52,8 +52,14 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
 
         {recommendation ? (
           <Chip
-            label={rank === 1 ? 'Recommended' : 'Potentially Eligible'}
-            tone={rank === 1 ? 'success' : 'info'}
+            label={
+              recommendation.fitStatus === 'RELATED'
+                ? t('uiCards.relatedOption')
+                : rank === 1
+                  ? t('uiCards.matchesDetails')
+                  : t('recommender.otherApplicableSchemes')
+            }
+            tone={recommendation.fitStatus === 'RELATED' ? 'neutral' : rank === 1 ? 'success' : 'info'}
           />
         ) : null}
       </View>

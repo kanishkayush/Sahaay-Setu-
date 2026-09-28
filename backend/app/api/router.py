@@ -319,9 +319,14 @@ def get_partner_by_id(partner_id: str) -> dict[str, Any]:
 @router.post("/recommendations")
 def create_recommendations(request: RecommendationRequest) -> dict[str, Any]:
     user_profile_dict = _map_to_user_profile(request)
+    activity = None
+    if request.profile.narrative:
+        from app.rag.language_detect import extract_specific_activity
+        activity = extract_specific_activity(request.profile.narrative)
     relevance = relevance_from_project_type(
         request.profile.projectType,
         amount_inr=float(request.profile.estimatedProjectCost),
+        activity=activity,
     )
 
     eval_response = evaluate_all_schemes(user_profile_dict, organization="NSFDC")
@@ -337,5 +342,6 @@ def create_recommendations(request: RecommendationRequest) -> dict[str, Any]:
     # Honour the frontend's limit param on final results.
     limit = request.limit or 5
     response["recommendations"] = response["recommendations"][:limit]
+    response["relatedOptions"] = (response.get("relatedOptions") or [])[:limit]
 
     return response

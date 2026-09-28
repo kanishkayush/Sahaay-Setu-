@@ -106,4 +106,44 @@ def test_education_card_points_at_els_catalogue_id():
     assert cards
     scheme_cards = [c for c in cards if c.type.value == "SCHEME_CARD"]
     assert scheme_cards[0].schemeId == "nsfdc-education"
+    assert scheme_cards[0].action == "VIEW_DETAILS"
+    assert scheme_cards[0].isPrimary is True
+    assert scheme_cards[0].whySelected
     assert get_scheme("nsfdc-education")["id"] == "nsfdc-education"
+
+
+def test_business_cards_are_structured_not_recommended():
+    from app.rag.scheme_advisor import ui_cards
+
+    brief = build_brief(domain="BUSINESS", amount=200000, activity="SHOP", lang="en", income=300000)
+    cards = ui_cards(brief, "en")
+    assert cards
+    primary = cards[0]
+    assert primary.schemeId in {"nsfdc-term-loan", "nsfdc-uny", "nsfdc-mfs", "nsfdc-amy"}
+    assert primary.organization == "NSFDC"
+    assert primary.action == "VIEW_DETAILS"
+    assert primary.whySelected
+    assert primary.isPrimary is True
+    assert "recommended" not in (primary.reason or "").lower()
+    assert "best option" not in (brief.answer or "").lower()
+    assert all(c.schemeId for c in cards)
+
+
+def test_agriculture_does_not_force_term_loan_as_crop_match():
+    from app.rag.scheme_advisor import ui_cards
+
+    brief = build_brief(
+        domain="AGRICULTURE", amount=200000, activity="CROP_FARMING", lang="hi",
+        query="मुझे खेती के लिए लोन चाहिए",
+    )
+    assert brief.primary is None
+    assert "मेल खाने वाली योजना नहीं" in brief.answer or "समर्पित" in brief.answer
+    assert "recommended" not in brief.answer.lower()
+    cards = ui_cards(brief, "hi")
+    for card in cards:
+        assert card.action == "VIEW_DETAILS"
+        assert card.schemeId
+        if card.schemeId == "nsfdc-term-loan":
+            assert card.isPrimary is not True
+            assert card.fitStatus == "RELATED"
+            assert any("समर्पित" in (item.get("text") or "") or "फसल" in (item.get("text") or "") for item in (card.whySelected or []))

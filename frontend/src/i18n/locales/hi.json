@@ -120,6 +120,10 @@
     "resultsSubtitle_other": "{{count}} योजनाएँ आपके विवरण से मेल खाती हैं",
     "noResults": "कोई योजना मेल नहीं खाई",
     "noResultsBody": "अक्सर इसका कारण यह होता है कि पारिवारिक आय ₹5 लाख की सीमा से अधिक है। नीचे कारण देखें।",
+    "noDedicatedMatch": "कोई समर्पित सत्यापित योजना नहीं मिली",
+    "noDedicatedMatchBody": "वर्तमान catalogue में इस विशिष्ट गतिविधि के लिए कोई समर्पित सत्यापित योजना नहीं मिली।",
+    "relatedOptions": "संबंधित विकल्प",
+    "whyRelated": "यह केवल संबंधित विकल्प क्यों है",
     "nearMisses": "करीब, लेकिन पात्र नहीं",
     "whyThisScheme": "यह योजना क्यों?",
     "matchScore": "{{score}}% मेल",
@@ -480,15 +484,17 @@
     "pleaseWait": "कृपया प्रतीक्षा करें...",
     "disclaimer": "जारी रखकर, आप इस पोर्टल की सेवा शर्तों और गोपनीयता नीति से सहमत हैं।"
   },
-  "uiCards": {
+    "uiCards": {
     "requiredDocuments": "आवश्यक दस्तावेज़",
-    "recommended": "अनुशंसित",
+    "recommended": "अन्य उपयोगी दस्तावेज़",
+    "suggestedDocuments": "अन्य उपयोगी दस्तावेज़",
     "noPartnerSelected": "कोई साझेदार नहीं चुना गया",
     "away": "कि.मी. दूर",
     "selectPartner": "इस साझेदार का चयन करें",
-    "relevantOptions": "संबंधित NSFDC विकल्प",
+    "relevantOptions": "आपकी जानकारी के आधार पर मेल खाते विकल्प",
     "relatedEducationOptions": "संबंधित शिक्षा विकल्प",
-    "viewDetails": "योजना की पूरी जानकारी देखें →",
+    "viewDetails": "देखें योजना विवरण →",
+    "viewSchemeDetails": "देखें योजना विवरण →",
     "viewAvailableInfo": "उपलब्ध जानकारी देखें →",
     "verified": "सत्यापित",
     "partial": "आंशिक",
@@ -504,6 +510,13 @@
     "fitOutside": "सीमा से बाहर",
     "fitAbove": "ऊपर",
     "fitNotALoan": "ऋण नहीं",
-    "fitUnknown": "अज्ञात"
+    "fitUnknown": "अज्ञात",
+    "matchesDetails": "आपकी जानकारी के आधार पर मेल खाता विकल्प",
+    "mostRelevant": "दी गई जानकारी के आधार पर सबसे संबंधित",
+    "otherRelevantOptions": "अन्य संबंधित विकल्प",
+    "relatedOption": "संबंधित विकल्प",
+    "whyThisScheme": "यह योजना क्यों?",
+    "maxAssistance": "अधिकतम सहायता",
+    "repaymentPeriod": "अवधि"
   }
 }
