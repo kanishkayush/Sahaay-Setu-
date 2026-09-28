@@ -15,7 +15,7 @@ import { useLocation } from '@/hooks/useLocation';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, radius, spacing } from '@/theme';
-import { formatCurrency } from '@/utils/format';
+import { formatTriBool } from '@/profile/canonical';
 import {
   getProfile,
   updateProfile,
@@ -348,8 +348,8 @@ export default function ProfileScreen() {
                     <Row label={t('profile.educationLevel', 'Education Level')} value={displayProfile.educationLevel || 'Not provided'} />
                     <Row label={t('profile.occupation', 'Occupation')} value={displayProfile.occupation || 'Not provided'} />
                     <Row label={t('profile.annualFamilyIncome', 'Family Income')} value={displayProfile.eligibility?.annualFamilyIncome ? `₹${displayProfile.eligibility.annualFamilyIncome}` : 'Not provided'} />
-                    <Row label={t('profile.scEligibility', 'SC Category')} value={displayProfile.eligibility?.scEligibilityStatus ? 'Yes' : 'No'} />
-                    <Row label={t('profile.existingBusiness', 'Existing Business')} value={displayProfile.business?.existingBusiness ? 'Yes' : 'No'} last />
+                    <Row label={t('profile.scEligibility', 'SC Category')} value={formatTriBool(displayProfile.eligibility?.scEligibilityStatus)} />
+                    <Row label={t('profile.existingBusiness', 'Existing Business')} value={formatTriBool(displayProfile.business?.existingBusiness)} last />
                   </Card>
                 </View>
               )}

@@ -27,6 +27,7 @@ class DetectionResult:
     domain: Optional[str]
     purpose: Optional[str]
     assistance_type: Optional[str]
+    activity: Optional[str] = None  # specific activity only when the utterance names it
 
 
 # ── Script detection ───────────────────────────────────────────────
@@ -184,10 +185,48 @@ def _extract_intent(text: str) -> Optional[str]:
 
 _INTENT_TO_RETRIEVAL_QUERY = {
     "EDUCATION_LOAN": "education loan scheme for students college course fees",
-    "AGRICULTURE": "agriculture farming dairy loan scheme",
+    "AGRICULTURE": "agriculture farming loan scheme",
     "BUSINESS": "business enterprise self-employment loan scheme",
     "GENERAL_LOAN": "loan financial assistance scheme",
 }
+
+# Specific activities are stored only when the utterance contains evidence.
+# Generic "farming" / "खेती" must not become rice or dairy.
+_RICE_MARKERS = ("rice farming", "rice", "paddy", "chawal", "धान", "चावल")
+_DAIRY_MARKERS = (
+    "dairy farming", "dairy farm", "dairy", "livestock", "cattle",
+    "डेयरी फार्मिंग", "डेयरी फार्म", "डेयरी", "दूध", "पशुपालन", "doodh",
+)
+_POULTRY_MARKERS = ("poultry", "murgi", "मुर्गी पालन", "मुर्गी")
+_GOAT_MARKERS = ("goat farming", "goat", "bakri", "बकरी पालन", "बकरी")
+
+
+def _has_marker(text: str, markers: tuple[str, ...]) -> bool:
+    for marker in markers:
+        if not marker:
+            continue
+        if any(ord(ch) > 127 for ch in marker) or " " in marker:
+            if marker in text:
+                return True
+        elif re.search(rf"(?<![a-z0-9]){re.escape(marker)}(?![a-z0-9])", text):
+            return True
+    return False
+
+
+def extract_specific_activity(text: str) -> Optional[str]:
+    """Return a specific activity code only when the user named it."""
+    t = (text or "").lower()
+    if not t.strip():
+        return None
+    if _has_marker(t, _RICE_MARKERS):
+        return "RICE_FARMING"
+    if _has_marker(t, _DAIRY_MARKERS):
+        return "DAIRY_FARMING"
+    if _has_marker(t, _POULTRY_MARKERS):
+        return "POULTRY"
+    if _has_marker(t, _GOAT_MARKERS):
+        return "GOAT_REARING"
+    return None
 
 
 def detect_language_and_intent(query: str) -> DetectionResult:
@@ -219,10 +258,15 @@ def detect_language_and_intent(query: str) -> DetectionResult:
 
     # Extract intent
     intent = _extract_intent(stripped)
+    activity = extract_specific_activity(stripped)
 
-    # Build a retrieval-friendly English translation
+    # Build a retrieval-friendly English translation from the utterance +
+    # domain gloss. Do not inject rice/dairy unless the user named them.
     if intent and intent in _INTENT_TO_RETRIEVAL_QUERY:
-        translated = f"{stripped} {_INTENT_TO_RETRIEVAL_QUERY[intent]}"
+        gloss = _INTENT_TO_RETRIEVAL_QUERY[intent]
+        if activity:
+            gloss = f"{activity.replace('_', ' ').lower()} {gloss}"
+        translated = f"{stripped} {gloss}"
     else:
         translated = stripped  # Use original if no intent mapping
 
@@ -238,7 +282,7 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         assistance_type = "LOAN"
     elif intent == "AGRICULTURE":
         domain = "AGRICULTURE"
-        purpose = "FARMING"
+        purpose = activity or "AGRICULTURE"
         assistance_type = "LOAN"
     elif intent == "BUSINESS":
         domain = "BUSINESS"
@@ -257,5 +301,6 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         organization="NSFDC",
         domain=domain,
         purpose=purpose,
-        assistance_type=assistance_type
+        assistance_type=assistance_type,
+        activity=activity,
     )

@@ -144,7 +144,8 @@ def get_scheme_by_id(scheme_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Scheme not found")
     return scheme
 
-from app.rag.partner_repo import get_partner_repo
+from app.rag.partner_repo import get_partner_repo, partner_coordinates
+from app.profile_normalization import relevance_from_project_type
 
 class PartnerSearchRequest(BaseModel):
     location: Optional[dict] = None  # Expected: {"latitude": ..., "longitude": ...}
@@ -172,8 +173,8 @@ def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]
     mapped_type = type_map.get(p_type, "SCA")
 
     raw_pincode = str(p.get("pincode", "")).strip()
-    if not raw_pincode or not raw_pincode[0].isdigit() or len(raw_pincode) != 6:
-        raw_pincode = "100000"  # placeholder to pass validation — frontend shows address anyway
+    if not raw_pincode or not raw_pincode[0].isdigit() or len(raw_pincode) != 6 or raw_pincode == "100000":
+        raw_pincode = str(p.get("pincode") or "").strip()
 
     mapped: dict[str, Any] = {
         "id": p.get("id", p.get("partnerId", "")),
@@ -182,10 +183,10 @@ def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]
         "address": p.get("address", "Address unavailable"),
         "district": p.get("district", "") or "Unknown",
         "stateCode": p.get("stateCode", "") or "XX",
-        "pincode": raw_pincode,
-        "eligibility": {
+        "pincode": raw_pincode or "000000",
+        "eligibility": p.get("eligibility") if isinstance(p.get("eligibility"), dict) else {
             "status": "UNKNOWN",
-            "reasonKey": "errors.generic",
+            "reasonKey": "partners.eligibility.unknown",
         },
         # Always coerce to valid OfficialCategory enum values — raw JSON may have
         # internal category codes (MICRO_FINANCE, TERM_LOAN…) that are not valid.
@@ -202,12 +203,9 @@ def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]
     elif p.get("distance_km") is not None:
         mapped["distanceKm"] = p["distance_km"]
 
-    # Location — prefer nested object, fall back to top-level fields
-    loc = p.get("location")
-    if isinstance(loc, dict) and loc.get("latitude") is not None and loc.get("longitude") is not None:
-        mapped["location"] = {"latitude": loc["latitude"], "longitude": loc["longitude"]}
-    elif p.get("latitude") is not None and p.get("longitude") is not None:
-        mapped["location"] = {"latitude": p["latitude"], "longitude": p["longitude"]}
+    coords = partner_coordinates(p)
+    if coords is not None:
+        mapped["location"] = {"latitude": coords[0], "longitude": coords[1]}
 
     if p.get("phone"):
         mapped["phone"] = p["phone"]
@@ -224,65 +222,49 @@ def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]
 @router.post("/partners/search")
 def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
     fallback_used = False
-    
-    if req.location and "latitude" in req.location and "longitude" in req.location:
-        lat = req.location["latitude"]
-        lon = req.location["longitude"]
-    else:
-        lat = None
-        lon = None
-        
-    repo = get_partner_repo()
-    
-    if req.allPartners or (lat is None and lon is None and not req.pincode):
-        # No location context — return everything ("All Partners" mode or no geo info)
-        nearby_partners = repo.get_all_partners(
-            scheme_id=req.schemeId,
-            lat=lat,
-            lon=lon
-        )
-    elif req.pincode:
-        nearby_partners = repo.search_by_pincode_with_expansion(
-            pincode=req.pincode,
-            scheme_id=req.schemeId,
-            initial_radius_km=req.radiusKm,
-            lat=lat,
-            lon=lon
-        )
-        if not nearby_partners:
-            # Fallback to all partners
-            fallback_used = True
-            nearby_partners = repo.get_all_partners(scheme_id=req.schemeId, lat=lat, lon=lon)
-        elif all(p.get("distance_km", 0.0) > 0 for p in nearby_partners):
-            fallback_used = True
-    elif lat is not None and lon is not None:
-        nearby_partners = repo.search_nearby(
-            latitude=lat,
-            longitude=lon,
-            radius_km=req.radiusKm,
-            scheme_id=req.schemeId
-        )
-        # If none in radius, return all
-        if not nearby_partners:
-            fallback_used = True
-            nearby_partners = repo.get_all_partners(scheme_id=req.schemeId, lat=lat, lon=lon)
-    else:
-        nearby_partners = repo.get_all_partners(scheme_id=req.schemeId)
+    loc = req.location or {}
+    lat = loc.get("latitude") if isinstance(loc, dict) else None
+    lon = loc.get("longitude") if isinstance(loc, dict) else None
+    has_user_coords = partner_coordinates({"latitude": lat, "longitude": lon}) is not None
 
-    # Apply onlyAccepting filter — UNKNOWN is still shown, only NOT_ACCEPTING is hidden
-    if req.onlyAccepting:
-        filtered = [
+    repo = get_partner_repo()
+
+    if req.allPartners:
+        nearby_partners = repo.get_all_partners(scheme_id=req.schemeId, lat=lat, lon=lon)
+    elif not has_user_coords:
+        # Nearby without a real user location must not dump the national list.
+        return {
+            "items": [],
+            "fallbackUsed": False,
+            "radiusKm": req.radiusKm,
+            "searchedFrom": None,
+        }
+    else:
+        nearby_partners = repo.search_nearby(
+            latitude=float(lat),
+            longitude=float(lon),
+            radius_km=req.radiusKm,
+            scheme_id=req.schemeId,
+        )
+        # Keep only partners that could be geographically validated.
+        nearby_partners = [
             p for p in nearby_partners
-            if p.get("eligibility", {}).get("status", "UNKNOWN") != "NOT_ACCEPTING"
+            if p.get("distance_km") is not None and partner_coordinates(p) is not None
         ]
-        # If filtering removes everything, show all (avoid empty list)
-        if filtered:
-            nearby_partners = filtered
-        
+
+    if req.onlyAccepting:
+        filtered = []
+        for p in nearby_partners:
+            status = (p.get("eligibility") or {}).get("status", "UNKNOWN")
+            if status == "ACCEPTING":
+                filtered.append(p)
+        nearby_partners = filtered
+
     return {
         "items": [_map_partner(p) for p in nearby_partners],
         "fallbackUsed": fallback_used,
-        "radiusKm": req.radiusKm
+        "radiusKm": req.radiusKm,
+        "searchedFrom": {"latitude": lat, "longitude": lon} if has_user_coords else None,
     }
 
 
@@ -337,10 +319,13 @@ def get_partner_by_id(partner_id: str) -> dict[str, Any]:
 @router.post("/recommendations")
 def create_recommendations(request: RecommendationRequest) -> dict[str, Any]:
     user_profile_dict = _map_to_user_profile(request)
+    relevance = relevance_from_project_type(
+        request.profile.projectType,
+        amount_inr=float(request.profile.estimatedProjectCost),
+    )
 
-    eval_response = evaluate_all_schemes(user_profile_dict)
-
-    ranked = generate_recommendations(eval_response)
+    eval_response = evaluate_all_schemes(user_profile_dict, organization="NSFDC")
+    ranked = generate_recommendations(eval_response, relevance=relevance)
 
     # Collect not_eligible schemes for near-miss construction.
     not_eligible = [

@@ -61,8 +61,7 @@ def update_profile(
 ) -> dict[str, Any]:
     store = get_profile_store()
 
-    # Only write non-None fields to avoid overwriting existing data.
-    update_data = request.model_dump(exclude_none=True)
+    update_data = request.model_dump(exclude_unset=True)
     return store.upsert(user_id, update_data)
 
 

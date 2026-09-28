@@ -36,6 +36,28 @@ def normalize_scheme_id(value: Any) -> Optional[str]:
         return "VOCATIONAL_TRAINING"
     return val
 
+def partner_coordinates(partner: Dict[str, Any]) -> Optional[tuple[float, float]]:
+    loc = partner.get("location") if isinstance(partner.get("location"), dict) else {}
+    lat = loc.get("latitude") if loc else partner.get("latitude")
+    lon = loc.get("longitude") if loc else partner.get("longitude")
+    if lat is None:
+        lat = partner.get("latitude")
+    if lon is None:
+        lon = partner.get("longitude")
+    try:
+        lat_f = float(lat)
+        lon_f = float(lon)
+    except (TypeError, ValueError):
+        return None
+    if lat_f != lat_f or lon_f != lon_f:
+        return None
+    if abs(lat_f) > 90 or abs(lon_f) > 180:
+        return None
+    if lat_f == 0.0 and lon_f == 0.0:
+        return None
+    return lat_f, lon_f
+
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculates distance in kilometers between two points on Earth."""
     R = 6371.0  # Earth radius in kilometers
@@ -96,12 +118,10 @@ class JsonPartnerRepository(PartnerRepositoryProtocol):
             if scheme_id and scheme_id not in partner.get("supported_schemes", []):
                 continue
                 
-            p_lat = partner.get("latitude")
-            p_lon = partner.get("longitude")
-            
-            if p_lat is None or p_lon is None:
+            coords = partner_coordinates(partner)
+            if coords is None:
                 continue
-                
+            p_lat, p_lon = coords
             distance = haversine_distance(latitude, longitude, p_lat, p_lon)
             
             if distance <= radius_km:
@@ -166,11 +186,9 @@ class JsonPartnerRepository(PartnerRepositoryProtocol):
             # Distance computation if user GPS is available and partner has GPS
             dist_km = None
             if lat is not None and lon is not None:
-                p_loc = partner.get("location") or {}
-                p_lat = p_loc.get("latitude") or partner.get("latitude")
-                p_lon = p_loc.get("longitude") or partner.get("longitude")
-                if p_lat is not None and p_lon is not None:
-                    dist_km = round(haversine_distance(lat, lon, float(p_lat), float(p_lon)), 2)
+                coords = partner_coordinates(partner)
+                if coords is not None:
+                    dist_km = round(haversine_distance(lat, lon, coords[0], coords[1]), 2)
                     partner_with_dist["distance_km"] = dist_km
             
             p_pincode = str(partner.get("pincode", ""))
@@ -236,11 +254,9 @@ class JsonPartnerRepository(PartnerRepositoryProtocol):
             
             # Distance computation if user GPS is available and partner has GPS
             if lat is not None and lon is not None:
-                p_loc = partner.get("location") or {}
-                p_lat = p_loc.get("latitude") or partner.get("latitude")
-                p_lon = p_loc.get("longitude") or partner.get("longitude")
-                if p_lat is not None and p_lon is not None:
-                    dist_km = round(haversine_distance(lat, lon, float(p_lat), float(p_lon)), 2)
+                coords = partner_coordinates(partner)
+                if coords is not None:
+                    dist_km = round(haversine_distance(lat, lon, coords[0], coords[1]), 2)
                     partner_with_dist["distance_km"] = dist_km
             
             results.append(partner_with_dist)

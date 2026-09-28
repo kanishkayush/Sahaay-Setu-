@@ -118,6 +118,18 @@ function scoreScheme(scheme: Scheme, profile: ApplicantProfile): Scored {
   // ---- Hard gate 3: education schemes need an education project --------
   const isEducationScheme = scheme.officialCategory === 'EDUCATION';
   const wantsEducation = profile.projectType === 'EDUCATION';
+  const name = `${scheme.name?.en ?? ''} ${scheme.name?.hi ?? ''}`.toLowerCase();
+  const isCoachingOrScholarship =
+    name.includes('free coaching') || name.includes('scholarship') || name.includes('coaching');
+  if (isCoachingOrScholarship && !wantsEducation) {
+    blockers.push(
+      reason(
+        'MISMATCH',
+        'This assistance type does not match the selected activity',
+        'यह सहायता प्रकार चुनी गई गतिविधि से मेल नहीं खाता',
+      ),
+    );
+  }
   if (isEducationScheme !== wantsEducation) {
     blockers.push(
       isEducationScheme

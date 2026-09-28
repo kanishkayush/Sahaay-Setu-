@@ -10,6 +10,7 @@ from app.schemas.assistant import AssistantUICard, AssistantUICardType
 from app.rag.memory import get_history, get_session_profile, update_session_profile, add_turn
 from app.eligibility_engine import evaluate_all_schemes, load_scheme
 from app.recommendation_engine import generate_recommendations, RelevanceQuery
+from app.rag.language_detect import extract_specific_activity
 from app.services.storage import get_profile_store
 
 def _llm_model() -> str:
@@ -84,6 +85,10 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
     if not is_loan:
         return None
         
+    specific = extract_specific_activity(query)
+    if specific:
+        return {"intent": "LOAN", "activity": specific, "domain": "AGRICULTURE"}
+
     # Check for specific activities
     ACTIVITY_ALIASES = {
         "RICE_FARMING": [
@@ -110,7 +115,6 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
             "bachelors", "graduation", "university", "institute", "fees", "higher education",
             "padhai", "shiksha", "paddhai"
         ],
-        "FARMING": ["kheti", "farming", "agriculture", "खेती", "कृषि", "krishi"],
         "GENERAL_BUSINESS": [
             "business", "startup", "company", "enterprise", "manufacturing", "व्यापार", "बिज़नेस", 
             "handicraft", "craft", "artisan", "weaving", "pottery", "हस्तशिल्प", "शिल्प", "कारीगर",
@@ -120,7 +124,14 @@ def _deterministic_intent_extraction(query: str) -> Optional[dict]:
     
     for activity, aliases in ACTIVITY_ALIASES.items():
         if any(alias in query_lower for alias in aliases):
-            return {"intent": "LOAN", "activity": activity}
+            domain = "AGRICULTURE" if activity not in {"EDUCATION_LOAN", "GENERAL_BUSINESS", "TAILORING", "SHOP"} else (
+                "EDUCATION" if activity == "EDUCATION_LOAN" else "BUSINESS"
+            )
+            return {"intent": "LOAN", "activity": activity, "domain": domain}
+
+    generic_agri = ("kheti", "farming", "agriculture", "खेती", "कृषि", "krishi")
+    if any(alias in query_lower for alias in generic_agri):
+        return {"intent": "LOAN", "activity": None, "domain": "AGRICULTURE"}
             
     return None
 
@@ -135,7 +146,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
     4. Sets up the guided journey state for follow-up questions
     """
     from app.rag.language_detect import detect_language_and_intent
-    
+
     # Check if intent was already detected by chat.py
     pre_detected_intent = getattr(request, '_detected_intent', None)
     
@@ -152,14 +163,9 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
         }
         activity = intent_to_activity.get(pre_detected_intent)
         if pre_detected_intent == "AGRICULTURE":
-            q = request.query.lower()
-            if any(w in q for w in ("rice", "chawal", "paddy", "धान", "चावल")):
-                activity = "RICE_FARMING"
-            elif any(w in q for w in ("dairy", "doodh", "दूध", "डेयरी")):
-                activity = "DAIRY_FARMING"
-            else:
-                activity = "FARMING"
-        if activity:
+            activity = extract_specific_activity(request.query)
+            data = {"intent": "LOAN", "activity": activity, "domain": "AGRICULTURE"}
+        elif activity:
             data = {"intent": "LOAN", "activity": activity}
         elif pre_detected_intent == "GENERAL_LOAN":
             data = {"intent": "AMBIGUOUS_LOAN"}
@@ -186,7 +192,12 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             )
         elif data.get("intent") == "LOAN":
             activity = data.get("activity")
+            domain = data.get("domain")
+            if not activity:
+                activity = extract_specific_activity(request.query)
             profile.activity = activity
+            if domain == "AGRICULTURE" or (not domain and extract_specific_activity(request.query)):
+                profile.projectType = "AGRICULTURE"
             activity_lower = str(activity).lower() if activity else ""
             
             # Detect education intent
@@ -240,6 +251,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 retrieved_chunks=retrieved_chunks,
                 lang=lang,
                 user_query=request.query,
+                domain=profile.projectType or domain,
             )
             
             if (
@@ -336,6 +348,7 @@ Do not include any other text.
                 retrieved_chunks=retrieved_chunks,
                 lang=lang,
                 user_query=request.query,
+                domain=profile.projectType,
             )
             
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
@@ -365,6 +378,7 @@ def _build_conversational_first_response(
     retrieved_chunks: list,
     lang: str,
     user_query: str,
+    domain: str | None = None,
 ) -> str:
     """
     Generate a natural, conversational first response that includes
@@ -384,16 +398,23 @@ def _build_conversational_first_response(
         "bn": "Bengali", "ta": "Tamil", "te": "Telugu"
     }
     lang_name = lang_names.get(lang, "English")
+    is_agriculture = (domain or "").upper() == "AGRICULTURE" or (
+        activity and any(kw in str(activity).lower() for kw in ["dairy", "farm", "agriculture", "kheti", "rice", "poultry", "goat"])
+    )
     
     if is_education:
         purpose_desc = "education/studies"
     elif activity:
         purpose_desc = activity.lower().replace("_", " ")
+    elif is_agriculture:
+        purpose_desc = "farming, without a named crop or livestock type"
     else:
         purpose_desc = "business/self-employment"
     
+    named_activity = bool(activity and str(activity).upper() not in {"FARMING", "AGRICULTURE", "GENERAL"})
     system_prompt = f"""You are SAARTHI, a friendly multilingual loan assistant.
 The user wants help with {purpose_desc}.
+The user's actual words were: {user_query!r}
 
 Here is verified scheme information that may be relevant:
 {context_text}
@@ -401,7 +422,7 @@ Here is verified scheme information that may be relevant:
 Generate a NATURAL, CONVERSATIONAL advisory reply in {lang_name} that:
 1. Acknowledges the user's purpose in one sentence. Do not introduce yourself as SAARTHI or सारथी.
 2. Briefly says what kind of NSFDC assistance typically fits this purpose. Do not dump a full scheme brochure.
-3. Asks ONE useful next question only (amount if unknown; course name for education; specific crop/activity if still vague).
+3. Asks ONE useful next question only (amount if unknown; course name for education; specific crop/activity if farming is still unspecified).
 4. Never ask about business type if the purpose is farming or education.
 
 Rules:
@@ -413,6 +434,8 @@ Rules:
 - Respond ENTIRELY in {lang_name}
 - Do NOT output JSON
 - Do NOT say "based on retrieved context" or mention internal processes
+- Do NOT mention rice, dairy, wheat, poultry, or any other specific crop/livestock unless the user's actual words named it.
+- If the user only said farming/agriculture/खेती, ask which farming activity they mean. Do not assume rice.
 
 - If the verified context says no specific scheme is available, do not name Term Loan, Micro Finance, or any other scheme as an agriculture match.
 - Do not invent that a business loan covers farming unless the retrieved text says so.
@@ -431,7 +454,13 @@ Rules:
         )
         answer = (response.choices[0].message.content or "").strip()
         if answer:
-            return answer
+            if not named_activity and is_agriculture:
+                lowered = answer.lower()
+                invented = ("rice" in lowered or "चावल" in lowered or "paddy" in lowered) and not extract_specific_activity(user_query)
+                if invented:
+                    answer = ""
+            if answer:
+                return answer
     except Exception as e:
         logger = __import__("logging").getLogger(__name__)
         logger.warning(f"LLM first response generation failed: {e}")
@@ -440,39 +469,40 @@ Rules:
     fallback_map = {
         "en": {
             "education": "I can help you with education loans. NSFDC offers an Educational Loan Scheme for professional and technical courses. Could you tell me which course or program you're planning to pursue?",
-            "agriculture": "I can help with NSFDC financing, but I could not confirm a verified NSFDC scheme that is specifically for rice/farming from the scheme records. I will not guess a match. If this is a self-employment or business activity, tell me that; otherwise I can only note that agriculture-specific NSFDC loan details are not in the verified catalogue.",
+            "agriculture": "Are you looking for a loan for a specific farming activity, such as crop cultivation, dairy, poultry, or another agricultural activity?",
             "business": "I can help you with business financing. NSFDC offers several schemes like Micro Finance, Term Loan, and Laghu Vyavsay Yojana for different business sizes. What kind of business are you planning?",
         },
         "hi": {
             "education": "बिल्कुल, मैं आपको शिक्षा ऋण में मदद कर सकता हूँ। NSFDC की शैक्षिक ऋण योजना व्यावसायिक और तकनीकी कोर्स के लिए उपलब्ध है। आप कौन सा कोर्स या प्रोग्राम करना चाहते हैं?",
-            "agriculture": "NSFDC की पुष्टि की गई योजना सूची में चावल/खेती के लिए कोई स्पष्ट रूप से मेल खाती ऋण योजना नहीं मिली, इसलिए मैं कोई योजना गढ़ नहीं रहा हूँ। यदि यह स्वरोजगार या व्यवसाय है तो बताइए; खेती-विशेष ऋण का विवरण सत्यापित रिकॉर्ड में नहीं है।",
+            "agriculture": "क्या आप किसी खास खेती की गतिविधि के लिए लोन चाहते हैं, जैसे फसल, डेयरी, मुर्गी पालन, या कोई और कृषि काम?",
             "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
         },
         "mr": {
             "education": "नक्कीच, मी तुम्हाला शैक्षणिक कर्जामध्ये मदत करू शकतो. कोणत्या कोर्ससाठी तुम्ही विचार करत आहात?",
-            "agriculture": "मी तुम्हाला शेती आणि कृषीसाठी आर्थिक मदत शोधण्यात मदत करू शकतो. तुम्ही कोणत्या प्रकारची शेती करणार आहात?",
+            "agriculture": "तुम्हाला कोणत्या शेती कामासाठी कर्ज हवे आहे — पीक, दुग्धव्यवसाय, कुक्कुटपालन किंवा इतर कृषी काम?",
             "business": "मी तुम्हाला व्यवसायासाठी आर्थिक मदतीत मदत करू शकतो. तुम्ही कोणता व्यवसाय सुरू करणार आहात?"
         },
         "bn": {
             "education": "আমি আপনাকে শিক্ষা ঋণের বিষয়ে সাহায্য করতে পারি। আপনি কোন কোর্সটি করতে চান?",
-            "agriculture": "আমি আপনাকে চাষাবাদের জন্য আর্থিক সহায়তা খুঁজে পেতে সাহায্য করতে পারি। আপনি কি ধরণের চাষাবাদ করতে চান?",
+            "agriculture": "আপনি কি নির্দিষ্ট কোনো কৃষিকাজের জন্য ঋণ চান, যেমন ফসল, দুগ্ধ, মুরগি পালন, বা অন্য কোনো কৃষি কাজ?",
             "business": "আমি আপনাকে ব্যবসার জন্য আর্থিক সহায়তা পেতে সাহায্য করতে পারি। আপনি কি ধরণের ব্যবসা শুরু করতে চান?"
         },
         "ta": {
             "education": "நான் உங்களுக்கு கல்வி கடன்களுக்கு உதவ முடியும். நீங்கள் எந்த படிப்பை படிக்க விரும்புகிறீர்கள்?",
-            "agriculture": "விவசாயத்திற்கான நிதி உதவியைக் கண்டறிய நான் உங்களுக்கு உதவ முடியும். நீங்கள் என்ன வகையான விவசாயம் செய்ய திட்டமிட்டுள்ளீர்கள்?",
+            "agriculture": "பயிர், பால் பண்ணை, கோழி வளர்ப்பு அல்லது வேறு விவசாய வேலை போன்ற குறிப்பிட்ட விவசாய நடவடிக்கைக்காகவா கடன் வேண்டும்?",
             "business": "வணிக நிதிக்கு நான் உங்களுக்கு உதவ முடியும். நீங்கள் என்ன வகையான வணிகத்தைத் தொடங்க திட்டமிட்டுள்ளீர்கள்?"
         },
         "te": {
             "education": "నేను మీకు విద్యా రుణాలతో సహాయం చేయగలను. మీరు ఏ కోర్సు చదవాలనుకుంటున్నారు?",
-            "agriculture": "వ్యవసాయం కోసం ఆర్థిక సహాయాన్ని కనుగొనడంలో నేను మీకు సహాయం చేయగలను. మీరు ఏ రకమైన వ్యవసాయం చేయాలనుకుంటున్నారు?",
+            "agriculture": "పంట, పాడి, కోడి పెంపకం లేదా ఇతర వ్యవసాయ పని వంటి నిర్దిష్ట వ్యవసాయ కార్యకలాపం కోసమా రుణం కావాలి?",
             "business": "వ్యాపార ఆర్థిక సహాయంతో నేను మీకు సహాయం చేయగలను. మీరు ఏ రకమైన వ్యాపారాన్ని ప్రారంభించాలనుకుంటున్నారు?"
         }
     }
     
-    category = "education" if is_education else ("agriculture" if activity and any(kw in str(activity).lower() for kw in ["dairy", "farm", "agriculture", "kheti"]) else "business")
+    category = "education" if is_education else ("agriculture" if is_agriculture else "business")
     lang_fallbacks = fallback_map.get(lang, fallback_map.get("en", {}))
     return lang_fallbacks.get(category, lang_fallbacks.get("business", "I can help you find suitable loan schemes. Could you tell me more about what you need?"))
+
 
 def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, session_id: str, is_transition: bool = False) -> ChatResponse:
     # If this is not a direct transition, we need to extract the user's answer from their query
@@ -704,9 +734,24 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
         new_biz = _NEW_BUSINESS_ANSWERS | {"नया व्यवसाय", "नया बिजनेस", "नई शुरुआत", "शुरू करना है", "पहले से नहीं है"}
         old_biz = _EXISTING_BUSINESS_ANSWERS | {"पुराना व्यवसाय", "मौजूदा व्यवसाय", "पहले से व्यवसाय", "पहले से चल रहा है", "पहले से है"}
         
-        if any(term in q for term in new_biz):
+        negated_existing = any(
+            phrase in q
+            for phrase in (
+                "don't have an existing",
+                "dont have an existing",
+                "do not have an existing",
+                "don't have a business",
+                "do not have a business",
+                "no existing business",
+                "not an existing business",
+                "पहले से नहीं है",
+            )
+        )
+        if negated_existing:
             updates["existingBusiness"] = False
-        if any(term in q for term in old_biz):
+        elif any(term in q for term in new_biz):
+            updates["existingBusiness"] = False
+        elif any(term in q for term in old_biz):
             updates["existingBusiness"] = True
 
     # Explicit PIN change intent check
@@ -945,10 +990,14 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
     # 1. Map to Eligibility Engine format
     user_profile = {
         "purpose": purpose,
-        "family_income_inr": profile.annualFamilyIncome or 0,
-        "project_cost_inr": 0 if is_edu else (profile.estimatedProjectCost or 0),
-        "course_cost_inr": (profile.estimatedProjectCost or 0) if is_edu else 0,
-        "beneficiary_category_verified": True,
+        "family_income_inr": float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
+        "project_cost_inr": None if is_edu else (
+            float(profile.estimatedProjectCost) if profile.estimatedProjectCost is not None else None
+        ),
+        "course_cost_inr": (
+            float(profile.estimatedProjectCost) if is_edu and profile.estimatedProjectCost is not None else None
+        ),
+        "beneficiary_category_verified": profile.scEligibilityStatus,
         "education_status": "admission_secured" if is_edu else None
     }
     

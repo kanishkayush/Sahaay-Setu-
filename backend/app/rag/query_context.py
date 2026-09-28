@@ -43,11 +43,26 @@ class RetrievalQuery:
     utterance: str
 
 
+_GENERIC_ACTIVITIES = {
+    None, "", "FARMING", "AGRICULTURE", "GENERAL", "GENERAL_BUSINESS", "BUSINESS",
+}
+
+
+def _specific_activity(profile: Optional[ChatProfile], detection: DetectionResult) -> Optional[str]:
+    if profile and profile.activity and str(profile.activity).upper() not in _GENERIC_ACTIVITIES:
+        return profile.activity
+    if detection.activity and str(detection.activity).upper() not in _GENERIC_ACTIVITIES:
+        return detection.activity
+    return None
+
+
 def _domain_from_profile(profile: Optional[ChatProfile]) -> Optional[str]:
     if not profile:
         return None
     if profile.projectType == "EDUCATION":
         return "EDUCATION"
+    if profile.projectType == "AGRICULTURE":
+        return "AGRICULTURE"
     act = str(profile.activity or "").upper()
     if act in _AGRI_ACTIVITIES or "FARM" in act or "RICE" in act:
         return "AGRICULTURE"
@@ -99,10 +114,9 @@ def build_retrieval_query(
     if prior_domain and len(words) <= 6:
         domain = prior_domain
 
-    activity = None
+    activity = _specific_activity(profile, detection)
     education_course = None
     if profile and profile.activity:
-        activity = profile.activity
         if prior_domain == "EDUCATION" or str(profile.activity).upper() in _EDU_MARKERS:
             education_course = profile.activity
     amount = None

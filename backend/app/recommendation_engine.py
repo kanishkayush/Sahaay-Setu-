@@ -227,7 +227,7 @@ def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
         return 3
 
     if user_domain == "BUSINESS":
-        if domain == "EDUCATION":
+        if domain in {"EDUCATION", "AGRICULTURE"}:
             return 0
         if scheme_type == "MICRO_FINANCE" and (amount is None or amount <= 125000):
             return 4
@@ -409,6 +409,12 @@ def generate_recommendations(
 def recommend_from_profile(
     user_profile: Dict[str, Any],
     rules: Optional[List[dict]] = None,
+    relevance: Optional[RelevanceQuery] = None,
+    organization: Optional[str] = "NSFDC",
 ) -> RankedRecommendations:
-    """User profile → eligibility engine → ranked recommendations."""
-    return generate_recommendations(evaluate_all_schemes(user_profile), rules=rules)
+    """User profile → eligibility engine → relevance gate → ranked recommendations."""
+    return generate_recommendations(
+        evaluate_all_schemes(user_profile, organization=organization),
+        rules=rules,
+        relevance=relevance,
+    )

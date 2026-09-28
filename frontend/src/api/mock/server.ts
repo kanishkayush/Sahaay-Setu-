@@ -15,7 +15,7 @@ import { MOCK_SCHEMES, SCHEME_DATA_DISCLAIMER } from './fixtures/schemes';
 import type { AuthResponse } from '@/api/services/auth.service';
 import { answerFromKnowledgeBase } from './fixtures/assistant';
 import { recommendSchemes } from '@/features/recommender/ruleEngine';
-import { haversineKm } from '@/utils/geo';
+import { haversineKm, isValidCoordinate } from '@/utils/geo';
 
 /**
  * In-memory mock backend.
@@ -78,19 +78,19 @@ export async function mockSearchPartners(
     items = items.filter((p) => req.partnerTypes!.includes(p.type));
   }
 
-  if (origin) {
-    items = items.filter((p) => (p.distanceKm ?? Infinity) <= req.radiusKm);
+  if (origin && !req.allPartners) {
+    items = items.filter((p) => isValidCoordinate(p.location) && (p.distanceKm ?? Infinity) <= req.radiusKm);
+  } else if (!req.allPartners && !origin) {
+    items = [];
   }
 
   items.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 
-  // The routing rule: don't send people to partners that can't disburse.
-  const accepting = items.filter((p) => p.eligibility.status !== 'NOT_ACCEPTING');
-  const useFallback = req.onlyAccepting && accepting.length === 0 && items.length > 0;
+  const accepting = items.filter((p) => p.eligibility.status === 'ACCEPTING');
 
   return {
-    items: req.onlyAccepting && !useFallback ? accepting : items,
-    fallbackUsed: useFallback,
+    items: req.onlyAccepting ? accepting : items,
+    fallbackUsed: false,
     searchedFrom: origin,
     radiusKm: req.radiusKm,
   };

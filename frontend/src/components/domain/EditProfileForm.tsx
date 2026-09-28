@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Switch, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { colors, radius, spacing } from '../../../src/theme';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
 import { ProfileUpdateRequest, UserProfile } from '../../../src/api/contracts/profile';
 
 interface EditProfileFormProps {
@@ -35,12 +36,12 @@ export function EditProfileForm({ initialData, onSave, onCancel, isSaving }: Edi
   const [annualFamilyIncome, setAnnualFamilyIncome] = useState(
     initialData.eligibility?.annualFamilyIncome?.toString() || ''
   );
-  const [scEligibilityStatus, setScEligibilityStatus] = useState(
-    initialData.eligibility?.scEligibilityStatus ?? false
+  const [scEligibilityStatus, setScEligibilityStatus] = useState<boolean | null>(
+    initialData.eligibility?.scEligibilityStatus ?? null
   );
 
-  const [existingBusiness, setExistingBusiness] = useState(
-    initialData.business?.existingBusiness ?? false
+  const [existingBusiness, setExistingBusiness] = useState<boolean | null>(
+    initialData.business?.existingBusiness ?? null
   );
   const [businessActivity, setBusinessActivity] = useState(initialData.business?.businessActivity || '');
 
@@ -121,11 +122,11 @@ export function EditProfileForm({ initialData, onSave, onCancel, isSaving }: Edi
         
         <View style={styles.switchContainer}>
           <Text variant="body" style={{ flex: 1 }}>{t('profile.scEligibility', 'SC Category Eligibility')}</Text>
-          <Switch
-            value={scEligibilityStatus}
-            onValueChange={setScEligibilityStatus}
-            trackColor={{ false: colors.borderStrong, true: colors.primary }}
-          />
+        </View>
+        <View style={styles.triRow}>
+          <Chip label={t('profile.notProvided', 'Not provided')} selected={scEligibilityStatus === null} onPress={() => setScEligibilityStatus(null)} tone="neutral" />
+          <Chip label={t('common.yes', 'Yes')} selected={scEligibilityStatus === true} onPress={() => setScEligibilityStatus(true)} tone="primary" />
+          <Chip label={t('common.no', 'No')} selected={scEligibilityStatus === false} onPress={() => setScEligibilityStatus(false)} tone="primary" />
         </View>
       </Card>
 
@@ -134,13 +135,13 @@ export function EditProfileForm({ initialData, onSave, onCancel, isSaving }: Edi
       <Card variant="glass">
         <View style={styles.switchContainer}>
           <Text variant="body" style={{ flex: 1 }}>{t('profile.existingBusiness', 'Has Existing Business?')}</Text>
-          <Switch
-            value={existingBusiness}
-            onValueChange={setExistingBusiness}
-            trackColor={{ false: colors.borderStrong, true: colors.primary }}
-          />
         </View>
-        {existingBusiness && (
+        <View style={styles.triRow}>
+          <Chip label={t('profile.notProvided', 'Not provided')} selected={existingBusiness === null} onPress={() => setExistingBusiness(null)} tone="neutral" />
+          <Chip label={t('common.yes', 'Yes')} selected={existingBusiness === true} onPress={() => setExistingBusiness(true)} tone="primary" />
+          <Chip label={t('common.no', 'No')} selected={existingBusiness === false} onPress={() => setExistingBusiness(false)} tone="primary" />
+        </View>
+        {existingBusiness === true && (
           <InputField label={t('profile.businessActivity', 'Business Activity')} value={businessActivity} onChangeText={setBusinessActivity} />
         )}
       </Card>
@@ -191,11 +192,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: colors.surface,
   },
-  switchContainer: {
+  triRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   actions: {
     flexDirection: 'row',

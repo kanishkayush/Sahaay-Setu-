@@ -265,7 +265,14 @@ class ProfileStore:
         from datetime import datetime, timezone
         import uuid
         existing = self.get(user_id) or {}
-        existing.update(data)
+        nested = ("address", "eligibility", "business", "preferences")
+        for key, value in data.items():
+            if key in nested and isinstance(value, dict):
+                current = existing.get(key) if isinstance(existing.get(key), dict) else {}
+                merged = {**current, **value}
+                existing[key] = merged
+            else:
+                existing[key] = value
         existing["user_id"] = user_id
         existing["updatedAt"] = datetime.now(timezone.utc).isoformat()
         if "createdAt" not in existing:

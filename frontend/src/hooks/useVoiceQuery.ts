@@ -5,7 +5,6 @@ import { speak, stopSpeaking } from '@/features/voice/textToSpeech';
 import { useCanSpeak } from './useCanSpeak';
 import { useSpeechInput, type SpeechInputError } from './useSpeechInput';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAppStore } from '@/store/useAppStore';
 
 /**
  * The voice pipeline, as one state machine.
@@ -64,7 +63,6 @@ function generateUUID(): string {
 
 export function useVoiceQuery(language: LanguageCode) {
   const queryClient = useQueryClient();
-  const profile = useAppStore((state) => state.profile);
   const canRead = useCanSpeak(language);
   const [busyPhase, setBusyPhase] = useState<'idle' | 'thinking' | 'speaking'>('idle');
   const [transcript, setTranscript] = useState('');
@@ -119,13 +117,22 @@ export function useVoiceQuery(language: LanguageCode) {
       console.log('[VOICE] Session ID:', sessionId.current);
 
       try {
+        const persistentProfile = queryClient.getQueryData<import('@/api/contracts').UserProfile>(['profile']);
+        const coords = persistentProfile?.address?.coordinates;
+        const hasCoords =
+          typeof coords?.latitude === 'number' &&
+          typeof coords?.longitude === 'number' &&
+          Number.isFinite(coords.latitude) &&
+          Number.isFinite(coords.longitude) &&
+          !(coords.latitude === 0 && coords.longitude === 0);
+
         const response = await askAssistant({
           query: trimmed,
           responseLanguage: apiLanguage,
           history: [],
-          profileContext: profile?.address?.coordinates ? {
-            latitude: profile.address.coordinates.latitude,
-            longitude: profile.address.coordinates.longitude,
+          profileContext: hasCoords ? {
+            latitude: coords!.latitude,
+            longitude: coords!.longitude,
           } : undefined,
           sessionId: sessionId.current,
           guideMe: true,
@@ -178,7 +185,7 @@ export function useVoiceQuery(language: LanguageCode) {
         setBusyPhase('idle');
       }
     },
-    [canRead, language],
+    [canRead, language, queryClient],
   );
 
   const speech = useSpeechInput(language, {

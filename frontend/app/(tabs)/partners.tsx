@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -20,6 +20,8 @@ import { usePartnerSearch } from '@/hooks/usePartners';
 import { useAppStore } from '@/store/useAppStore';
 import { getProfile } from '@/api/services/profile.service';
 import { colors, radius, spacing, typography } from '@/theme';
+import { formatProfileLocation } from '@/profile/canonical';
+import { isValidCoordinate } from '@/utils/geo';
 
 const RADII = [25, 50, 100];
 const SORT_OPTIONS = ['distance', 'name', 'type'] as const;
@@ -32,10 +34,17 @@ export default function PartnersScreen() {
   const updateLoanJourney = useAppStore((s) => s.updateLoanJourney);
 
   // Canonical location source: persistent profile from backend
-  const { data: persistentProfile } = useQuery({
+  const { data: persistentProfile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: getProfile,
+    refetchOnMount: 'always',
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchProfile();
+    }, [refetchProfile]),
+  );
 
   const [viewMode, setViewMode] = useState<'nearby' | 'all'>('nearby');
   const [radiusKm, setRadiusKm] = useState(25);
@@ -56,12 +65,7 @@ export default function PartnersScreen() {
 
   // Strict coordinate validation — only valid, finite GPS coordinates count
   const locPoint = persistentProfile?.address?.coordinates;
-  const userLocationAvailable =
-    typeof locPoint?.latitude === 'number' &&
-    typeof locPoint?.longitude === 'number' &&
-    Number.isFinite(locPoint.latitude) &&
-    Number.isFinite(locPoint.longitude) &&
-    !(locPoint.latitude === 0 && locPoint.longitude === 0);
+  const userLocationAvailable = isValidCoordinate(locPoint);
 
   // Log location source for diagnostics
   console.log(`[PARTNERS] location source= persistentProfile.address.coordinates`);
@@ -80,8 +84,12 @@ export default function PartnersScreen() {
     return req;
   }, [locPoint, userLocationAvailable, radiusKm, viewMode, onlyAccepting, language]);
 
-  const { data, isLoading, isError } = usePartnerSearch(request);
+  const nearbyNeedsLocation = viewMode === 'nearby' && !userLocationAvailable;
+  const { data, isLoading, isError } = usePartnerSearch(request, !nearbyNeedsLocation);
   let partners = data?.items ?? [];
+  if (nearbyNeedsLocation) {
+    partners = [];
+  }
 
   // Log partner counts
   console.log(`[PARTNERS] backend returned=${partners.length}`);
@@ -115,10 +123,7 @@ export default function PartnersScreen() {
     return sorted;
   }, [partners, sortOption, userLocationAvailable]);
 
-  const address = persistentProfile?.address;
-  const locationText = [address?.pinCode, address?.district, address?.state]
-    .filter(Boolean)
-    .join(' · ');
+  const locationText = formatProfileLocation(persistentProfile);
 
   return (
     <Screen>
@@ -262,7 +267,7 @@ export default function PartnersScreen() {
         />
       ) : null}
 
-      {!showMap ? (
+      {!showMap && !nearbyNeedsLocation ? (
         <>
           <View style={{ marginTop: spacing.md, marginBottom: spacing.sm }}>
             <Text variant="subheading">
