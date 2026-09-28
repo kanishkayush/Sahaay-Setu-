@@ -353,6 +353,9 @@ _EN_SWITCH_RE = re.compile(
     r"|in\s+english\s+please"
     r"|switch\s+to\s+english"
     r"|reply\s+in\s+english"
+    r"|answer\s+in\s+english"
+    r"|respond\s+in\s+english"
+    r"|please\s+answer\s+in\s+english"
     r"|speak\s+(?:in\s+)?english"
     r"|english\s+me(?:n|in)?\s+batao"
     r"|english\s+में\s+बताओ"
@@ -396,6 +399,23 @@ def _explicit_switch_to_english(text: str) -> bool:
 
 def _explicit_switch_to_hindi(text: str) -> bool:
     return bool(_HI_SWITCH_RE.search(text or ""))
+
+
+def _is_slot_value_utterance(text: str) -> bool:
+    """Amount/income/course slot answers should inherit conversation language."""
+    stripped = (text or "").strip()
+    if not stripped or _explicit_switch_to_english(stripped) or _explicit_switch_to_hindi(stripped):
+        return False
+    if len(stripped.split()) > 14:
+        return False
+    if _AMOUNT_UTTERANCE_RE.match(stripped):
+        return True
+    return bool(re.search(
+        r"(?:family\s+income|annual\s+income|income\s+is|आय|"
+        r"(?:\d[\d,]*|[a-zA-Z]+)\s*(?:lakh|lac|लाख))",
+        stripped,
+        re.IGNORECASE,
+    ))
 
 
 def _is_amount_or_short_entity(text: str) -> bool:
@@ -468,6 +488,8 @@ def resolve_conversation_language(
         return prior_lang or hint or "en"
     if _is_roman_hindi_sentence(text):
         return "hi"
+    if prior_lang and _is_slot_value_utterance(text):
+        return prior_lang
     if _is_clear_english_utterance(text):
         return "en"
 

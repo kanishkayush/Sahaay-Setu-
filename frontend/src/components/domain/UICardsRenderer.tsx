@@ -5,6 +5,13 @@ import { AssistantUICard } from '@/api/contracts';
 import { colors, spacing } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
+function verificationTone(status?: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (status === 'VERIFIED') return 'success';
+  if (status === 'PARTIAL') return 'warning';
+  if (status === 'UNVERIFIED') return 'danger';
+  return 'neutral';
+}
+
 export function UICardsRenderer({
   cards,
   onOptionSelect,
@@ -19,18 +26,39 @@ export function UICardsRenderer({
   const { t } = useTranslation();
   if (!cards || cards.length === 0) return null;
 
+  const verifyLabel = (status?: string) => {
+    if (status === 'VERIFIED') return t('uiCards.verified');
+    if (status === 'PARTIAL') return t('uiCards.partial');
+    if (status === 'UNVERIFIED') return t('uiCards.verify');
+    return status || '';
+  };
+  const fitLabel = (value: string) => {
+    if (value === 'WITHIN_RANGE' || value === 'WITHIN_LIMIT') return t('uiCards.fitFits');
+    if (value === 'OUTSIDE_RANGE') return t('uiCards.fitOutside');
+    if (value === 'ABOVE_LIMIT') return t('uiCards.fitAbove');
+    if (value === 'NOT_A_LOAN') return t('uiCards.fitNotALoan');
+    if (value === 'UNKNOWN') return t('uiCards.fitUnknown');
+    return value;
+  };
+
   const schemeCards = cards.filter((card) => card.type === 'SCHEME_CARD');
   const otherCards = cards.filter((card) => card.type !== 'SCHEME_CARD');
+  const educationSet = schemeCards.some((card) => Boolean(card.assistanceType));
 
   return (
     <View style={styles.container}>
       {schemeCards.length > 0 ? (
         <View style={styles.schemeGroup}>
-          <Text variant="label">{t('uiCards.relevantOptions')}</Text>
+          <Text variant="label">
+            {educationSet ? t('uiCards.relatedEducationOptions') : t('uiCards.relevantOptions')}
+          </Text>
           {schemeCards.map((card, idx) => (
             <Card
               key={card.schemeId || `scheme-${idx}`}
-              style={styles.schemeCard}
+              style={[
+                styles.schemeCard,
+                card.verificationStatus === 'UNVERIFIED' ? styles.unverifiedCard : null,
+              ]}
               onPress={
                 card.schemeId && onSelectScheme
                   ? () => onSelectScheme(card.schemeId as string)
@@ -42,12 +70,33 @@ export function UICardsRenderer({
                 <Icon name="doc" size={20} color={colors.primary} />
                 <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
               </View>
+              {card.organization ? (
+                <Text variant="caption" color={colors.textSecondary}>{card.organization}</Text>
+              ) : null}
+              <View style={styles.badgeRow}>
+                {card.assistanceType ? (
+                  <Chip label={card.assistanceType.replace(/_/g, ' ')} tone="info" />
+                ) : null}
+                {card.verificationStatus ? (
+                  <Chip
+                    label={verifyLabel(card.verificationStatus)}
+                    tone={verificationTone(card.verificationStatus)}
+                  />
+                ) : null}
+              </View>
+              {card.verificationStatus === 'UNVERIFIED' ? (
+                <Text variant="caption" color={colors.warningText} style={{ marginTop: spacing.xs }}>
+                  {t('uiCards.verificationRequired')}
+                </Text>
+              ) : null}
               {card.reason ? (
                 <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
               ) : null}
               {card.schemeId && onSelectScheme ? (
                 <Text variant="caption" color={colors.primary} style={{ marginTop: spacing.xs }}>
-                  {t('uiCards.viewDetails')}
+                  {card.verificationStatus === 'UNVERIFIED'
+                    ? t('uiCards.viewAvailableInfo')
+                    : t('uiCards.viewDetails')}
                 </Text>
               ) : null}
             </Card>
@@ -56,6 +105,28 @@ export function UICardsRenderer({
       ) : null}
       {otherCards.map((card, idx) => {
         switch (card.type) {
+          case 'COMPARISON_CARD':
+            return (
+              <Card key={`cmp-${idx}`} style={styles.comparisonCard}>
+                <Text variant="label">{card.title || t('uiCards.comparisonTitle')}</Text>
+                <View style={styles.comparisonHeader}>
+                  <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colScheme')}</Text>
+                  <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colType')}</Text>
+                  <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colAmount')}</Text>
+                  <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colIncome')}</Text>
+                  <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colVerify')}</Text>
+                </View>
+                {(card.rows ?? []).map((row) => (
+                  <View key={row.schemeId || row.schemeName} style={styles.comparisonRow}>
+                    <Text variant="caption" style={styles.cmpCol}>{row.schemeName}</Text>
+                    <Text variant="caption" style={styles.cmpCol}>{row.assistanceType.replace(/_/g, ' ')}</Text>
+                    <Text variant="caption" style={styles.cmpCol}>{fitLabel(row.amountFit)}</Text>
+                    <Text variant="caption" style={styles.cmpCol}>{fitLabel(row.incomeFit)}</Text>
+                    <Text variant="caption" style={styles.cmpCol}>{verifyLabel(row.verificationStatus)}</Text>
+                  </View>
+                ))}
+              </Card>
+            );
           case 'NEXT_QUESTION_CARD':
             return (
               <Card key={idx} style={styles.questionCard}>
@@ -134,11 +205,17 @@ export function UICardsRenderer({
 const styles = StyleSheet.create({
   container: { gap: spacing.md, marginVertical: spacing.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   schemeGroup: { gap: spacing.sm },
   schemeCard: { borderColor: colors.primary, borderWidth: 1 },
+  unverifiedCard: { borderColor: colors.warningText, borderWidth: 1 },
   questionCard: { backgroundColor: colors.surface },
   checklistCard: { backgroundColor: colors.surface },
   partnerCard: { borderColor: colors.primary, borderWidth: 1 },
   warningCard: { borderColor: colors.danger, borderWidth: 1 },
+  comparisonCard: { backgroundColor: colors.surface, gap: spacing.xs },
+  comparisonHeader: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
+  comparisonRow: { flexDirection: 'row', gap: spacing.xs, paddingVertical: 2 },
+  cmpCol: { flex: 1 },
 });

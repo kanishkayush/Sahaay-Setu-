@@ -186,13 +186,19 @@ def test_profile_coordinates_persist_through_put_get():
     got = client.get("/v1/profile", headers=headers)
     assert got.status_code == 200
     coords = ((got.json().get("address") or {}).get("coordinates") or {})
+    address = got.json().get("address") or {}
     assert coords.get("latitude") == JAIPUR["latitude"]
     assert coords.get("longitude") == JAIPUR["longitude"]
+    assert address.get("pinCode") == "302017"
+    assert address.get("district") == "Jaipur"
+    assert address.get("state") == "Rajasthan"
     nearby = client.post(
         "/v1/partners/search",
         json={"location": coords, "radiusKm": 50, "onlyAccepting": False, "allPartners": False},
     )
     assert nearby.status_code == 200
-    for p in nearby.json()["items"]:
+    body = nearby.json()
+    assert body.get("searchedFrom") == JAIPUR
+    for p in body["items"]:
         assert p.get("distanceKm") is not None
         assert p["distanceKm"] <= 50

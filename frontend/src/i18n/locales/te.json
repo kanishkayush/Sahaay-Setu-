@@ -492,6 +492,23 @@
     "away": "కి.మీ. దూరం",
     "selectPartner": "ఈ భాగస్వామిని ఎంచుకోండి",
     "relevantOptions": "సంబంధిత NSFDC ఎంపికలు",
-    "viewDetails": "పథకం వివరాలు చూడండి →"
+    "relatedEducationOptions": "సంబంధిత విద్యా ఎంపికలు",
+    "viewDetails": "పథకం వివరాలు చూడండి →",
+    "viewAvailableInfo": "అందుబాటులో ఉన్న సమాచారం చూడండి →",
+    "verified": "ధృవీకరించబడింది",
+    "partial": "పాక్షికం",
+    "verify": "ధృవీకరించండి",
+    "verificationRequired": "ధృవీకరణ అవసరం. ప్రస్తుత వివరాలను నిర్ధారించలేకపోయాం.",
+    "comparisonTitle": "పోలిక",
+    "colScheme": "పథకం",
+    "colType": "రకం",
+    "colAmount": "మొత్తం",
+    "colIncome": "ఆదాయం",
+    "colVerify": "ధృవీకరణ",
+    "fitFits": "సరిపోతుంది",
+    "fitOutside": "పరిధి బయట",
+    "fitAbove": "పైన",
+    "fitNotALoan": "రుణం కాదు",
+    "fitUnknown": "తెలియదు"
   }
 }

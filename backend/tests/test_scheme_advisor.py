@@ -21,6 +21,14 @@ def test_option_comparison_mode():
     assert mode == OPTIONS
     mode, _ = detect_adviser_mode("What other options do I have?")
     assert mode == OPTIONS
+    mode, named = detect_adviser_mode("show me all education options")
+    assert mode == OPTIONS
+    assert "nsfdc-education" not in named
+
+
+def test_generic_education_word_is_not_a_named_scheme():
+    assert named_scheme_ids("show me all education options") == []
+    assert "nsfdc-education" in named_scheme_ids("education loan kya hai")
 
 
 def test_explain_and_compare_modes():
@@ -67,8 +75,10 @@ def test_education_is_els_not_scholarship():
     brief = build_brief(domain="EDUCATION", amount=None, activity="EDUCATION_LOAN", lang="hi")
     assert brief.primary and brief.primary.facts.scheme_id == "nsfdc-education"
     assert "nsfdc-mfs" not in brief.related_ids
-    assert "scholarship" not in brief.answer.lower()
     assert "शैक्षिक" in brief.answer or "educational" in brief.answer.lower()
+    if "scholarship" in brief.answer.lower() or "छात्रवृत्ति" in brief.answer:
+        assert "ऋण उत्पाद नहीं" in brief.answer or "not a loan" in brief.answer.lower() or "not loan" in brief.answer.lower()
+    assert len(brief.related_ids) >= 3
 
 
 def test_ui_cards_carry_canonical_scheme_ids_for_find_scheme():
@@ -94,5 +104,6 @@ def test_education_card_points_at_els_catalogue_id():
     brief = build_brief(domain="EDUCATION", amount=None, activity="EDUCATION_LOAN", lang="hi")
     cards = ui_cards(brief, "hi")
     assert cards
-    assert cards[0].schemeId == "nsfdc-education"
+    scheme_cards = [c for c in cards if c.type.value == "SCHEME_CARD"]
+    assert scheme_cards[0].schemeId == "nsfdc-education"
     assert get_scheme("nsfdc-education")["id"] == "nsfdc-education"

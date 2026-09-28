@@ -13,13 +13,18 @@ import { z } from 'zod';
 
 import { GeoPointSchema } from './common';
 
+/**
+ * The backend stores every address field as `Optional[...] = None` and
+ * serialises unset ones as explicit `null`. Rejecting `null` here fails the
+ * whole profile parse, which silently blanks location everywhere.
+ */
 export const ProfileAddressSchema = z.object({
-  state: z.string().optional(),
-  district: z.string().optional(),
-  city: z.string().optional(),
-  pinCode: z.string().optional(),
-  addressLine1: z.string().optional(),
-  coordinates: GeoPointSchema.optional(),
+  state: z.string().nullish(),
+  district: z.string().nullish(),
+  city: z.string().nullish(),
+  pinCode: z.string().nullish(),
+  addressLine1: z.string().nullish(),
+  coordinates: GeoPointSchema.nullish(),
 });
 export type ProfileAddress = z.infer<typeof ProfileAddressSchema>;
 
@@ -31,7 +36,7 @@ export type ProfileEligibility = z.infer<typeof ProfileEligibilitySchema>;
 
 export const ProfileBusinessSchema = z.object({
   existingBusiness: z.boolean().nullable().optional(),
-  businessActivity: z.string().optional(),
+  businessActivity: z.string().nullish(),
 });
 export type ProfileBusiness = z.infer<typeof ProfileBusinessSchema>;
 

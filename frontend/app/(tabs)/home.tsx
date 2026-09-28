@@ -8,6 +8,7 @@ import { Screen, Text, Icon, Card } from '@/components/ui';
 import { colors, spacing, radius, typography } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { getProfile } from '@/api/services/profile.service';
+import { profileKeys } from '@/features/profile/queryKeys';
 
 /**
  * Returns the correct i18n key for the greeting based on device local time.
@@ -71,7 +72,7 @@ export default function HomeScreen() {
   const greetingKey = useGreeting();
 
   const { data: persistentProfile } = useQuery({
-    queryKey: ['profile'],
+    queryKey: profileKeys.profile,
     queryFn: getProfile,
   });
 

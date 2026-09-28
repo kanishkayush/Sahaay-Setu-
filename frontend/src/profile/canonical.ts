@@ -1,4 +1,4 @@
-import type { UserProfile } from '@/api/contracts';
+import type { GeoPoint, UserProfile } from '@/api/contracts';
 import { isValidCoordinate } from '@/utils/geo';
 
 /** Unknown / missing is distinct from false. */
@@ -15,6 +15,15 @@ export function formatProvided(value: string | number | null | undefined, prefix
 
 export function profileHasCoordinates(profile: UserProfile | undefined | null): boolean {
   return isValidCoordinate(profile?.address?.coordinates);
+}
+
+/**
+ * Coordinates are the only thing distance search needs. A profile with
+ * coordinates but no PIN/district/state still counts as "location set".
+ */
+export function profileSearchPoint(profile: UserProfile | undefined | null): GeoPoint | undefined {
+  const coords = profile?.address?.coordinates;
+  return isValidCoordinate(coords) ? coords : undefined;
 }
 
 export function formatProfileLocation(profile: UserProfile | undefined | null): string {

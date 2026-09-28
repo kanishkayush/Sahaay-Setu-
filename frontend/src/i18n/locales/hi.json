@@ -487,6 +487,23 @@
     "away": "कि.मी. दूर",
     "selectPartner": "इस साझेदार का चयन करें",
     "relevantOptions": "संबंधित NSFDC विकल्प",
-    "viewDetails": "योजना की पूरी जानकारी देखें →"
+    "relatedEducationOptions": "संबंधित शिक्षा विकल्प",
+    "viewDetails": "योजना की पूरी जानकारी देखें →",
+    "viewAvailableInfo": "उपलब्ध जानकारी देखें →",
+    "verified": "सत्यापित",
+    "partial": "आंशिक",
+    "verify": "सत्यापित करें",
+    "verificationRequired": "सत्यापन आवश्यक। वर्तमान विवरण की पुष्टि नहीं हो सकी।",
+    "comparisonTitle": "तुलना",
+    "colScheme": "योजना",
+    "colType": "प्रकार",
+    "colAmount": "राशि",
+    "colIncome": "आय",
+    "colVerify": "सत्यापन",
+    "fitFits": "सीमा में",
+    "fitOutside": "सीमा से बाहर",
+    "fitAbove": "ऊपर",
+    "fitNotALoan": "ऋण नहीं",
+    "fitUnknown": "अज्ञात"
   }
 }

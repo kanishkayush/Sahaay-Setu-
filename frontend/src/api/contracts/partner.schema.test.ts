@@ -41,4 +41,18 @@ describe('PartnerSearchResponseSchema', () => {
       expect(parsed.data.items).toEqual([]);
     }
   });
+
+  it('accepts nearby results searched from saved Jaipur coordinates', () => {
+    const parsed = PartnerSearchResponseSchema.safeParse({
+      items: [{ ...samplePartner, distanceKm: 4.2 }],
+      fallbackUsed: false,
+      searchedFrom: { latitude: 26.9124, longitude: 75.7873 },
+      radiusKm: 25,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.searchedFrom).toEqual({ latitude: 26.9124, longitude: 75.7873 });
+      expect(parsed.data.fallbackUsed).toBe(false);
+    }
+  });
 });

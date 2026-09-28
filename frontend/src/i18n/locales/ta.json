@@ -492,6 +492,23 @@
     "away": "கி.மீ. தொலைவு",
     "selectPartner": "இந்த கூட்டாளரைத் தேர்ந்தெடுக்கவும்",
     "relevantOptions": "தொடர்புடைய NSFDC விருப்பங்கள்",
-    "viewDetails": "திட்ட விவரங்களைப் பார்க்கவும் →"
+    "relatedEducationOptions": "தொடர்புடைய கல்வி விருப்பங்கள்",
+    "viewDetails": "திட்ட விவரங்களைப் பார்க்கவும் →",
+    "viewAvailableInfo": "கிடைக்கும் தகவலைப் பார்க்கவும் →",
+    "verified": "சரிபார்க்கப்பட்டது",
+    "partial": "பகுதி",
+    "verify": "சரிபார்",
+    "verificationRequired": "சரிபார்ப்பு தேவை. தற்போதைய விவரங்களை உறுதிப்படுத்த முடியவில்லை.",
+    "comparisonTitle": "ஒப்பீடு",
+    "colScheme": "திட்டம்",
+    "colType": "வகை",
+    "colAmount": "தொகை",
+    "colIncome": "வருமானம்",
+    "colVerify": "சரிபார்ப்பு",
+    "fitFits": "பொருந்தும்",
+    "fitOutside": "வரம்புக்கு வெளியே",
+    "fitAbove": "மேலே",
+    "fitNotALoan": "கடன் அல்ல",
+    "fitUnknown": "தெரியாது"
   }
 }

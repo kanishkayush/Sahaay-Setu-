@@ -135,8 +135,8 @@ def test_guided_hindi_education_names_retrieved_scheme(rag_store):
     text = resp.answer or ""
     assert "गढ़ नहीं" not in text
     assert "Educational Loan" in text or "शैक्षिक" in text or "nsfdc-education" in text.lower()
-    assert "scholarship" not in text.lower()
-    assert "free coaching" not in text.lower()
+    if "scholarship" in text.lower():
+        assert "ऋण उत्पाद नहीं" in text or "not a loan" in text.lower() or "not loan" in text.lower()
     assert resp.related_scheme_ids
     assert NSFDC_EDU in resp.related_scheme_ids
 

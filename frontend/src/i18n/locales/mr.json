@@ -492,6 +492,23 @@
     "away": "कि.मी. दूर",
     "selectPartner": "हा भागीदार निवडा",
     "relevantOptions": "संबंधित NSFDC पर्याय",
-    "viewDetails": "योजनेची सविस्तर माहिती पहा →"
+    "relatedEducationOptions": "संबंधित शिक्षण पर्याय",
+    "viewDetails": "योजनेची सविस्तर माहिती पहा →",
+    "viewAvailableInfo": "उपलब्ध माहिती पहा →",
+    "verified": "सत्यापित",
+    "partial": "आंशिक",
+    "verify": "सत्यापित करा",
+    "verificationRequired": "सत्यापन आवश्यक. सध्याचे तपशील निश्चित करता आले नाहीत.",
+    "comparisonTitle": "तुलना",
+    "colScheme": "योजना",
+    "colType": "प्रकार",
+    "colAmount": "रक्कम",
+    "colIncome": "उत्पन्न",
+    "colVerify": "सत्यापन",
+    "fitFits": "जुळते",
+    "fitOutside": "मर्यादेबाहेर",
+    "fitAbove": "वर",
+    "fitNotALoan": "कर्ज नाही",
+    "fitUnknown": "अज्ञात"
   }
 }

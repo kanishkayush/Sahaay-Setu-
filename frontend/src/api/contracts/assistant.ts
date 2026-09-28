@@ -80,6 +80,23 @@ export const AssistantUICardSchema = z.discriminatedUnion('type', [
     schemeName: z.string(),
     reason: z.string().optional(),
     eligible: z.boolean().optional(),
+    organization: z.string().optional(),
+    assistanceType: z.string().optional(),
+    verificationStatus: z.enum(['VERIFIED', 'PARTIAL', 'UNVERIFIED']).optional(),
+    amountFit: z.string().optional(),
+    incomeFit: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('COMPARISON_CARD'),
+    title: z.string().optional(),
+    rows: z.array(z.object({
+      schemeName: z.string(),
+      assistanceType: z.string(),
+      amountFit: z.string(),
+      incomeFit: z.string(),
+      verificationStatus: z.string(),
+      schemeId: z.string().optional(),
+    })).default([]),
   }),
   z.object({
     type: z.literal('ELIGIBILITY_CARD'),

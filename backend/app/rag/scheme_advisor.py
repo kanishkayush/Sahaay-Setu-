@@ -33,7 +33,9 @@ DISCOVERY = "SCHEME_DISCOVERY"
 _OPTIONS_RE = re.compile(
     r"\b(other options?|other schemes?|any other|anything else|choices?|"
     r"which other|aur kya|alawa|iske alawa|ke alawa|options? hain|"
-    r"kya mil sakta|aur kaunse)\b",
+    r"kya mil sakta|aur kaunse|"
+    r"all (the )?(education )?options?|education options?|show me all|"
+    r"saari options?|saare options?)\b",
     re.IGNORECASE,
 )
 _EXPLAIN_RE = re.compile(
@@ -186,7 +188,10 @@ def catalogue_name_index() -> dict[str, str]:
         facts = load_scheme_facts(sid)
         if not facts:
             continue
-        index[sid.replace("nsfdc-", "").replace("-", " ")] = sid
+        slug = sid.replace("nsfdc-", "").replace("-", " ").strip()
+        # Generic words like "education" must not count as a named scheme.
+        if slug and slug not in {"education"}:
+            index[slug] = sid
         for name in facts.names.values():
             index[name.lower()] = sid
         if sid == "nsfdc-term-loan":
@@ -317,10 +322,71 @@ def build_brief(
     mode: str = DISCOVERY,
     named_ids: Optional[list[str]] = None,
     retrieved_ids: Optional[list[str]] = None,
+    income: Optional[float] = None,
+    query: Optional[str] = None,
 ) -> AdviserBrief:
     lang = "hi" if lang == "hi" else "en"
     named_ids = named_ids or []
     retrieved_ids = retrieved_ids or []
+    if (domain or "").upper() == "EDUCATION" and mode != EXPLAIN:
+        from app.rag.education_advisor import (
+            build_education_brief,
+            education_ui_cards,
+        )
+
+        edu = build_education_brief(
+            amount=amount,
+            income=income,
+            course=activity,
+            lang=lang,
+            query=query,
+            activity=activity,
+        )
+        def _as_fit(opt):
+            facts = load_scheme_facts(opt.scheme_id)
+            if facts is None:
+                facts = SchemeFacts(
+                    scheme_id=opt.scheme_id,
+                    names={"en": opt.scheme_name, "hi": opt.scheme_name},
+                    short={},
+                    organization=opt.organization,
+                    domain="EDUCATION",
+                    scheme_type=opt.assistance_type,
+                    assistance_type=opt.assistance_type,
+                    purpose=opt.purpose or None,
+                    purpose_hi=None,
+                    project_cost_min=None,
+                    project_cost_min_exclusive=False,
+                    project_cost_max=None,
+                    loan_amount_min=None,
+                    loan_amount_max=opt.loan_amount_max,
+                    interest_rate_pct=None,
+                    interest_rate_note=None,
+                    repayment=None,
+                    repayment_hi=None,
+                    channeling_agency=None,
+                    source_url=opt.source_url or ("https://nsfdc.nic.in/faqs" if opt.organization == "NSFDC" else ""),
+                    verified=opt.verification_status == "VERIFIED",
+                )
+            status = "relevant" if opt.relevance == "HIGH" else ("unknown" if opt.requires_verification else "relevant")
+            return SchemeFit(facts=facts, status=status, why=opt.why_relevant)
+        loans = [_as_fit(o) for o in edu.primary_loan_options]
+        support = [_as_fit(o) for o in edu.other_education_support]
+        primary = next((f for f in loans if f.facts.scheme_id == "nsfdc-education"), loans[0] if loans else None)
+        alts = [f for f in loans + support if not primary or f.facts.scheme_id != primary.facts.scheme_id]
+        brief = AdviserBrief(
+            mode=mode,
+            primary=primary,
+            alternatives=alts,
+            comparison=([primary] if primary else []) + alts,
+            missing=edu.missing,
+            next_question=edu.next_question,
+            confidence="medium" if primary else "low",
+            answer=edu.answer,
+            related_ids=edu.related_ids,
+        )
+        brief._education_cards = education_ui_cards(edu, lang)  # type: ignore[attr-defined]
+        return brief
     universe = list(_universe(domain))
     if mode == EXPLAIN and named_ids:
         universe = named_ids[:1]
@@ -563,6 +629,9 @@ def render_answer(
 
 
 def ui_cards(brief: AdviserBrief, lang: str) -> list[AssistantUICard]:
+    extra = getattr(brief, "_education_cards", None)
+    if extra:
+        return list(extra)
     cards: list[AssistantUICard] = []
     seen = set()
     ordered = []

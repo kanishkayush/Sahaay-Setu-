@@ -49,4 +49,16 @@ describe('partnerSearchUiState', () => {
     });
     expect(state).toEqual({ kind: 'results', count: 65 });
   });
+
+  it('does not convert nearby-without-coordinates into all-partners results', () => {
+    const nearby = partnerSearchUiState({
+      viewMode: 'nearby',
+      locationAvailable: false,
+      onlyAccepting: false,
+      isLoading: false,
+      isError: false,
+      resultCount: 65,
+    });
+    expect(nearby).toEqual({ kind: 'idle-location-required' });
+  });
 });

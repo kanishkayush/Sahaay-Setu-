@@ -8,6 +8,7 @@ import {
   resetAdviserSession,
 } from '@/features/adviser/session';
 import { buildAssistantProfileContext } from '@/features/adviser/profileContext';
+import { profileKeys } from '@/features/profile/queryKeys';
 
 let idCounter = 0;
 const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
@@ -44,7 +45,7 @@ export function useAssistant(language: LanguageCode) {
       setIsThinking(true);
 
       try {
-        const persistentProfile = queryClient.getQueryData<UserProfile>(['profile']);
+        const persistentProfile = queryClient.getQueryData<UserProfile>(profileKeys.profile);
         const response = await askAssistant({
           query: trimmed,
           responseLanguage: language,

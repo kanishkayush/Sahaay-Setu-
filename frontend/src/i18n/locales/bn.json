@@ -492,6 +492,23 @@
     "away": "কি.মি. দূরে",
     "selectPartner": "এই অংশীদার নির্বাচন করুন",
     "relevantOptions": "প্রাসঙ্গিক NSFDC বিকল্প",
-    "viewDetails": "প্রকল্পের সম্পূর্ণ তথ্য দেখুন →"
+    "relatedEducationOptions": "সম্পর্কিত শিক্ষা বিকল্প",
+    "viewDetails": "প্রকল্পের সম্পূর্ণ তথ্য দেখুন →",
+    "viewAvailableInfo": "উপলব্ধ তথ্য দেখুন →",
+    "verified": "যাচাইকৃত",
+    "partial": "আংশিক",
+    "verify": "যাচাই",
+    "verificationRequired": "যাচাই প্রয়োজন। বর্তমান বিবরণ নিশ্চিত করা যায়নি।",
+    "comparisonTitle": "তুলনা",
+    "colScheme": "স্কিম",
+    "colType": "ধরন",
+    "colAmount": "পরিমাণ",
+    "colIncome": "আয়",
+    "colVerify": "যাচাই",
+    "fitFits": "মানায়",
+    "fitOutside": "সীমার বাইরে",
+    "fitAbove": "উপরে",
+    "fitNotALoan": "ঋণ নয়",
+    "fitUnknown": "অজানা"
   }
 }

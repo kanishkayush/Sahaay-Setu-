@@ -20,9 +20,9 @@ import { usePartnerSearch } from '@/hooks/usePartners';
 import { useAppStore } from '@/store/useAppStore';
 import { getProfile } from '@/api/services/profile.service';
 import { colors, radius, spacing, typography } from '@/theme';
-import { formatProfileLocation } from '@/profile/canonical';
-import { isValidCoordinate } from '@/utils/geo';
+import { formatProfileLocation, profileSearchPoint } from '@/profile/canonical';
 import { partnerSearchUiState } from '@/features/partners/searchUiState';
+import { profileKeys } from '@/features/profile/queryKeys';
 
 const RADII = [25, 50, 100];
 const SORT_OPTIONS = ['distance', 'name', 'type'] as const;
@@ -36,9 +36,10 @@ export default function PartnersScreen() {
 
   // Canonical location source: persistent profile from backend
   const { data: persistentProfile, refetch: refetchProfile } = useQuery({
-    queryKey: ['profile'],
+    queryKey: profileKeys.profile,
     queryFn: getProfile,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   });
 
   useFocusEffect(
@@ -65,8 +66,8 @@ export default function PartnersScreen() {
   };
 
   // Strict coordinate validation — only valid, finite GPS coordinates count
-  const locPoint = persistentProfile?.address?.coordinates;
-  const userLocationAvailable = isValidCoordinate(locPoint);
+  const locPoint = profileSearchPoint(persistentProfile);
+  const userLocationAvailable = Boolean(locPoint);
 
   // Log location source for diagnostics
   console.log(`[PARTNERS] location source= persistentProfile.address.coordinates`);
@@ -75,7 +76,7 @@ export default function PartnersScreen() {
 
   const request: PartnerSearchRequest = useMemo(() => {
     const req: PartnerSearchRequest = {
-      location: userLocationAvailable ? locPoint : undefined,
+      location: locPoint,
       radiusKm: viewMode === 'all' ? 1000 : radiusKm,
       allPartners: viewMode === 'all',
       onlyAccepting,
@@ -239,7 +240,7 @@ export default function PartnersScreen() {
       {showMap && uiState.kind === 'results' ? (
         <PartnerMap
           partners={partners}
-          center={locPoint ?? undefined}
+          center={locPoint}
           onSelect={(partner) => router.push(`/partner/${partner.id}`)}
           unavailableMessage={t('partners.listView')}
           userLocationText={locationText}

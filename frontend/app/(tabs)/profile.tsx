@@ -17,6 +17,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { colors, radius, spacing } from '@/theme';
 import { formatTriBool } from '@/profile/canonical';
 import { formatCurrency } from '@/utils/format';
+import { profileKeys } from '@/features/profile/queryKeys';
 import {
   getProfile,
   updateProfile,
@@ -44,11 +45,6 @@ const EMPTY_PROFILE: UserProfile = {
   preferences: { language: 'en' },
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),
-};
-
-const profileKeys = {
-  profile: ['profile'] as const,
-  documents: ['profile', 'documents'] as const,
 };
 
 export default function ProfileScreen() {
@@ -83,16 +79,13 @@ export default function ProfileScreen() {
     mutationFn: updateProfile,
     onSuccess: async (data) => {
       console.log('[LOCATION] profile update response=', JSON.stringify(data?.address));
-
-      // Step 1: Invalidate and refetch the profile to verify backend persistence
+      queryClient.setQueryData(profileKeys.profile, data);
       await queryClient.invalidateQueries({ queryKey: profileKeys.profile });
       const refetched = await queryClient.fetchQuery({
         queryKey: profileKeys.profile,
         queryFn: getProfile,
       });
       console.log('[LOCATION] persisted profile=', JSON.stringify(refetched?.address));
-
-      // Step 2: Invalidate the entire partners query family
       await queryClient.invalidateQueries({ queryKey: ['partners'] });
       console.log('[LOCATION] partners query family invalidated');
     },

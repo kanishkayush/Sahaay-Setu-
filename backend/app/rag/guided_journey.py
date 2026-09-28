@@ -18,6 +18,7 @@ from app.rag.query_context import build_retrieval_query
 from app.rag.scheme_advisor import (
     BUSINESS_CREDIT_IDS,
     COMPARE,
+    DISCOVERY,
     EDUCATION_CREDIT_IDS,
     EXPLAIN,
     OPTIONS,
@@ -75,6 +76,36 @@ def _conversation_amount(profile: ChatProfile) -> Optional[int]:
     return profile.estimatedProjectCost or profile.requestedLoanAmount
 
 
+_EDU_QUERY_MARKERS = (
+    "education", "study", "studies", "student", "college", "school",
+    "padhai", "padai", "shiksha", "scholarship", "fellowship", "coaching",
+    "btech", "b.tech", "पढ़ाई", "शिक्षा", "स्कॉलरशिप", "छात्रवृत्ति",
+)
+
+
+def _query_suggests_education(query: str) -> bool:
+    q = (query or "").lower()
+    return any(m in q for m in _EDU_QUERY_MARKERS)
+
+
+def _education_course(profile: ChatProfile) -> Optional[str]:
+    act = profile.activity
+    token = str(act or "").upper()
+    if token and token not in {"EDUCATION", "EDUCATION_LOAN", "GENERAL"}:
+        return act
+    return profile.educationStatus or act
+
+
+def _education_expected_field(missing: list[str], fallback: str | None = "general") -> str:
+    if "requested_amount" in missing:
+        return "requestedLoanAmount"
+    if "course" in missing:
+        return "activity"
+    if "income" in missing:
+        return "annualFamilyIncome"
+    return fallback or "general"
+
+
 def _retrieve_adviser_scheme_ids(request: ChatRequest, profile: ChatProfile, lang: str) -> list[str]:
     """Retrieve NSFDC credit candidates from the merged conversation query."""
     retrieval_spec = build_retrieval_query(
@@ -111,7 +142,15 @@ def _adviser_chat_response(
     domain = profile.projectType or ("EDUCATION" if named and named[0] in EDUCATION_CREDIT_IDS else "BUSINESS")
     if named and named[0] in EDUCATION_CREDIT_IDS and mode in {EXPLAIN, COMPARE}:
         domain = "EDUCATION"
-    elif named and any(sid in BUSINESS_CREDIT_IDS for sid in named):
+    elif not profile.projectType and _query_suggests_education(request.query):
+        domain = "EDUCATION"
+        profile.projectType = "EDUCATION"
+    elif (
+        named
+        and any(sid in BUSINESS_CREDIT_IDS for sid in named)
+        and (domain or "").upper() != "EDUCATION"
+        and not _query_suggests_education(request.query)
+    ):
         domain = "BUSINESS"
     live_ids = _retrieve_adviser_scheme_ids(request, profile, lang)
     retrieved_ids = live_ids or list(retrieved_ids or [])
@@ -119,15 +158,19 @@ def _adviser_chat_response(
     brief = build_brief(
         domain=domain,
         amount=float(amount) if amount is not None else None,
-        activity=profile.activity,
+        activity=_education_course(profile) if (domain or "").upper() == "EDUCATION" else profile.activity,
         lang=lang,
         mode=mode,
         named_ids=named,
         retrieved_ids=retrieved_ids,
+        income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
+        query=request.query,
     )
     if brief.primary:
         profile.recommendedSchemeId = brief.primary.facts.scheme_id
     profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
+    if (domain or "").upper() == "EDUCATION":
+        expected_field = _education_expected_field(brief.missing, expected_field)
     _set_expected_field(profile, session_id, expected_field)
     add_turn(session_id, request.query, brief.answer)
     return ChatResponse(
@@ -414,7 +457,10 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
         mode, _named = detect_adviser_mode(request.query)
         if mode in {EXPLAIN, COMPARE, OPTIONS} and profile.projectType != "AGRICULTURE":
             _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
-            if not profile.projectType and _named and _named[0] == "nsfdc-education":
+            if not profile.projectType and (
+                (_named and _named[0] == "nsfdc-education")
+                or _query_suggests_education(request.query)
+            ):
                 profile.projectType = "EDUCATION"
             elif not profile.projectType:
                 profile.projectType = "BUSINESS"
@@ -623,11 +669,13 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 brief = build_brief(
                     domain=profile.projectType or domain,
                     amount=float(_conversation_amount(profile)) if _conversation_amount(profile) is not None else None,
-                    activity=profile.activity,
+                    activity=_education_course(profile) if (profile.projectType or domain) == "EDUCATION" else profile.activity,
                     lang=lang,
                     mode=mode,
                     named_ids=named,
                     retrieved_ids=retrieved_ids,
+                    income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
+                    query=request.query,
                 )
                 answer_text = brief.answer
                 if brief.primary:
@@ -663,7 +711,8 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             
             conversation_amount = parsed.get("requestedLoanAmount") or parsed.get("estimatedProjectCost")
             if (
-                profile.activity
+                profile.projectType != "EDUCATION"
+                and profile.activity
                 and profile.activity not in {"BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING", "GENERAL", None}
                 and conversation_amount is not None
             ):
@@ -678,6 +727,8 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                     return rec
 
             expected = _initial_expected_field(profile, is_education)
+            if is_education and not is_agriculture:
+                expected = _education_expected_field(brief.missing, expected)
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             _set_expected_field(profile, session_id, expected)
             add_turn(session_id, request.query, answer_text)
@@ -783,6 +834,12 @@ Do not include any other text.
 
 def _initial_expected_field(profile: ChatProfile, is_education: bool) -> str:
     if is_education or profile.projectType == "EDUCATION":
+        if profile.requestedLoanAmount is None:
+            return "requestedLoanAmount"
+        if str(profile.activity or "").upper() in {"", "EDUCATION", "EDUCATION_LOAN", "GENERAL"}:
+            return "activity"
+        if profile.annualFamilyIncome is None:
+            return "annualFamilyIncome"
         return "general"
     act = str(profile.activity or "").upper()
     if profile.projectType == "AGRICULTURE" and act in {"", "FARMING", "AGRICULTURE", "GENERAL"}:
@@ -836,11 +893,13 @@ def _build_conversational_first_response(
         brief = build_brief(
             domain="EDUCATION" if is_education else "BUSINESS",
             amount=float(_conversation_amount(profile)) if profile and _conversation_amount(profile) is not None else None,
-            activity=activity,
+            activity=_education_course(profile) if is_education and profile else activity,
             lang=lang,
             mode=detect_adviser_mode(user_query)[0],
             named_ids=detect_adviser_mode(user_query)[1],
             retrieved_ids=retrieved_ids,
+            income=float(profile.annualFamilyIncome) if profile and profile.annualFamilyIncome is not None else None,
+            query=user_query,
         )
         if brief.answer:
             return brief.answer
@@ -1244,6 +1303,32 @@ _COST_PATTERN = __import__("re").compile(
 )
 
 
+def _collect_scaled_amounts(text: str) -> list[tuple[int, int]]:
+    """Return (start_index, rupee_value) for each scaled amount in text."""
+    found: list[tuple[int, int]] = []
+    seen_spans: set[tuple[int, int]] = set()
+    for m in _COST_PATTERN.finditer(text):
+        raw = m.group(1).replace(",", "")
+        try:
+            amount = float(raw)
+        except ValueError:
+            continue
+        suffix_text = m.group(0).lower()
+        has_scale = any(s in suffix_text for s in ("lakh", "lac", "लाख", "thousand", "हजार")) or suffix_text.endswith("k")
+        if "lakh" in suffix_text or "lac" in suffix_text or "लाख" in suffix_text:
+            amount *= 100_000
+        elif "thousand" in suffix_text or "हजार" in suffix_text or suffix_text.endswith("k"):
+            amount *= 1_000
+        if amount < 1000 and not has_scale:
+            continue
+        span = (m.start(), m.end())
+        if span in seen_spans:
+            continue
+        seen_spans.add(span)
+        found.append((m.start(), int(amount)))
+    return found
+
+
 def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
     """
     Attempt to extract profile fields from a query WITHOUT calling the LLM.
@@ -1397,52 +1482,71 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
             marker in q
             for marker in ("course fee", "tuition", "फीस", "fees")
         )
-        # Education amounts are requested loan, not business project cost.
-        if is_income_answer:
-            target_amount_field = "annualFamilyIncome"
-        elif profile.projectType == "EDUCATION":
-            target_amount_field = "estimatedProjectCost" if fee_markers else "requestedLoanAmount"
-        else:
-            target_amount_field = "estimatedProjectCost"
-        word_amount = _resolve_word_amount(query_norm)
-        if word_amount:
-            updates[target_amount_field] = word_amount
-
-        stripped = __import__("re").sub(
-            r"(?:project cost|cost|estimate|budget|amount|approximately|around|about|लागत|खर्च|budget)\s*[:=]?\s*",
-            "",
-            query_norm,
-            flags=__import__("re").IGNORECASE,
+        loanish = profile.projectType == "EDUCATION" or any(
+            marker in q for marker in ("loan", "लोन", "education", "study", "padhai", "पढ़ाई", "fees", "फीस")
         )
+        scaled = _collect_scaled_amounts(query_norm)
+        if is_income_answer and loanish and len(scaled) >= 2:
+            income_hits = [query_norm.find(m) for m in ("family income", "annual income", "income", "आय") if m in query_norm]
+            loan_hits = [
+                query_norm.find(m)
+                for m in ("loan", "लोन", "education", "study", "padhai", "पढ़ाई", "fees", "फीस", "chahiye")
+                if m in query_norm
+            ]
+            income_pos = min(income_hits) if income_hits else 0
+            loan_pos = min(loan_hits) if loan_hits else len(query_norm)
+            income_amt = min(scaled, key=lambda item: abs(item[0] - income_pos))
+            loan_amt = min((item for item in scaled if item != income_amt), key=lambda item: abs(item[0] - loan_pos), default=None)
+            updates["annualFamilyIncome"] = income_amt[1]
+            if loan_amt:
+                updates["requestedLoanAmount" if profile.projectType == "EDUCATION" or loanish else "estimatedProjectCost"] = loan_amt[1]
+        else:
+            # Education amounts are requested loan, not business project cost.
+            if is_income_answer:
+                target_amount_field = "annualFamilyIncome"
+            elif profile.projectType == "EDUCATION":
+                target_amount_field = "estimatedProjectCost" if fee_markers else "requestedLoanAmount"
+            else:
+                target_amount_field = "estimatedProjectCost"
+            word_amount = _resolve_word_amount(query_norm)
+            if word_amount:
+                updates[target_amount_field] = word_amount
 
-        if target_amount_field not in updates:
-            bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
-            if bare_number_match:
-                raw = bare_number_match.group(1).replace(",", "")
-                try:
-                    amount = int(raw)
-                    if amount >= 1000:
-                        updates[target_amount_field] = amount
-                except ValueError:
-                    pass
+            stripped = __import__("re").sub(
+                r"(?:project cost|cost|estimate|budget|amount|approximately|around|about|लागत|खर्च|budget)\s*[:=]?\s*",
+                "",
+                query_norm,
+                flags=__import__("re").IGNORECASE,
+            )
 
-        if target_amount_field not in updates:
-            for m in _COST_PATTERN.finditer(stripped):
-                raw = m.group(1).replace(",", "")
-                try:
-                    amount = float(raw)
-                    suffix_text = m.group(0).lower()
-                    has_scale = any(s in suffix_text for s in ("lakh", "lac", "लाख", "thousand", "हजार")) or suffix_text.endswith("k")
-                    if "lakh" in suffix_text or "lac" in suffix_text or "लाख" in suffix_text:
-                        amount *= 100_000
-                    elif "thousand" in suffix_text or "हजार" in suffix_text or suffix_text.endswith("k"):
-                        amount *= 1_000
-                    if amount < 1000 and not has_scale:
-                        continue
-                    updates[target_amount_field] = int(amount)
-                    break
-                except ValueError:
-                    pass
+            if target_amount_field not in updates:
+                bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
+                if bare_number_match:
+                    raw = bare_number_match.group(1).replace(",", "")
+                    try:
+                        amount = int(raw)
+                        if amount >= 1000:
+                            updates[target_amount_field] = amount
+                    except ValueError:
+                        pass
+
+            if target_amount_field not in updates:
+                for m in _COST_PATTERN.finditer(stripped):
+                    raw = m.group(1).replace(",", "")
+                    try:
+                        amount = float(raw)
+                        suffix_text = m.group(0).lower()
+                        has_scale = any(s in suffix_text for s in ("lakh", "lac", "लाख", "thousand", "हजार")) or suffix_text.endswith("k")
+                        if "lakh" in suffix_text or "lac" in suffix_text or "लाख" in suffix_text:
+                            amount *= 100_000
+                        elif "thousand" in suffix_text or "हजार" in suffix_text or suffix_text.endswith("k"):
+                            amount *= 1_000
+                        if amount < 1000 and not has_scale:
+                            continue
+                        updates[target_amount_field] = int(amount)
+                        break
+                    except ValueError:
+                        pass
 
     sc_positive = (
         "i am sc", "scheduled caste", "sc category", "मैं sc", "अनुसूचित जाति",
@@ -1469,7 +1573,8 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
 
 _PROFILE_SAVE_RE = re.compile(
     r"(?:profile|प्रोफाइल|प्रोफ़ाइल).{0,48}(?:save|update|सेव|अपडेट|डाल|कर\s*दो)"
-    r"|(?:save|update|सेव).{0,48}(?:profile|प्रोफाइल|प्रोफ़ाइल)",
+    r"|(?:save|update|सेव).{0,48}(?:profile|प्रोफाइल|प्रोफ़ाइल)"
+    r"|remember.{0,32}(?:my\s+)?(?:income|profile|प्रोफाइल|प्रोफ़ाइल)",
     re.IGNORECASE,
 )
 
@@ -1484,14 +1589,19 @@ def _extract_profile_data_from_query(query: str, profile: ChatProfile, session_i
     deterministic = _try_deterministic_parse(query, profile)
     
     def _sync_persistent_fields(updates: dict):
-        if not user_id or not updates:
+        if not user_id:
             return
         if not _explicit_profile_save_request(query):
             return
+        merged = dict(updates or {})
+        if "annualFamilyIncome" not in merged and profile.annualFamilyIncome is not None:
+            merged["annualFamilyIncome"] = profile.annualFamilyIncome
+        if "scEligibilityStatus" not in merged and profile.scEligibilityStatus is not None:
+            merged["scEligibilityStatus"] = profile.scEligibilityStatus
         persistable = {
-            k: updates[k]
+            k: merged[k]
             for k in ("pinCode", "fullName", "annualFamilyIncome", "scEligibilityStatus")
-            if k in updates
+            if k in merged
         }
         if not persistable:
             return
@@ -1527,6 +1637,10 @@ def _extract_profile_data_from_query(query: str, profile: ChatProfile, session_i
         update_session_profile(session_id, profile)
         _sync_persistent_fields(deterministic)
         print(f"[Guided] Deterministic parse: {deterministic}")
+        return
+
+    if _explicit_profile_save_request(query):
+        _sync_persistent_fields({})
         return
 
 

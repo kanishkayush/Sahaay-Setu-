@@ -45,6 +45,7 @@ class AssistantUICardType(str, Enum):
     PARTNER_CARD = "PARTNER_CARD"
     APPLICATION_STEP_CARD = "APPLICATION_STEP_CARD"
     WARNING_CARD = "WARNING_CARD"
+    COMPARISON_CARD = "COMPARISON_CARD"
 
 class AssistantUICard(BaseModel):
     type: AssistantUICardType
@@ -52,6 +53,12 @@ class AssistantUICard(BaseModel):
     schemeName: Optional[str] = None
     reason: Optional[str] = None
     eligible: Optional[bool] = None
+    organization: Optional[str] = None
+    assistanceType: Optional[str] = None
+    verificationStatus: Optional[str] = None
+    amountFit: Optional[str] = None
+    incomeFit: Optional[str] = None
+    rows: Optional[List[Dict[str, Any]]] = None
     title: Optional[str] = None
     details: Optional[str] = None
     question: Optional[str] = None

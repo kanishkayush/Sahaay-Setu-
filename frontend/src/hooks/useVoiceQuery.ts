@@ -7,6 +7,7 @@ import { useSpeechInput, type SpeechInputError } from './useSpeechInput';
 import { useQueryClient } from '@tanstack/react-query';
 import { acceptAdviserSessionId, getAdviserSessionId } from '@/features/adviser/session';
 import { buildAssistantProfileContext } from '@/features/adviser/profileContext';
+import { profileKeys } from '@/features/profile/queryKeys';
 
 /**
  * The voice pipeline, as one state machine.
@@ -114,7 +115,7 @@ export function useVoiceQuery(language: LanguageCode) {
       console.log('[VOICE] Session ID:', sessionId.current);
 
       try {
-        const persistentProfile = queryClient.getQueryData<import('@/api/contracts').UserProfile>(['profile']);
+        const persistentProfile = queryClient.getQueryData<import('@/api/contracts').UserProfile>(profileKeys.profile);
 
         const response = await askAssistant({
           query: trimmed,
@@ -151,7 +152,7 @@ export function useVoiceQuery(language: LanguageCode) {
 
         // Invalidate the persistent profile in the background so the Profile tab reflects
         // any new data (like PIN or name) the backend saved during this Guided Journey turn.
-        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+        void queryClient.invalidateQueries({ queryKey: profileKeys.profile });
 
         // No voice for this language: leave the answer on screen rather than
         // reading it in the wrong phonetics and reporting success.

@@ -489,6 +489,23 @@
     "away": "km away",
     "selectPartner": "Select this Partner",
     "relevantOptions": "Relevant NSFDC options",
-    "viewDetails": "View scheme details →"
+    "relatedEducationOptions": "Related education options",
+    "viewDetails": "View scheme details →",
+    "viewAvailableInfo": "View available information →",
+    "verified": "VERIFIED",
+    "partial": "PARTIAL",
+    "verify": "VERIFY",
+    "verificationRequired": "Verification required. Current details could not be confirmed.",
+    "comparisonTitle": "Comparison",
+    "colScheme": "Scheme",
+    "colType": "Type",
+    "colAmount": "Amount fit",
+    "colIncome": "Income fit",
+    "colVerify": "Verification",
+    "fitFits": "Fits",
+    "fitOutside": "Outside",
+    "fitAbove": "Above",
+    "fitNotALoan": "Not a loan",
+    "fitUnknown": "Unknown"
   }
 }
