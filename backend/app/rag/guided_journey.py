@@ -253,17 +253,17 @@ If no, return exactly this JSON object:
 {{"intent": "GENERAL"}}
 Do not include any other text.
 """
-    model = _llm_model()
-    response = litellm.completion(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": request.query}
-        ],
-        temperature=0.1
-    )
-    
     try:
+        model = _llm_model()
+        response = litellm.completion(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.query}
+            ],
+            temperature=0.1
+        )
+        
         content = (response.choices[0].message.content or "").strip()
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "").strip()
@@ -663,11 +663,20 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
     is_explicit_change = any(p in q for p in change_pin_phrases)
 
     # Check for PIN code (6-digit number starting with 1-9)
+    # Be careful not to match large loan amounts like 500000 as a PIN code.
+    # If the bot was asking for a PIN code, missing_fields would be asking for it.
+    # To be safe, if we see a 6-digit number, we should check if it's explicitly a PIN change,
+    # or if we are actively looking for a PIN code (pinCode is None AND no other large numbers expected).
     if profile.pinCode is None or is_explicit_change:
         pins = _PIN_PATTERN.findall(query_norm)
         if pins:
-            updates["pinCode"] = pins[0]
-            return updates
+            # If it's a multiple of 50000 (like 500000, 150000), it's very likely an amount, not a PIN.
+            # Real PIN codes like 110001, 560001 are rarely perfectly round numbers.
+            # But let's just make sure it's not a round number.
+            pin_val = int(pins[0])
+            if pin_val % 10000 != 0 or is_explicit_change:
+                updates["pinCode"] = pins[0]
+                return updates
 
     # ── Word-to-number resolver for Hindi/Roman Hindi amounts ──────────────
     # "दो लाख" → 200000, "do lakh" → 200000, "teen lakh" → 300000, etc.
@@ -731,8 +740,8 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
             updates["activity"] = matched_edu
             return updates
 
-    # Check for a numeric project cost
-    if profile.estimatedProjectCost is None:
+    # Check for a numeric project cost or requested amount
+    if profile.estimatedProjectCost is None or True: # We should always try to parse amount if the user says it
         # Try word-number resolution first (e.g. "दो लाख", "do lakh")
         word_amount = _resolve_word_amount(query_norm)
         if word_amount:
@@ -746,6 +755,19 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
             query_norm,
             flags=__import__("re").IGNORECASE,
         )
+        
+        # Additional parsing for plain numbers (like "500000") which might not be caught if user just says the number
+        bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
+        if bare_number_match:
+            raw = bare_number_match.group(1).replace(",", "")
+            try:
+                amount = int(raw)
+                if amount >= 1000: # Ensure it's a realistic loan amount
+                    updates["estimatedProjectCost"] = amount
+                    return updates
+            except ValueError:
+                pass
+
         # Match numbers with optional lakh/thousand suffixes
         for m in _COST_PATTERN.finditer(stripped):
             raw = m.group(1).replace(",", "")
@@ -814,17 +836,17 @@ Available fields: fullName (string), stateCode (string), districtCode (string), 
 Return a JSON object with ONLY the updated fields. Do NOT invent information.
 Return ONLY raw JSON text. DO NOT wrap it in markdown blocks.
 """
-    model = _llm_model()
-    response = litellm.completion(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query}
-        ],
-        temperature=0.1
-    )
-
     try:
+        model = _llm_model()
+        response = litellm.completion(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query}
+            ],
+            temperature=0.1
+        )
+
         content = (response.choices[0].message.content or "").strip()
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "").strip()
