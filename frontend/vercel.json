@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/scheme/:schemeId",
-      "destination": "/scheme/%5Bid%5D.html"
+      "destination": "/scheme/%5Bid%5D"
     },
     {
       "source": "/partner/:partnerId",
-      "destination": "/partner/%5Bid%5D.html"
+      "destination": "/partner/%5Bid%5D"
     }
   ]
 }
