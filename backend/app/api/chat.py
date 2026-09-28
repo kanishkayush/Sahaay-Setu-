@@ -8,7 +8,7 @@ from app.schemas.explanation import GroundingStatus
 from app.rag.retriever import retrieve
 from app.rag.chat_service import generate_chat_answer
 import app.rag.memory as memory
-from app.rag.language_detect import detect_language_and_intent
+from app.rag.language_detect import detect_language_and_intent, resolve_conversation_language
 
 logger = logging.getLogger(__name__)
 
@@ -36,23 +36,23 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
     try:
         # Step 0: Language detection + intent extraction (deterministic, no LLM)
         detection = detect_language_and_intent(request.query)
-        
-        # Override language ONLY if we successfully detected it, and respect stickiness.
-        # RULE: If the user has already established a language preference (request.language is set)
-        # and the current query is short (≤3 words) or numeric (like "200000", "2 lakh", "rice"),
-        # NEVER override the language — these are contextual answers, not language switches.
-        if detection.detected_language:
-            has_existing_lang = bool(request.language and request.language != "en")
-            is_short_query = len(request.query.strip().split()) <= 4
-            # Only upgrade to a detected non-English language, or switch if we don't have one yet.
-            if detection.detected_language != "en":
-                # Confidently detected as non-English (script-based): always trust this.
-                request.language = detection.detected_language
-            elif not has_existing_lang and not is_short_query:
-                # No prior language and query is long enough to be reliable.
-                request.language = detection.detected_language
-            # else: keep the existing language preference — short English/neutral words
-            # like "rice", "dairy", "200000", "BTech" inside a Hindi session stay Hindi.
+
+        # Conversation language lives on the session. The request language field
+        # is only an app hint — short tokens like "BTech" / "Jaipur" / "2 lakh"
+        # must not switch the conversation just because they use Latin letters.
+        prior_language = None
+        if request.conversation_id:
+            prior_language = memory.get_session_profile(request.conversation_id).preferredLanguage
+        request.language = resolve_conversation_language(
+            request.query,
+            prior=prior_language,
+            app_hint=request.language,
+        )
+        if request.conversation_id:
+            session_profile = memory.get_session_profile(request.conversation_id)
+            if session_profile.preferredLanguage != request.language:
+                session_profile.preferredLanguage = request.language
+                memory.update_session_profile(request.conversation_id, session_profile)
         
         normalized_query = detection.translated_query_en
         is_low_info = detection.is_low_info

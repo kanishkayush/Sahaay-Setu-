@@ -9,6 +9,8 @@ class AssistantProfileContext(BaseModel):
     stateCode: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    scEligibilityStatus: Optional[bool] = None
+    pinCode: Optional[str] = None
 
 class AssistantQueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)

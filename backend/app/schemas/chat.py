@@ -29,6 +29,7 @@ class ConversationState(str, Enum):
 class ChatProfile(BaseModel):
     projectType: Optional[str] = None
     estimatedProjectCost: Optional[int] = Field(None, ge=0)
+    requestedLoanAmount: Optional[int] = Field(None, ge=0)
     annualFamilyIncome: Optional[int] = Field(None, ge=0)
     educationStatus: Optional[str] = None
     gender: Optional[str] = None
@@ -42,7 +43,11 @@ class ChatProfile(BaseModel):
     scEligibilityStatus: Optional[bool] = None
     existingBusiness: Optional[bool] = None
     fundingRequired: Optional[int] = Field(None, ge=0)
-    preferredLanguage: Optional[str] = None
+    preferredLanguage: Optional[str] = Field(
+        None,
+        description="Sticky conversation language for the session (hi/en/...). "
+                    "Short tokens inherit this instead of switching language.",
+    )
     conversationState: Optional[ConversationState] = None
     recommendedSchemeId: Optional[str] = None
     channelPartnerRequired: Optional[bool] = None
@@ -50,6 +55,7 @@ class ChatProfile(BaseModel):
     longitude: Optional[float] = None
     landHoldingAcres: Optional[float] = None
     noVerifiedMatch: Optional[bool] = None
+    lastExpectedField: Optional[str] = None
 
 class ChatRequest(BaseModel):
     model_config = {"populate_by_name": True}

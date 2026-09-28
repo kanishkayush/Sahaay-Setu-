@@ -146,8 +146,11 @@ def build_retrieval_query(
         if prior_domain == "EDUCATION" or str(profile.activity).upper() in _EDU_MARKERS:
             education_course = profile.activity
     amount = None
-    if profile and profile.estimatedProjectCost is not None:
-        amount = float(profile.estimatedProjectCost)
+    if profile:
+        if (profile.projectType == "EDUCATION" or prior_domain == "EDUCATION") and getattr(profile, "requestedLoanAmount", None) is not None:
+            amount = float(profile.requestedLoanAmount)
+        elif profile.estimatedProjectCost is not None:
+            amount = float(profile.estimatedProjectCost)
     location = None
     if profile:
         bits = [b for b in (profile.districtCode, profile.stateCode, profile.pinCode) if b]

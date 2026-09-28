@@ -6,6 +6,7 @@ import { useCanSpeak } from './useCanSpeak';
 import { useSpeechInput, type SpeechInputError } from './useSpeechInput';
 import { useQueryClient } from '@tanstack/react-query';
 import { acceptAdviserSessionId, getAdviserSessionId } from '@/features/adviser/session';
+import { buildAssistantProfileContext } from '@/features/adviser/profileContext';
 
 /**
  * The voice pipeline, as one state machine.
@@ -47,7 +48,7 @@ export type VoiceTurn = {
   grounded: boolean;
   sessionId?: string;
   /** Which Guided Journey field the backend is waiting for next. */
-  expectedField?: 'pinCode' | 'existingBusiness' | 'estimatedProjectCost' | 'activity' | 'annualFamilyIncome' | 'scEligibilityStatus' | 'general' | null;
+  expectedField?: 'pinCode' | 'existingBusiness' | 'estimatedProjectCost' | 'requestedLoanAmount' | 'activity' | 'annualFamilyIncome' | 'scEligibilityStatus' | 'general' | null;
 };
 
 export function useVoiceQuery(language: LanguageCode) {
@@ -114,22 +115,12 @@ export function useVoiceQuery(language: LanguageCode) {
 
       try {
         const persistentProfile = queryClient.getQueryData<import('@/api/contracts').UserProfile>(['profile']);
-        const coords = persistentProfile?.address?.coordinates;
-        const hasCoords =
-          typeof coords?.latitude === 'number' &&
-          typeof coords?.longitude === 'number' &&
-          Number.isFinite(coords.latitude) &&
-          Number.isFinite(coords.longitude) &&
-          !(coords.latitude === 0 && coords.longitude === 0);
 
         const response = await askAssistant({
           query: trimmed,
           responseLanguage: apiLanguage,
           history: [],
-          profileContext: hasCoords ? {
-            latitude: coords!.latitude,
-            longitude: coords!.longitude,
-          } : undefined,
+          profileContext: buildAssistantProfileContext(persistentProfile),
           sessionId: sessionId.current,
           guideMe: true,
         }, abortController.current.signal);

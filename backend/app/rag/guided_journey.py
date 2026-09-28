@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 from typing import Dict, Any, List, Optional
 
@@ -58,24 +59,139 @@ def _unique_retrieved_schemes(retrieved_chunks: list) -> list:
     return out
 
 
+_INCOME_QUESTION_MARKERS = (
+    "annual family income",
+    "वार्षिक पारिवारिक आय",
+    "सालाना पारिवारिक आय",
+    "family income",
+)
+_BTECH_ITI_MEDICAL_GATE = (
+    "btech, medical, nursing, iti",
+    "btech, मेडिकल, नर्सिंग, iti",
+    "btech, iti",
+)
+_DOC_REQUEST_MARKERS = (
+    "document", "documents", "checklist", "papers",
+    "दस्तावेज़", "दस्तावेज", "कागज़", "कागज", "डॉक्यूमेंट",
+)
+_PARTNER_REQUEST_MARKERS = (
+    "channel partner", "partners", "partner near",
+    "चैनल पार्टनर", "पार्टनर खोज", "नज़दीकी",
+)
+_INCOME_LANGUAGE_MARKERS = (
+    "income", "family income", "annual income", "salary",
+    "आय", "पारिवारिक आय", "सालाना", "वार्षिक",
+)
+
+
+def _is_document_request(query: str) -> bool:
+    q = (query or "").strip().lower()
+    return any(marker in q for marker in _DOC_REQUEST_MARKERS)
+
+
+def _is_partner_request(query: str) -> bool:
+    q = (query or "").strip().lower()
+    return any(marker in q for marker in _PARTNER_REQUEST_MARKERS)
+
+
+def _mentions_income(query: str) -> bool:
+    q = (query or "").strip().lower()
+    return any(marker in q for marker in _INCOME_LANGUAGE_MARKERS)
+
+
+def _profile_income_note(profile: ChatProfile, lang: str) -> str:
+    if profile.annualFamilyIncome is not None:
+        return ""
+    if lang == "hi":
+        return (
+            " विस्तृत eligibility जाँच के लिए Profile में वार्षिक पारिवारिक आय पूरी करना मददगार है. "
+            "मैं अभी योजना recommend कर सकता हूँ।"
+        )
+    return (
+        " For a detailed eligibility check, you can complete annual family income in Profile. "
+        "I can still recommend the relevant scheme now."
+    )
+
+
+def _seed_chat_profile_from_persistent(profile: ChatProfile, persistent: dict) -> ChatProfile:
+    """Copy Profile-owned facts into conversation state. Never overwrite a filled slot."""
+    if not persistent:
+        return profile
+    if persistent.get("fullName") and not getattr(profile, "fullName", None):
+        profile.fullName = persistent.get("fullName")
+    eligibility = persistent.get("eligibility") or {}
+    if profile.annualFamilyIncome is None and eligibility.get("annualFamilyIncome") is not None:
+        try:
+            profile.annualFamilyIncome = int(eligibility["annualFamilyIncome"])
+        except (TypeError, ValueError):
+            pass
+    if profile.scEligibilityStatus is None and eligibility.get("scEligibilityStatus") is not None:
+        profile.scEligibilityStatus = bool(eligibility["scEligibilityStatus"])
+    address = persistent.get("address") or {}
+    if address.get("pinCode") and not profile.pinCode:
+        profile.pinCode = address.get("pinCode")
+    if address.get("state") and not profile.stateCode:
+        profile.stateCode = address.get("state")
+    if address.get("district") and not profile.districtCode:
+        profile.districtCode = address.get("district")
+    coords = address.get("coordinates") or {}
+    if profile.latitude is None and coords.get("latitude") is not None:
+        try:
+            profile.latitude = float(coords["latitude"])
+            if coords.get("longitude") is not None:
+                profile.longitude = float(coords["longitude"])
+        except (TypeError, ValueError):
+            pass
+    if persistent.get("educationLevel") and not profile.educationStatus:
+        profile.educationStatus = persistent.get("educationLevel")
+    business = persistent.get("business") or {}
+    if profile.existingBusiness is None and business.get("existingBusiness") is not None:
+        profile.existingBusiness = bool(business["existingBusiness"])
+    return profile
+
+
+def _set_expected_field(profile: ChatProfile, session_id: str, field: str | None) -> None:
+    profile.lastExpectedField = field
+    update_session_profile(session_id, profile)
+
+
+def _scheme_display_name(chunk, lang: str) -> str:
+    sid = getattr(chunk, "scheme_id", None)
+    if sid:
+        try:
+            meta = load_scheme(sid)
+            api = meta.get("api") if isinstance(meta.get("api"), dict) else {}
+            names = api.get("name") or {}
+            localized = names.get(lang) or names.get("en")
+            if localized:
+                return str(localized)
+        except Exception:
+            pass
+    return getattr(chunk, "scheme_name", None) or sid or "NSFDC scheme"
+
+
 def _deterministic_scheme_reply(
     retrieved_chunks: list,
     lang: str,
     is_education: bool,
     is_agriculture: bool,
     activity: str | None,
+    profile: ChatProfile | None = None,
 ) -> str | None:
     schemes = _unique_retrieved_schemes(retrieved_chunks)
     if not schemes:
         return None
     best = schemes[0]
-    name = best.scheme_name
+    name = _scheme_display_name(best, lang)
     org = best.organization or "NSFDC"
+    income_note = _profile_income_note(profile or ChatProfile(), lang)
     if lang == "hi":
         if is_education:
             return (
-                f"आप शिक्षा के लिए लोन की तलाश कर रहे हैं। मुझे उपलब्ध योजनाओं में {name} मिली है. "
-                f"यह {org} की योजना है। आप कौन सा कोर्स या शिक्षा स्तर कर रहे हैं?"
+                f"आपके लिए {org} की {name} relevant है. "
+                f"यह eligible professional/technical education के लिए educational loan प्रदान करती है. "
+                f"आपकी saved profile information को ध्यान में रखकर मैं आपको आगे guide कर सकता हूँ."
+                f"{income_note}"
             )
         if is_agriculture:
             if str(activity or "").upper() in {"", "FARMING", "AGRICULTURE", "GENERAL"}:
@@ -93,8 +209,10 @@ def _deterministic_scheme_reply(
         )
     if is_education:
         return (
-            f"You are looking for an education loan. I found a verified scheme: {name}. "
-            f"It is an {org} scheme. Which course or education level is this for?"
+            f"{org}'s {name} is relevant for your education-loan request. "
+            f"It supports eligible professional/technical education. "
+            f"I can guide you using your saved profile information."
+            f"{income_note}"
         )
     if is_agriculture:
         if str(activity or "").upper() in {"", "FARMING", "AGRICULTURE", "GENERAL"}:
@@ -168,7 +286,9 @@ def _maybe_restart_for_new_purpose(
         return None
     if purpose_changed:
         profile.estimatedProjectCost = None
+        profile.requestedLoanAmount = None
         profile.activity = None
+        profile.lastExpectedField = None
         if hasattr(profile, "landHoldingAcres"):
             profile.landHoldingAcres = None
     profile.noVerifiedMatch = False
@@ -199,17 +319,7 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
         persistent = store.get(request.user_id)
         if persistent:
             print(f"[PROFILE] Loaded profile for user: {request.user_id}")
-            # Ensure fullName uses the same schema
-            # We don't have fullName in ChatProfile explicitly yet, but we will add it to schemas/chat.py if needed.
-            # Actually, ChatProfile might not have fullName. Let's set it if it exists.
-            if persistent.get("fullName") and not getattr(profile, "fullName", None):
-                setattr(profile, "fullName", persistent.get("fullName"))
-                
-            address = persistent.get("address", {})
-            if address.get("pinCode") and not profile.pinCode:
-                profile.pinCode = address.get("pinCode")
-                print(f"[GUIDED JOURNEY] Seeded pinCode from persistent profile: {profile.pinCode}")
-                
+            profile = _seed_chat_profile_from_persistent(profile, persistent)
             update_session_profile(session_id, profile)
     
     state = profile.conversationState or ConversationState.INITIAL_QUERY
@@ -416,6 +526,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 lang=lang,
                 user_query=request.query,
                 domain=profile.projectType or domain,
+                profile=profile,
             )
 
             # Store the purpose-relevant candidate independently of final
@@ -431,10 +542,11 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                     candidate_api and candidate_api.get("channelPartnerRequired", False)
                 )
             
+            conversation_amount = parsed.get("requestedLoanAmount") or parsed.get("estimatedProjectCost")
             if (
                 profile.activity
                 and profile.activity not in {"BUSINESS", "AGRICULTURE", "GENERAL_BUSINESS", "FARMING", "GENERAL", None}
-                and parsed.get("estimatedProjectCost") is not None
+                and conversation_amount is not None
             ):
                 profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
                 update_session_profile(session_id, profile)
@@ -445,8 +557,9 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                     return rec
 
             # Set up the guided journey state
+            expected = _initial_expected_field(profile, is_education)
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
-            update_session_profile(session_id, profile)
+            _set_expected_field(profile, session_id, expected)
             
             # Save this turn to memory
             add_turn(session_id, request.query, answer_text)
@@ -458,7 +571,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 grounding_status="GROUNDED",
                 related_scheme_ids=[rc.chunk.scheme_id for rc in retrieved_chunks[:3]],
                 response_source=ResponseSource.RAG_LLM,
-                expected_field="general"  # No specific field yet — just conversational
+                expected_field=expected,
             )
     
     # LLM fallback for ambiguous queries
@@ -524,10 +637,12 @@ Do not include any other text.
                 lang=lang,
                 user_query=request.query,
                 domain=profile.projectType,
+                profile=profile,
             )
             
+            expected = _initial_expected_field(profile, is_education)
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
-            update_session_profile(session_id, profile)
+            _set_expected_field(profile, session_id, expected)
             add_turn(session_id, request.query, answer_text)
             
             return ChatResponse(
@@ -537,7 +652,7 @@ Do not include any other text.
                 grounding_status="GROUNDED",
                 related_scheme_ids=[rc.chunk.scheme_id for rc in retrieved_chunks[:3]],
                 response_source=ResponseSource.RAG_LLM,
-                expected_field="general"
+                expected_field=expected,
             )
     except Exception as e:
         logger = __import__("logging").getLogger(__name__)
@@ -547,6 +662,15 @@ Do not include any other text.
     return None
 
 
+def _initial_expected_field(profile: ChatProfile, is_education: bool) -> str:
+    if is_education or profile.projectType == "EDUCATION":
+        return "general"
+    act = str(profile.activity or "").upper()
+    if profile.projectType == "AGRICULTURE" and act in {"", "FARMING", "AGRICULTURE", "GENERAL"}:
+        return "activity"
+    return "estimatedProjectCost"
+
+
 def _build_conversational_first_response(
     activity: str | None,
     is_education: bool,
@@ -554,6 +678,7 @@ def _build_conversational_first_response(
     lang: str,
     user_query: str,
     domain: str | None = None,
+    profile: ChatProfile | None = None,
 ) -> str:
     """
     Generate a natural, conversational first response that includes
@@ -588,7 +713,7 @@ def _build_conversational_first_response(
     
     named_activity = bool(activity and str(activity).upper() not in {"FARMING", "AGRICULTURE", "GENERAL"})
     grounded = _deterministic_scheme_reply(
-        retrieved_chunks, lang, is_education, is_agriculture, activity
+        retrieved_chunks, lang, is_education, is_agriculture, activity, profile
     )
     if is_agriculture and str(activity or "").upper() == "CROP_FARMING" and not retrieved_chunks:
         grounded = _exhausted_no_match_answer(lang, "AGRICULTURE", "CROP_FARMING")
@@ -602,8 +727,10 @@ Here is verified scheme information that may be relevant:
 Generate a NATURAL, CONVERSATIONAL advisory reply in {lang_name} that:
 1. Acknowledges the user's purpose in one sentence. Do not introduce yourself as SAARTHI or सारथी.
 2. If the context names a verified scheme, you MUST name that scheme and its organization and briefly say what the record supports.
-3. Asks ONE useful next question only (amount if unknown; course name for education; specific crop/activity if farming is still unspecified).
-4. Never ask about business type if the purpose is farming or education.
+3. For education loans: recommend the scheme first. Do NOT ask BTech/ITI/Medical as a forced choice. Do NOT ask annual family income. Profile already owns income; if it is missing, mention they can complete Profile rather than turning this into a form.
+4. For farming: ask which farming activity they mean only if unspecified. Do not assume rice.
+5. For business: you may ask estimated amount if unknown.
+6. Never ask about business type if the purpose is farming or education.
 
 Rules:
 - Be warm and conversational, NOT robotic
@@ -620,7 +747,7 @@ Rules:
 - Do not present scholarships, coaching, or fellowships as loans.
 - If the verified context contains no scheme, do not name Term Loan, Micro Finance, or Green Business as a substitute match.
 - Do not invent that a business loan covers farming unless the retrieved text says so.
-"""
+- Do not start an eligibility questionnaire. Recommendation comes before eligibility collection."""
     
     try:
         model = _llm_model()
@@ -652,12 +779,16 @@ Rules:
         return grounded
     fallback_map = {
         "en": {
-            "education": "I can help you with education loans. NSFDC offers an Educational Loan Scheme for professional and technical courses. Could you tell me which course or program you're planning to pursue?",
+            "education": "NSFDC's Educational Loan Scheme is relevant for your request. It supports eligible professional/technical education. I can guide you using your saved profile.",
+            "agriculture": "Are you looking for a loan for a specific farming activity, such as crop cultivation, dairy, poultry, or another agricultural activity?",
+            "business": "I can help you with business financing. NSFDC offers several schemes like Micro Finance, Term Loan, and Laghu Vyavsay Yojana for different business sizes. What kind of business are you planning?",
             "agriculture": "Are you looking for a loan for a specific farming activity, such as crop cultivation, dairy, poultry, or another agricultural activity?",
             "business": "I can help you with business financing. NSFDC offers several schemes like Micro Finance, Term Loan, and Laghu Vyavsay Yojana for different business sizes. What kind of business are you planning?",
         },
         "hi": {
-            "education": "बिल्कुल, मैं आपको शिक्षा ऋण में मदद कर सकता हूँ। NSFDC की शैक्षिक ऋण योजना व्यावसायिक और तकनीकी कोर्स के लिए उपलब्ध है। आप कौन सा कोर्स या प्रोग्राम करना चाहते हैं?",
+            "education": "आपके लिए NSFDC की Educational Loan Scheme relevant है. यह eligible professional/technical education के लिए educational loan प्रदान करती है. आपकी saved profile के आधार पर मैं आगे guide कर सकता हूँ.",
+            "agriculture": "क्या आप किसी खास खेती की गतिविधि के लिए लोन चाहते हैं, जैसे फसल, डेयरी, मुर्गी पालन, या कोई और कृषि काम?",
+            "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
             "agriculture": "क्या आप किसी खास खेती की गतिविधि के लिए लोन चाहते हैं, जैसे फसल, डेयरी, मुर्गी पालन, या कोई और कृषि काम?",
             "business": "मैं आपको व्यवसाय के लिए वित्तीय सहायता में मदद कर सकता हूँ। NSFDC की कई योजनाएं हैं जैसे माइक्रो फाइनेंस, टर्म लोन, और लघु व्यवसाय योजना। आप किस प्रकार का व्यवसाय शुरू करना चाहते हैं?",
         },
@@ -731,27 +862,23 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
                 print(f"[Guided] Resolved short activity answer '{kw}' → {mapped}")
                 break
 
-    _EDU_GENERIC = {None, "EDUCATION_LOAN", "EDUCATION"}
     _AGRI_GENERIC = {"FARMING", "AGRICULTURE"}
 
-    # PIN is useful for partners later, not required to recommend.
-    # Do not force a trade name or "new vs existing business" before a
-    # purpose+amount recommendation can be made.
+    # Conversation must not become a profile form. Profile owns income/SC.
+    # Education retrieval is not gated on course, fee, or income.
     missing_fields = []
-    if profile.projectType == "EDUCATION" and profile.activity in _EDU_GENERIC:
-        missing_fields.append("Course / education level")
-    elif profile.projectType != "EDUCATION" and profile.activity in _AGRI_GENERIC:
+    if profile.projectType != "EDUCATION" and profile.activity in _AGRI_GENERIC:
         missing_fields.append("Specific Activity")
-    elif profile.estimatedProjectCost is None:
-        if profile.projectType == "EDUCATION":
-            missing_fields.append("Course Fee")
-        else:
-            missing_fields.append("Estimated Project Cost")
-    elif profile.annualFamilyIncome is None:
-        missing_fields.append("Annual Family Income")
-    elif profile.scEligibilityStatus is None:
-        missing_fields.append("SC Category Confirmation")
-        
+
+    if _is_document_request(request.query) and profile.recommendedSchemeId:
+        profile.conversationState = ConversationState.DOCUMENT_PREPARATION
+        update_session_profile(session_id, profile)
+        return _handle_document_preparation(request, profile, session_id)
+    if _is_partner_request(request.query) and profile.recommendedSchemeId:
+        profile.conversationState = ConversationState.PARTNER_SEARCH
+        update_session_profile(session_id, profile)
+        return _handle_partner_search(request, profile, session_id, is_transition=True)
+
     if not missing_fields:
         if profile.noVerifiedMatch:
             rec = _handle_scheme_recommendation(request, profile, session_id, is_transition=True)
@@ -768,6 +895,8 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
                 grounding_status="GROUNDED",
                 response_source=ResponseSource.CLARIFICATION,
             )
+        if profile.recommendedSchemeId:
+            return _acknowledge_follow_up(request, profile, session_id)
         profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
         update_session_profile(session_id, profile)
         return _handle_scheme_recommendation(request, profile, session_id, is_transition=True)
@@ -779,7 +908,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
     questions_map = {
         "en": {
             "Specific Activity": "Could you tell me what specific kind of work or farming you want to do?",
-            "Course / education level": "Which course or education level is this loan for — for example BTech, medical, nursing, ITI, 12th?",
+            "Course / education level": "Which course are you pursuing?",
             "PIN Code": "I need your 6-digit PIN code to find accurate schemes and partners. Please update your PIN in your Profile.",
             "Is this a new business or an existing business?": "Is this a new business or an existing business?",
             "Estimated Project Cost": "What is the estimated total project cost?",
@@ -789,7 +918,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         },
         "hi": {
             "Specific Activity": "आप किस प्रकार का काम या खेती शुरू करना चाहते हैं?",
-            "Course / education level": "यह loan किस कोर्स या पढ़ाई के लिए है — जैसे BTech, मेडिकल, नर्सिंग, ITI, 12वीं?",
+            "Course / education level": "आप कौन-सा course कर रहे हैं?",
             "PIN Code": "सटीक योजनाएं और भागीदार खोजने के लिए मुझे आपके 6 अंकों के पिन कोड की आवश्यकता है। कृपया अपने प्रोफाइल में अपना पिन अपडेट करें।",
             "Is this a new business or an existing business?": "क्या यह नया व्यवसाय है या आपका पहले से चल रहा व्यवसाय है?",
             "Estimated Project Cost": "इस परियोजना की अनुमानित कुल लागत कितनी है?",
@@ -865,6 +994,7 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "SC Category Confirmation": "scEligibilityStatus",
     }
     expected_field = FIELD_MAP.get(next_question, "general")
+    _set_expected_field(profile, session_id, expected_field)
         
     return ChatResponse(
         answer=answer_text,
@@ -874,6 +1004,60 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         grounding_status="GROUNDED",
         response_source=ResponseSource.RAG_LLM,
         expected_field=expected_field
+    )
+
+
+def _acknowledge_follow_up(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
+    """Keep the retrieved scheme; store new slots; do not re-ask filled questions."""
+    lang = request.language or "en"
+    scheme_id = profile.recommendedSchemeId
+    scheme_name = scheme_id
+    if scheme_id:
+        try:
+            meta = load_scheme(scheme_id)
+            api = meta.get("api") if isinstance(meta.get("api"), dict) else {}
+            name = api.get("name") or {}
+            scheme_name = name.get(lang) or name.get("en") or meta.get("scheme_id") or scheme_id
+        except Exception:
+            scheme_name = scheme_id
+    facts = []
+    if profile.activity and str(profile.activity).upper() not in {
+        "EDUCATION_LOAN", "EDUCATION", "FARMING", "AGRICULTURE", "BUSINESS", "GENERAL",
+        "GENERAL_BUSINESS",
+    }:
+        facts.append(str(profile.activity).replace("_", " "))
+    amount = profile.requestedLoanAmount if profile.projectType == "EDUCATION" else profile.estimatedProjectCost
+    if amount is not None:
+        facts.append(f"₹{int(amount)}")
+    if profile.districtCode:
+        facts.append(str(profile.districtCode))
+    fact_text = ", ".join(facts)
+    income_note = _profile_income_note(profile, lang)
+    if lang == "hi":
+        answer = (
+            f"{scheme_name} आपके वर्तमान अनुरोध से मेल खाती है."
+            + (f" मैंने यह जानकारी नोट कर ली है: {fact_text}." if fact_text else "")
+            + income_note
+            + " आगे आप दस्तावेज़, चैनल पार्टनर, या कोई और जानकारी बता सकते हैं."
+        )
+    else:
+        answer = (
+            f"{scheme_name} remains the relevant scheme for this request."
+            + (f" I noted: {fact_text}." if fact_text else "")
+            + income_note
+            + " Next you can ask about documents, a channel partner, or share another detail."
+        )
+    profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
+    _set_expected_field(profile, session_id, "general")
+    add_turn(session_id, request.query, answer)
+    return ChatResponse(
+        answer=answer,
+        language=lang,
+        citations=[],
+        grounding_status="GROUNDED",
+        related_scheme_ids=[scheme_id] if scheme_id else [],
+        response_source=ResponseSource.RAG_LLM,
+        expected_field="general",
     )
 
 
@@ -926,21 +1110,16 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
     query_norm = normalize_indic_digits(q)
     updates: dict = {}
 
-    # A bare yes/no is only interpreted as SC confirmation once the preceding
-    # purpose, amount and income questions are complete.
-    if (
-        profile.scEligibilityStatus is None
-        and profile.estimatedProjectCost is not None
-        and profile.annualFamilyIncome is not None
-    ):
+    # A bare yes/no is SC confirmation only when that was the asked slot.
+    if profile.scEligibilityStatus is None and getattr(profile, "lastExpectedField", None) == "scEligibilityStatus":
         normalized_answer = q.strip().rstrip(".!?")
         if normalized_answer in _YES_ANSWERS:
             updates["scEligibilityStatus"] = True
         elif normalized_answer in _NO_ANSWERS:
             updates["scEligibilityStatus"] = False
 
-    # Check New/Existing business answer
-    if profile.existingBusiness is None:
+    # Check New/Existing business answer — never for education journeys.
+    if profile.projectType != "EDUCATION" and profile.existingBusiness is None:
         # Add extra mappings from user request
         new_biz = _NEW_BUSINESS_ANSWERS | {"नया व्यवसाय", "नया बिजनेस", "नई शुरुआत", "शुरू करना है", "पहले से नहीं है"}
         old_biz = _EXISTING_BUSINESS_ANSWERS | {"पुराना व्यवसाय", "मौजूदा व्यवसाय", "पहले से व्यवसाय", "पहले से चल रहा है", "पहले से है"}
@@ -1039,41 +1218,51 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
         if matched_edu:
             updates["activity"] = matched_edu
 
-    acre_match = __import__("re").search(
-        r"(\d+(?:\.\d+)?)\s*(acre|acres|एकड़|एकड)\b",
-        query_norm,
-        __import__("re").IGNORECASE,
-    )
+    acre_match = None
     word_acre = None
-    if not acre_match:
-        for word, num in _WORD_NUMS.items():
-            if __import__("re").search(
-                rf"{__import__('re').escape(word)}\s*(acre|acres|एकड़|एकड)\b",
-                query_norm,
-                __import__("re").IGNORECASE,
-            ):
-                word_acre = float(num)
-                break
-    if acre_match or word_acre is not None:
-        try:
-            updates["landHoldingAcres"] = float(acre_match.group(1)) if acre_match else word_acre
-        except ValueError:
-            pass
-        if profile.activity:
-            updates["activity"] = profile.activity
+    if profile.projectType != "EDUCATION":
+        acre_match = __import__("re").search(
+            r"(\d+(?:\.\d+)?)\s*(acre|acres|एकड़|एकड)\b",
+            query_norm,
+            __import__("re").IGNORECASE,
+        )
+        if not acre_match:
+            for word, num in _WORD_NUMS.items():
+                if __import__("re").search(
+                    rf"{__import__('re').escape(word)}\s*(acre|acres|एकड़|एकड)\b",
+                    query_norm,
+                    __import__("re").IGNORECASE,
+                ):
+                    word_acre = float(num)
+                    break
+        if acre_match or word_acre is not None:
+            try:
+                updates["landHoldingAcres"] = float(acre_match.group(1)) if acre_match else word_acre
+            except ValueError:
+                pass
+            if profile.activity:
+                updates["activity"] = profile.activity
 
     looks_like_land = bool(acre_match) or word_acre is not None
     if not looks_like_land and "pinCode" not in updates:
-        is_income_answer = any(
+        expected = getattr(profile, "lastExpectedField", None) or ""
+        is_income_answer = expected == "annualFamilyIncome" or _mentions_income(q)
+        if expected in {"estimatedProjectCost", "courseFee", "requestedLoanAmount"} and not _mentions_income(q):
+            is_income_answer = False
+        fee_markers = any(
             marker in q
-            for marker in (
-                "income", "family income", "annual income", "salary",
-                "आय", "पारिवारिक आय", "सालाना", "वार्षिक",
-            )
+            for marker in ("course fee", "tuition", "फीस", "fees")
         )
+        # Education amounts are requested loan, not business project cost.
+        if is_income_answer:
+            target_amount_field = "annualFamilyIncome"
+        elif profile.projectType == "EDUCATION":
+            target_amount_field = "estimatedProjectCost" if fee_markers else "requestedLoanAmount"
+        else:
+            target_amount_field = "estimatedProjectCost"
         word_amount = _resolve_word_amount(query_norm)
         if word_amount:
-            updates["annualFamilyIncome" if is_income_answer else "estimatedProjectCost"] = word_amount
+            updates[target_amount_field] = word_amount
 
         stripped = __import__("re").sub(
             r"(?:project cost|cost|estimate|budget|amount|approximately|around|about|लागत|खर्च|budget)\s*[:=]?\s*",
@@ -1082,7 +1271,6 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
             flags=__import__("re").IGNORECASE,
         )
 
-        target_amount_field = "annualFamilyIncome" if is_income_answer else "estimatedProjectCost"
         if target_amount_field not in updates:
             bare_number_match = __import__("re").search(r"^\s*(\d[\d,]*)\s*$", query_norm)
             if bare_number_match:
@@ -1135,30 +1323,58 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
     return updates
 
 
+_PROFILE_SAVE_RE = re.compile(
+    r"(?:profile|प्रोफाइल|प्रोफ़ाइल).{0,48}(?:save|update|सेव|अपडेट|डाल|कर\s*दो)"
+    r"|(?:save|update|सेव).{0,48}(?:profile|प्रोफाइल|प्रोफ़ाइल)",
+    re.IGNORECASE,
+)
+
+
+def _explicit_profile_save_request(query: str) -> bool:
+    """True only when the user asks to write conversation facts into Profile."""
+    return bool(_PROFILE_SAVE_RE.search(query or ""))
+
+
 def _extract_profile_data_from_query(query: str, profile: ChatProfile, session_id: str, user_id: str = None):
     # 1. Try deterministic parsing first (no LLM call, no latency)
     deterministic = _try_deterministic_parse(query, profile)
     
     def _sync_persistent_fields(updates: dict):
-        if not user_id:
+        if not user_id or not updates:
             return
-        if "pinCode" in updates or "fullName" in updates:
-            from app.services.storage import get_profile_store
-            store = get_profile_store()
-            persistent = store.get(user_id) or {}
-            
-            if "pinCode" in updates:
-                if "address" not in persistent:
-                    persistent["address"] = {}
-                persistent["address"]["pinCode"] = updates["pinCode"]
-                print(f"[PROFILE] Saving PIN: {updates['pinCode']}")
-                
-            if "fullName" in updates:
-                persistent["fullName"] = updates["fullName"]
-                print(f"[PROFILE] Saving Name: {updates['fullName']}")
-                
-            store.upsert(user_id, persistent)
-            print(f"[PROFILE] Profile saved successfully for user: {user_id}")
+        if not _explicit_profile_save_request(query):
+            return
+        persistable = {
+            k: updates[k]
+            for k in ("pinCode", "fullName", "annualFamilyIncome", "scEligibilityStatus")
+            if k in updates
+        }
+        if not persistable:
+            return
+        from app.services.storage import get_profile_store
+        store = get_profile_store()
+        persistent = store.get(user_id) or {}
+
+        if "pinCode" in persistable:
+            if "address" not in persistent:
+                persistent["address"] = {}
+            persistent["address"]["pinCode"] = persistable["pinCode"]
+            print(f"[PROFILE] Saving PIN: {persistable['pinCode']}")
+
+        if "fullName" in persistable:
+            persistent["fullName"] = persistable["fullName"]
+            print(f"[PROFILE] Saving Name: {persistable['fullName']}")
+
+        if "annualFamilyIncome" in persistable or "scEligibilityStatus" in persistable:
+            eligibility = persistent.get("eligibility") or {}
+            if "annualFamilyIncome" in persistable:
+                eligibility["annualFamilyIncome"] = persistable["annualFamilyIncome"]
+            if "scEligibilityStatus" in persistable:
+                eligibility["scEligibilityStatus"] = persistable["scEligibilityStatus"]
+            persistent["eligibility"] = eligibility
+
+        store.upsert(user_id, persistent)
+        print(f"[PROFILE] Profile saved successfully for user: {user_id}")
 
     if deterministic:
         for k, v in deterministic.items():
@@ -1181,7 +1397,8 @@ Recent Conversation History:
 {history_text}
 
 Update fields if the user provided them.
-Available fields: fullName (string), stateCode (string), districtCode (string), pinCode (string), existingBusiness (bool), estimatedProjectCost (int), annualFamilyIncome (int), activity (string).
+Available fields: fullName (string), stateCode (string), districtCode (string), pinCode (string), existingBusiness (bool), estimatedProjectCost (int), requestedLoanAmount (int), annualFamilyIncome (int), activity (string).
+For education loans, put a bare amount such as "2 lakh" in requestedLoanAmount, not estimatedProjectCost or annualFamilyIncome.
 Return a JSON object with ONLY the updated fields. Do NOT invent information.
 Return ONLY raw JSON text. DO NOT wrap it in markdown blocks.
 """
@@ -1213,6 +1430,20 @@ Return ONLY raw JSON text. DO NOT wrap it in markdown blocks.
 
 
 def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, session_id: str, is_transition: bool = False) -> ChatResponse:
+    if not is_transition:
+        _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
+        profile = get_session_profile(session_id)
+        if _is_document_request(request.query):
+            profile.conversationState = ConversationState.DOCUMENT_PREPARATION
+            update_session_profile(session_id, profile)
+            return _handle_document_preparation(request, profile, session_id)
+        if _is_partner_request(request.query):
+            profile.conversationState = ConversationState.PARTNER_SEARCH
+            update_session_profile(session_id, profile)
+            return _handle_partner_search(request, profile, session_id, is_transition=True)
+        if profile.recommendedSchemeId:
+            return _acknowledge_follow_up(request, profile, session_id)
+
     purpose = profile.activity or "BUSINESS"
     is_edu = profile.projectType == "EDUCATION"
     
@@ -1243,7 +1474,7 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
         domain = "AGRICULTURE"
     else:
         domain = "BUSINESS"
-    amount = profile.estimatedProjectCost
+    amount = profile.requestedLoanAmount if is_edu else profile.estimatedProjectCost
     lang = (request.language or "").strip().lower() or "en"
     retrieval_spec = build_retrieval_query(request.query, profile=profile, language=lang)
     ranked_ret = retrieve_ranked_schemes(
@@ -1336,7 +1567,7 @@ def _handle_scheme_recommendation(request: ChatRequest, profile: ChatProfile, se
             schemeId=scheme_api.get("id") if scheme_api else top.scheme_id,
             schemeName=top.scheme_name,
             reason=reason_text,
-            eligible=True
+            eligible=profile.annualFamilyIncome is not None and profile.scEligibilityStatus is True
         ),
         AssistantUICard(
             type=AssistantUICardType.NEXT_QUESTION_CARD,
@@ -1359,6 +1590,7 @@ Based on the user's profile and query context, the deterministic engine recommen
 User profile summary:
 Purpose/Activity: {purpose}
 Project Cost / Course Fee: {profile.estimatedProjectCost}
+Requested loan amount: {profile.requestedLoanAmount}
 Family Income: {profile.annualFamilyIncome}
 Location/PIN: {profile.pinCode}
 
@@ -1431,10 +1663,12 @@ RULES:
         }
         answer_text = fallback_map.get(lang, fallback_map.get(lang_name, fallback_map["en"]))
 
+    answer_text = (answer_text or "") + _profile_income_note(profile, lang)
+
     
-    # Transition State
-    profile.conversationState = ConversationState.DOCUMENT_PREPARATION
-    update_session_profile(session_id, profile)
+    # Stay on recommendation so follow-ups (amount, course, city) are not treated as a form.
+    profile.conversationState = ConversationState.SCHEME_RECOMMENDATION
+    _set_expected_field(profile, session_id, "general")
     
     return ChatResponse(
         answer=answer_text,
@@ -1442,7 +1676,9 @@ RULES:
         citations=[],
         ui_cards=ui_cards,
         grounding_status="GROUNDED",
-        response_source=ResponseSource.RAG_LLM
+        related_scheme_ids=[top.scheme_id],
+        response_source=ResponseSource.RAG_LLM,
+        expected_field="general",
     )
 
 def _handle_document_preparation(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:

@@ -143,13 +143,12 @@ def assistant_query_adapter(
     """
     profile = None
     if request.profileContext:
-        profile = ChatProfile(
-            annualFamilyIncome=request.profileContext.annualFamilyIncome,
-            projectType=request.profileContext.projectType,
-            stateCode=request.profileContext.stateCode,
-            latitude=request.profileContext.latitude,
-            longitude=request.profileContext.longitude
-        )
+        raw = request.profileContext.model_dump(exclude_unset=True)
+        raw = {k: v for k, v in raw.items() if v is not None}
+        if "annualFamilyIncome" in raw:
+            raw["annualFamilyIncome"] = int(raw["annualFamilyIncome"])
+        if raw:
+            profile = ChatProfile(**raw)
     
     # Do not silently infer eligibility. The chat pipeline respects the Profile safety rule.
     chat_request = ChatRequest(

@@ -45,6 +45,8 @@ export const AssistantQueryRequestSchema = z.object({
         stateCode: z.string().optional(),
         latitude: z.number().optional(),
         longitude: z.number().optional(),
+        scEligibilityStatus: z.boolean().optional(),
+        pinCode: z.string().optional(),
       })
       .optional(),
     sessionId: z.string().optional(),
@@ -139,6 +141,7 @@ export const AssistantQueryResponseSchema = z.object({
       'pinCode',
       'existingBusiness',
       'estimatedProjectCost',
+      'requestedLoanAmount',
       'activity',
       'annualFamilyIncome',
       'scEligibilityStatus',

@@ -336,3 +336,139 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         assistance_type=assistance_type,
         activity=activity,
     )
+
+
+# ── Conversation language (session-sticky) ─────────────────────────
+#
+# Token language ("BTech" is English letters) is not conversation language.
+# Short entity/value replies inherit the established session language.
+
+_EN_SWITCH_RE = re.compile(
+    r"(?:please\s+)?(?:can\s+you\s+)?explain\s+(?:this|it)\s+in\s+english"
+    r"|in\s+english\s+please"
+    r"|switch\s+to\s+english"
+    r"|reply\s+in\s+english"
+    r"|speak\s+(?:in\s+)?english"
+    r"|english\s+me(?:n|in)?\s+batao"
+    r"|english\s+में\s+बताओ"
+    r"|अब\s+english",
+    re.IGNORECASE,
+)
+_HI_SWITCH_RE = re.compile(
+    r"(?:हिंदी|हिन्दी)\s*में\s*(?:बताओ|समझाओ|बोलो|जवाब)"
+    r"|hindi\s+me(?:n|in)?\s+samjhao"
+    r"|explain\s+(?:this|it)\s+in\s+hindi"
+    r"|switch\s+to\s+hindi"
+    r"|in\s+hindi\s+please"
+    r"|reply\s+in\s+hindi",
+    re.IGNORECASE,
+)
+_AMOUNT_UTTERANCE_RE = re.compile(
+    r"^\s*(?:₹|rs\.?|inr)?\s*\d[\d,]*\s*"
+    r"(?:lakh|lac|लाख|thousand|hazar|हजार|k|rupees?|rupaye|रूपये|₹)?\s*$",
+    re.IGNORECASE,
+)
+_EN_FUNCTION_WORDS = frozenset({
+    "i", "we", "you", "me", "my", "please", "need", "want", "can", "could",
+    "would", "explain", "tell", "what", "how", "where", "why", "the", "a",
+    "an", "for", "this", "that", "is", "am", "are", "do", "does", "did",
+})
+_SHORT_ENTITY_WORDS = frozenset({
+    "btech", "b.tech", "mbbs", "iti", "mba", "mtech", "bca", "mca", "be",
+    "bsc", "bcom", "diploma", "nursing", "pharmacy",
+    "jaipur", "delhi", "mumbai", "kolkata", "chennai", "hyderabad",
+    "bengaluru", "bangalore", "pune", "lucknow", "patna", "ahmedabad",
+    "lakh", "lac", "rupees", "rupee",
+})
+_ROMAN_HINDI_LANGUAGE_WORDS = _ROMAN_HINDI_WORDS - {
+    "lakh", "rupaye", "rupay", "paise", "paisa",
+}
+
+
+def _explicit_switch_to_english(text: str) -> bool:
+    return bool(_EN_SWITCH_RE.search(text or ""))
+
+
+def _explicit_switch_to_hindi(text: str) -> bool:
+    return bool(_HI_SWITCH_RE.search(text or ""))
+
+
+def _is_amount_or_short_entity(text: str) -> bool:
+    stripped = (text or "").strip()
+    if not stripped:
+        return False
+    if _AMOUNT_UTTERANCE_RE.match(stripped):
+        return True
+    if _DEVANAGARI_RE.search(stripped) or _BENGALI_RE.search(stripped) or _TAMIL_RE.search(stripped) or _TELUGU_RE.search(stripped):
+        return False
+    words = re.findall(r"[a-zA-Z0-9.]+", stripped.lower())
+    if not words or len(words) > 4:
+        return False
+    if any(w in _ROMAN_HINDI_LANGUAGE_WORDS for w in words):
+        return False
+    if sum(1 for w in words if w in _EN_FUNCTION_WORDS) >= 2:
+        return False
+    if len(words) <= 3:
+        return True
+    return all(w in _SHORT_ENTITY_WORDS or w.isdigit() or len(w) <= 4 for w in words)
+
+
+def _is_roman_hindi_sentence(text: str) -> bool:
+    words = re.findall(r"[a-zA-Z]+", (text or "").lower())
+    if not words:
+        return False
+    hits = sum(1 for w in words if w in _ROMAN_HINDI_LANGUAGE_WORDS)
+    if len(words) == 1:
+        return words[0] in _ROMAN_HINDI_LANGUAGE_WORDS
+    return hits >= 2 or hits / len(words) >= 0.25
+
+
+def _is_clear_english_utterance(text: str) -> bool:
+    if _DEVANAGARI_RE.search(text or ""):
+        return False
+    if _is_roman_hindi_sentence(text):
+        return False
+    words = re.findall(r"[a-zA-Z']+", (text or "").lower())
+    if len(words) < 3:
+        return False
+    function_hits = sum(1 for w in words if w in _EN_FUNCTION_WORDS)
+    return len(words) >= 5 or function_hits >= 2
+
+
+def resolve_conversation_language(
+    query: str,
+    prior: Optional[str] = None,
+    app_hint: Optional[str] = None,
+) -> str:
+    """Choose the conversation language for this turn.
+
+    Distinguishes the language of the current token from the language of the
+    conversation. Short names, courses, cities, and amounts inherit `prior`.
+    """
+    text = (query or "").strip()
+    prior_lang = (prior or "").strip().lower() or None
+    hint = (app_hint or "").strip().lower() or None
+
+    if not text:
+        return prior_lang or hint or "en"
+    if _explicit_switch_to_english(text):
+        return "en"
+    if _explicit_switch_to_hindi(text):
+        return "hi"
+
+    script = _script_language(text)
+    if script:
+        return script
+    if _is_amount_or_short_entity(text):
+        return prior_lang or hint or "en"
+    if _is_roman_hindi_sentence(text):
+        return "hi"
+    if _is_clear_english_utterance(text):
+        return "en"
+
+    detection = detect_language_and_intent(text)
+    if prior_lang and detection.detected_language != prior_lang and (
+        detection.is_low_info or len(text.split()) <= 4
+    ):
+        return prior_lang
+    return detection.detected_language or prior_lang or hint or "en"

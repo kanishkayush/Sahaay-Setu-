@@ -7,6 +7,7 @@ import {
   getAdviserSessionId,
   resetAdviserSession,
 } from '@/features/adviser/session';
+import { buildAssistantProfileContext } from '@/features/adviser/profileContext';
 
 let idCounter = 0;
 const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
@@ -44,15 +45,11 @@ export function useAssistant(language: LanguageCode) {
 
       try {
         const persistentProfile = queryClient.getQueryData<UserProfile>(['profile']);
-        const coordinates = persistentProfile?.address.coordinates;
         const response = await askAssistant({
           query: trimmed,
           responseLanguage: language,
           history,
-          profileContext: coordinates ? {
-            latitude: coordinates.latitude,
-            longitude: coordinates.longitude,
-          } : undefined,
+          profileContext: buildAssistantProfileContext(persistentProfile),
           sessionId: sessionId.current ?? getAdviserSessionId(),
           guideMe: true,
         });
