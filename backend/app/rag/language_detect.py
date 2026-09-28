@@ -288,6 +288,11 @@ def detect_language_and_intent(query: str) -> DetectionResult:
 
     # Extract intent
     intent = _extract_intent(stripped)
+    if intent is None:
+        from app.rag.scheme_advisor import COMPARE, EXPLAIN, OPTIONS, detect_adviser_mode
+        mode, named = detect_adviser_mode(stripped)
+        if mode in {OPTIONS, EXPLAIN, COMPARE}:
+            intent = "EDUCATION_LOAN" if named == ["nsfdc-education"] else "GENERAL_LOAN"
     activity = extract_specific_activity(stripped)
 
     # Build a retrieval-friendly English translation from the utterance +

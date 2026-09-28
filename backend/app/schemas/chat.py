@@ -56,6 +56,7 @@ class ChatProfile(BaseModel):
     landHoldingAcres: Optional[float] = None
     noVerifiedMatch: Optional[bool] = None
     lastExpectedField: Optional[str] = None
+    alternativeSchemeIds: Optional[list[str]] = None
 
 class ChatRequest(BaseModel):
     model_config = {"populate_by_name": True}
@@ -91,3 +92,4 @@ class ChatResponse(BaseModel):
     related_scheme_ids: list[str] = Field(default_factory=list, description="List of scheme IDs related to the answer.")
     response_source: ResponseSource = Field(default=ResponseSource.RAG_LLM, description="The source that generated the response.")
     expected_field: Optional[str] = Field(None, description="The Guided Journey field currently being collected (pinCode, existingBusiness, estimatedProjectCost, general).")
+    follow_ups: list[str] = Field(default_factory=list, description="Optional follow-up chips; the answer already contains the next question.")

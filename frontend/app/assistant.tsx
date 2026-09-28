@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { AssistantAction, ChatMessage } from '@/api/contracts';
 import { Banner, Button, Card, Chip, Icon, Text } from '@/components/ui';
+import { UICardsRenderer } from '@/components/domain/UICardsRenderer';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { speak, stopSpeaking } from '@/features/voice/textToSpeech';
 import { useAssistant } from '@/hooks/useAssistant';
@@ -71,6 +72,7 @@ export default function AssistantScreen() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [actions, setActions] = useState<AssistantAction[]>([]);
   const [followUps, setFollowUps] = useState<string[]>([]);
+  const [uiCards, setUiCards] = useState<import('@/api/contracts').AssistantUICard[]>([]);
   const scrollRef = useRef<ScrollView>(null);
   // Whether the turn in flight arrived by voice, which decides whether the
   // reply reads itself aloud. A ref, not state: it must be readable inside the
@@ -86,10 +88,12 @@ export default function AssistantScreen() {
     setInputFromSpeech(false);
     setActions([]);
     setFollowUps([]);
+    setUiCards([]);
     const response = await send(text);
     if (response) {
       setActions(response.suggestedActions);
       setFollowUps(response.followUpQuestions);
+      setUiCards(response.uiCards ?? []);
       if (askedByVoice.current && canRead) {
         setSpeakingId(response.messageId);
         speak(response.answer, response.answerLanguage, {
@@ -258,6 +262,8 @@ export default function AssistantScreen() {
             </View>
           ) : null}
 
+          {uiCards.length > 0 ? <UICardsRenderer cards={uiCards} /> : null}
+
           {actions.length > 0 ? (
             <View style={styles.actionRow}>
               {actions.map((action, index) => (
@@ -301,6 +307,7 @@ export default function AssistantScreen() {
                 clear();
                 setActions([]);
                 setFollowUps([]);
+                setUiCards([]);
               }}
             />
           ) : null}

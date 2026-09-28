@@ -181,7 +181,7 @@ def assistant_query_adapter(
         citations=chat_response.citations,
         suggestedActions=[],
         uiCards=[card.model_dump(exclude_none=True) if hasattr(card, 'model_dump') else card for card in getattr(chat_response, 'ui_cards', [])],
-        followUpQuestions=[],
+        followUpQuestions=getattr(chat_response, "follow_ups", None) or [],
         grounded=grounded,
         sessionId=request.sessionId,
         expectedField=expected_field

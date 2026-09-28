@@ -483,6 +483,7 @@
     "recommended": "Recommended",
     "noPartnerSelected": "No partner selected",
     "away": "km away",
-    "selectPartner": "Select this Partner"
+    "selectPartner": "Select this Partner",
+    "relevantOptions": "Relevant NSFDC options"
   }
 }

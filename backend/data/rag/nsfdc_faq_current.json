@@ -1,0 +1,59 @@
+{
+  "source": "official NSFDC FAQ",
+  "source_url": "https://nsfdc.nic.in/faqs",
+  "retrieved_note": "Current public credit-scheme facts. Display these ahead of conflicting historical catalogue labels.",
+  "schemes": {
+    "nsfdc-mfs": {
+      "purpose": "Micro-credit for small business activities",
+      "purpose_hi": "छोटे व्यवसाय के लिए सूक्ष्म ऋण",
+      "project_cost_max": 140000,
+      "loan_amount_max": 125000,
+      "interest_rate_pct": 6.5,
+      "repayment_years": 3,
+      "repayment_hi": "चुकौती 3 वर्षों के भीतर",
+      "channeling_agency": "NSFDC channel partners"
+    },
+    "nsfdc-amy": {
+      "purpose": "Prompt/need-based micro-finance through selected NBFC-MFIs",
+      "purpose_hi": "चयनित NBFC-MFI के माध्यम से आवश्यकता-आधारित सूक्ष्म वित्त",
+      "project_cost_max": 140000,
+      "loan_amount_max": 125000,
+      "interest_rate_pct": 15.0,
+      "repayment_years": 3,
+      "repayment_hi": "चुकौती 3 वर्षों के भीतर",
+      "channeling_agency": "Selected NBFC-MFIs"
+    },
+    "nsfdc-term-loan": {
+      "purpose": "Larger income-generating projects",
+      "purpose_hi": "बड़ी आय-सृजन परियोजनाओं के लिए वित्त",
+      "project_cost_min_exclusive": 140000,
+      "project_cost_max": 5000000,
+      "loan_amount_max": 4500000,
+      "interest_rate_pct": 8.0,
+      "repayment_years": 7,
+      "repayment_hi": "चुकौती 7 वर्षों के भीतर",
+      "channeling_agency": "SCAs/CAs"
+    },
+    "nsfdc-uny": {
+      "purpose": "Income-generating projects through Cooperative Societies/Banks and SFBs",
+      "purpose_hi": "सहकारी समितियों/बैंकों और Small Finance Banks के माध्यम से आय-सृजन परियोजनाएँ",
+      "project_cost_max": 500000,
+      "loan_amount_max": 450000,
+      "interest_rate_pct": null,
+      "interest_rate_note": "Current FAQ lists different beneficiary rates by channel",
+      "interest_rate_note_hi": "वर्तमान FAQ में चैनल के अनुसार अलग लाभार्थी ब्याज दरें दी गई हैं",
+      "channeling_agency": "Cooperative Societies/Cooperative Banks and SFBs"
+    },
+    "nsfdc-education": {
+      "purpose": "Regular full-time professional/technical recognised courses, in India or abroad",
+      "purpose_hi": "भारत या विदेश में नियमित पूर्णकालिक व्यावसायिक/तकनीकी मान्यता प्राप्त पाठ्यक्रम",
+      "loan_amount_max": 4000000,
+      "loan_share_note": "Up to ₹40 lakh or 90% of course fee, whichever is less",
+      "interest_rate_pct": 6.5,
+      "repayment_years_min": 10,
+      "repayment_years_max": 12,
+      "repayment_note": "Up to 10–12 years subject to the stated moratorium",
+      "repayment_hi": "चुकौती कथित मोरेटोरियम के अधीन 10–12 वर्षों तक"
+    }
+  }
+}

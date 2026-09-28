@@ -554,3 +554,160 @@ def test_conversational_income_does_not_silently_write_profile():
             )
         )
     assert store.get(uid)["eligibility"]["annualFamilyIncome"] == 400000
+
+
+def _biz_names(text: str) -> str:
+    return (text or "").lower()
+
+
+def test_business_loan_mentions_multiple_nsfdc_options():
+    session = "sess-biz-multi"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("I need a business loan", session, "en"))
+    text = _biz_names(resp.answer)
+    assert "term loan" in text
+    assert "udyam" in text or "micro finance" in text
+    assert "aajeevika" in text or "micro finance" in text
+    assert len(resp.related_scheme_ids) >= 2
+    assert "nsfdc-education" not in (resp.related_scheme_ids or [])
+    assert "0070a49e" not in text
+
+
+def test_other_options_returns_alternatives():
+    session = "sess-biz-options"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("I need a business loan", session, "en"))
+        resp = process_chat_request(_req("What other options do I have?", session, "en"))
+    text = _biz_names(resp.answer)
+    assert "term loan" in text
+    assert "udyam" in text or "micro finance" in text
+    assert len(resp.related_scheme_ids) >= 2
+
+
+def test_term_loan_alawa_returns_alternatives():
+    session = "sess-alawa"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("mujhe business ke liye loan chahiye", session, "hi"))
+        resp = process_chat_request(_req("Term loan ke alawa aur kya hai?", session, "hi"))
+    assert resp.language == "hi"
+    text = resp.answer or ""
+    assert "उद्यम" in text or "सूक्ष्म" in text or "Udyam" in text or "Micro" in text
+    assert len(resp.related_scheme_ids) >= 2
+
+
+def test_term_loan_explanation():
+    session = "sess-explain-tl"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("Term loan kya hota hai?", session, "hi"))
+    assert "nsfdc-term-loan" in (resp.related_scheme_ids or [])
+    text = (resp.answer or "").lower()
+    assert "1.40" in text or "45" in text or "सावधि" in (resp.answer or "") or "term loan" in text
+
+
+def test_one_lakh_small_business_considers_microfinance():
+    session = "sess-1lakh"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("mujhe chhote business ke liye 1 lakh chahiye", session, "hi"))
+        resp = process_chat_request(_req("1 lakh", session, "hi"))
+    text = (resp.answer or "").lower() + " " + " ".join(resp.related_scheme_ids or [])
+    assert "nsfdc-mfs" in (resp.related_scheme_ids or []) or "micro" in text or "सूक्ष्म" in (resp.answer or "")
+
+
+def test_two_lakh_business_compares_contextually():
+    session = "sess-2lakh-biz"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("mujhe business ke liye 2 lakh chahiye", session, "hi"))
+        r2 = process_chat_request(_req("2 lakh", session, "hi"))
+    profile = get_session_profile(session)
+    assert profile.estimatedProjectCost == 200000
+    ids = r2.related_scheme_ids or []
+    assert "nsfdc-uny" in ids or "nsfdc-term-loan" in ids
+    assert "scholarship" not in (r2.answer or "").lower()
+
+
+def test_twenty_lakh_business_term_loan_context():
+    session = "sess-20lakh"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("I need a loan to start a business", session, "en"))
+        resp = process_chat_request(_req("20 lakh", session, "en"))
+    assert "nsfdc-term-loan" in (resp.related_scheme_ids or [])
+    assert "term loan" in (resp.answer or "").lower()
+
+
+def test_education_not_contaminated_by_business_or_scholarships():
+    session = "sess-edu-only"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("मुझे पढ़ाई के लिए लोन चाहिए", session, "hi"))
+    ids = resp.related_scheme_ids or []
+    assert "nsfdc-education" in ids
+    assert "nsfdc-mfs" not in ids
+    assert "scholarship" not in (resp.answer or "").lower()
+    assert "free coaching" not in (resp.answer or "").lower()
+
+
+def test_term_loan_vs_udyam_retrieves_both():
+    session = "sess-compare-tl-uny"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("Term Loan vs Udyam Nidhi", session, "en"))
+    ids = set(resp.related_scheme_ids or [])
+    assert "nsfdc-term-loan" in ids
+    assert "nsfdc-uny" in ids
+
+
+def test_hindi_business_discovery():
+    session = "sess-biz-hi-disc"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        resp = process_chat_request(_req("मुझे व्यवसाय के लिए लोन चाहिए", session, "hi"))
+    assert resp.language == "hi"
+    assert len(resp.related_scheme_ids) >= 2
+
+
+def test_roman_hindi_other_options():
+    session = "sess-roman-opts"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("mujhe business ke liye loan chahiye", session, "hi"))
+        resp = process_chat_request(_req("term loan ke alawa aur kya option hai?", session, "hi"))
+    assert resp.language == "hi"
+    assert len(resp.related_scheme_ids) >= 2
+
+
+def test_business_multi_turn_keeps_amount_and_activity():
+    session = "sess-biz-mt"
+    clear_session(session)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        process_chat_request(_req("I need a business loan", session, "en"))
+        process_chat_request(_req("2 lakh", session, "en"))
+        resp = process_chat_request(_req("mobile repair shop", session, "en"))
+    profile = get_session_profile(session)
+    assert profile.estimatedProjectCost == 200000
+    assert profile.activity
+    assert "repair" in str(profile.activity).lower() or "shop" in str(profile.activity).lower() or "REPAIR" in str(profile.activity)
+    text = (resp.answer or "").lower()
+    assert "2" in text or "200000" in text or "lakh" in text or "₹" in (resp.answer or "")
+    assert len(resp.related_scheme_ids) >= 1
+
+
+def test_voice_and_typed_share_adviser_path_for_options():
+    from app.api.chat import process_chat_request as shared
+
+    session_t = "sess-opt-typed"
+    session_v = "sess-opt-voice"
+    clear_session(session_t)
+    clear_session(session_v)
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        typed = shared(_req("I need a business loan", session_t, "en"))
+        voice = shared(_req("I need a business loan", session_v, "en"))
+    assert set(typed.related_scheme_ids) == set(voice.related_scheme_ids)
+    assert "term loan" in (typed.answer or "").lower()
+    assert "term loan" in (voice.answer or "").lower()

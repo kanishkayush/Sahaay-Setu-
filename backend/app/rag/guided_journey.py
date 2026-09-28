@@ -15,6 +15,16 @@ from types import SimpleNamespace
 
 from app.rag.language_detect import detect_language_and_intent, extract_specific_activity
 from app.rag.query_context import build_retrieval_query
+from app.rag.scheme_advisor import (
+    BUSINESS_CREDIT_IDS,
+    COMPARE,
+    EDUCATION_CREDIT_IDS,
+    EXPLAIN,
+    OPTIONS,
+    build_brief,
+    detect_adviser_mode,
+    ui_cards as adviser_ui_cards,
+)
 from app.rag.retriever import retrieve, retrieve_ranked_schemes
 from app.services.storage import get_profile_store
 
@@ -57,6 +67,80 @@ def _unique_retrieved_schemes(retrieved_chunks: list) -> list:
         seen.add(chunk.scheme_id)
         out.append(chunk)
     return out
+
+
+def _conversation_amount(profile: ChatProfile) -> Optional[int]:
+    if profile.projectType == "EDUCATION":
+        return profile.requestedLoanAmount
+    return profile.estimatedProjectCost or profile.requestedLoanAmount
+
+
+def _retrieve_adviser_scheme_ids(request: ChatRequest, profile: ChatProfile, lang: str) -> list[str]:
+    """Retrieve NSFDC credit candidates from the merged conversation query."""
+    retrieval_spec = build_retrieval_query(
+        request.query,
+        profile=profile,
+        language=lang,
+    )
+    try:
+        retrieved_chunks = retrieve(
+            query=retrieval_spec.search_text,
+            top_k=8,
+            min_similarity=None,
+            organization_filter=retrieval_spec.organization_scope or "NSFDC",
+            domain_filter=retrieval_spec.domain,
+            assistance_type_filter="LOAN",
+            retrieval_query=retrieval_spec,
+        )
+    except Exception as exc:
+        print(f"[Guided] Adviser retrieval skipped: {exc}")
+        return []
+    return [c.scheme_id for c in _unique_retrieved_schemes(retrieved_chunks)]
+
+
+def _adviser_chat_response(
+    request: ChatRequest,
+    profile: ChatProfile,
+    session_id: str,
+    *,
+    retrieved_ids: list[str] | None = None,
+    expected_field: str | None = "general",
+) -> ChatResponse:
+    lang = request.language or "en"
+    mode, named = detect_adviser_mode(request.query)
+    domain = profile.projectType or ("EDUCATION" if named and named[0] in EDUCATION_CREDIT_IDS else "BUSINESS")
+    if named and named[0] in EDUCATION_CREDIT_IDS and mode in {EXPLAIN, COMPARE}:
+        domain = "EDUCATION"
+    elif named and any(sid in BUSINESS_CREDIT_IDS for sid in named):
+        domain = "BUSINESS"
+    live_ids = _retrieve_adviser_scheme_ids(request, profile, lang)
+    retrieved_ids = live_ids or list(retrieved_ids or [])
+    amount = _conversation_amount(profile)
+    brief = build_brief(
+        domain=domain,
+        amount=float(amount) if amount is not None else None,
+        activity=profile.activity,
+        lang=lang,
+        mode=mode,
+        named_ids=named,
+        retrieved_ids=retrieved_ids,
+    )
+    if brief.primary:
+        profile.recommendedSchemeId = brief.primary.facts.scheme_id
+    profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
+    _set_expected_field(profile, session_id, expected_field)
+    add_turn(session_id, request.query, brief.answer)
+    return ChatResponse(
+        answer=brief.answer,
+        language=lang,
+        citations=[],
+        ui_cards=adviser_ui_cards(brief, lang),
+        grounding_status="GROUNDED",
+        related_scheme_ids=brief.related_ids,
+        response_source=ResponseSource.RAG_LLM,
+        expected_field=expected_field,
+        follow_ups=[brief.next_question] if brief.next_question else [],
+    )
 
 
 _INCOME_QUESTION_MARKERS = (
@@ -327,6 +411,19 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
         restarted = _maybe_restart_for_new_purpose(request, profile, session_id, state)
         if restarted is not None:
             return restarted
+        mode, _named = detect_adviser_mode(request.query)
+        if mode in {EXPLAIN, COMPARE, OPTIONS} and profile.projectType != "AGRICULTURE":
+            _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
+            if not profile.projectType and _named and _named[0] == "nsfdc-education":
+                profile.projectType = "EDUCATION"
+            elif not profile.projectType:
+                profile.projectType = "BUSINESS"
+            profile.conversationState = profile.conversationState or ConversationState.COLLECTING_ELIGIBILITY
+            return _adviser_chat_response(
+                request, profile, session_id,
+                retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
+                expected_field="general",
+            )
         if state == ConversationState.INITIAL_QUERY:
             return _handle_initial_query(request, profile, session_id)
             
@@ -510,7 +607,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             )
             retrieved_chunks = retrieve(
                 query=retrieval_spec.search_text,
-                top_k=5,
+                top_k=8,
                 min_similarity=None,
                 organization_filter=retrieval_spec.organization_scope or "NSFDC",
                 domain_filter=retrieval_spec.domain,
@@ -518,26 +615,48 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 retrieval_query=retrieval_spec,
             )
             
-            # Build a natural first response using the retrieved context
-            answer_text = _build_conversational_first_response(
-                activity=activity,
-                is_education=is_education,
-                retrieved_chunks=retrieved_chunks,
-                lang=lang,
-                user_query=request.query,
-                domain=profile.projectType or domain,
-                profile=profile,
-            )
-
-            # Store the purpose-relevant candidate independently of final
-            # eligibility. Income/category answers refine eligibility; their
-            # absence must not turn successful retrieval into "no match".
             retrieved_schemes = _unique_retrieved_schemes(retrieved_chunks)
-            if retrieved_schemes:
-                candidate = retrieved_schemes[0]
-                profile.recommendedSchemeId = candidate.scheme_id
+            retrieved_ids = [c.scheme_id for c in retrieved_schemes]
+            is_agriculture = (profile.projectType or domain) == "AGRICULTURE"
+            if not is_agriculture:
+                mode, named = detect_adviser_mode(request.query)
+                brief = build_brief(
+                    domain=profile.projectType or domain,
+                    amount=float(_conversation_amount(profile)) if _conversation_amount(profile) is not None else None,
+                    activity=profile.activity,
+                    lang=lang,
+                    mode=mode,
+                    named_ids=named,
+                    retrieved_ids=retrieved_ids,
+                )
+                answer_text = brief.answer
+                if brief.primary:
+                    profile.recommendedSchemeId = brief.primary.facts.scheme_id
+                elif retrieved_ids:
+                    profile.recommendedSchemeId = retrieved_ids[0]
+                profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
+                adviser_cards = adviser_ui_cards(brief, lang)
+                related_ids = brief.related_ids or retrieved_ids[:4]
+                follow_ups = [brief.next_question] if brief.next_question else []
+            else:
+                answer_text = _build_conversational_first_response(
+                    activity=activity,
+                    is_education=is_education,
+                    retrieved_chunks=retrieved_chunks,
+                    lang=lang,
+                    user_query=request.query,
+                    domain=profile.projectType or domain,
+                    profile=profile,
+                )
+                adviser_cards = []
+                follow_ups = []
+                related_ids = retrieved_ids[:3]
+                if retrieved_schemes:
+                    profile.recommendedSchemeId = retrieved_schemes[0].scheme_id
+
+            if profile.recommendedSchemeId:
                 from app.api.scheme_loader import get_scheme_by_internal_id
-                candidate_api = get_scheme_by_internal_id(candidate.scheme_id)
+                candidate_api = get_scheme_by_internal_id(profile.recommendedSchemeId)
                 profile.channelPartnerRequired = bool(
                     candidate_api and candidate_api.get("channelPartnerRequired", False)
                 )
@@ -553,25 +672,25 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 rec = _handle_scheme_recommendation(request, profile, session_id, is_transition=True)
                 if rec:
                     rec.answer = f"{answer_text}\n\n{rec.answer}"
+                    rec.ui_cards = adviser_cards or rec.ui_cards
+                    rec.related_scheme_ids = related_ids or rec.related_scheme_ids
                     add_turn(session_id, request.query, rec.answer)
                     return rec
 
-            # Set up the guided journey state
             expected = _initial_expected_field(profile, is_education)
             profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
             _set_expected_field(profile, session_id, expected)
-            
-            # Save this turn to memory
             add_turn(session_id, request.query, answer_text)
-            
             return ChatResponse(
                 answer=answer_text,
                 language=lang,
                 citations=[],
+                ui_cards=adviser_cards,
                 grounding_status="GROUNDED",
-                related_scheme_ids=[rc.chunk.scheme_id for rc in retrieved_chunks[:3]],
+                related_scheme_ids=related_ids,
                 response_source=ResponseSource.RAG_LLM,
                 expected_field=expected,
+                follow_ups=follow_ups,
             )
     
     # LLM fallback for ambiguous queries
@@ -712,6 +831,19 @@ def _build_conversational_first_response(
         purpose_desc = "business/self-employment"
     
     named_activity = bool(activity and str(activity).upper() not in {"FARMING", "AGRICULTURE", "GENERAL"})
+    if not is_agriculture:
+        retrieved_ids = [c.scheme_id for c in _unique_retrieved_schemes(retrieved_chunks)]
+        brief = build_brief(
+            domain="EDUCATION" if is_education else "BUSINESS",
+            amount=float(_conversation_amount(profile)) if profile and _conversation_amount(profile) is not None else None,
+            activity=activity,
+            lang=lang,
+            mode=detect_adviser_mode(user_query)[0],
+            named_ids=detect_adviser_mode(user_query)[1],
+            retrieved_ids=retrieved_ids,
+        )
+        if brief.answer:
+            return brief.answer
     grounded = _deterministic_scheme_reply(
         retrieved_chunks, lang, is_education, is_agriculture, activity, profile
     )
@@ -842,20 +974,24 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
         "fish": "FISHERY", "fishing": "FISHERY", "मछली": "FISHERY",
         "goat": "GOAT_REARING", "sheep": "GOAT_REARING", "बकरी": "GOAT_REARING", "bakri": "GOAT_REARING",
         "pig": "PIG_REARING", "सूअर": "PIG_REARING",
-        # Business / Trade
+        # Business / Trade — longer / more specific phrases must win over "shop".
+        "mobile repair": "REPAIR_WORKSHOP",
+        "repair shop": "REPAIR_WORKSHOP",
+        "workshop": "REPAIR_WORKSHOP",
+        "mechanic": "REPAIR_WORKSHOP",
+        "repair": "REPAIR_WORKSHOP",
         "shop": "SMALL_RETAIL", "dukaan": "SMALL_RETAIL", "दुकान": "SMALL_RETAIL",
         "tailoring": "TAILORING", "silai": "TAILORING", "सिलाई": "TAILORING",
         "handicraft": "HANDICRAFT", "craft": "HANDICRAFT", "हस्तशिल्प": "HANDICRAFT",
         "beauty": "BEAUTY_PARLOUR", "salon": "BEAUTY_PARLOUR",
         "transport": "TRANSPORT", "auto": "TRANSPORT", "cab": "TRANSPORT",
-        "repair": "REPAIR_WORKSHOP", "mechanic": "REPAIR_WORKSHOP",
         "catering": "CATERING", "food": "FOOD_PROCESSING",
         "fasal": "CROP_FARMING", "फसल": "CROP_FARMING", "crop": "CROP_FARMING",
         "crops": "CROP_FARMING",
     }
     if profile.activity in _VAGUE_ACTIVITIES and not is_transition:
         q_low = request.query.strip().lower()
-        for kw, mapped in _ACTIVITY_SHORT_MAP.items():
+        for kw, mapped in sorted(_ACTIVITY_SHORT_MAP.items(), key=lambda item: -len(item[0])):
             if kw in q_low:
                 profile.activity = mapped
                 update_session_profile(session_id, profile)
@@ -1008,7 +1144,15 @@ def _handle_collecting_eligibility(request: ChatRequest, profile: ChatProfile, s
 
 
 def _acknowledge_follow_up(request: ChatRequest, profile: ChatProfile, session_id: str) -> ChatResponse:
-    """Keep the retrieved scheme; store new slots; do not re-ask filled questions."""
+    """Keep conversation context and re-score NSFDC options from verified facts."""
+    if profile.projectType != "AGRICULTURE":
+        return _adviser_chat_response(
+            request,
+            profile,
+            session_id,
+            retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
+            expected_field="general",
+        )
     lang = request.language or "en"
     scheme_id = profile.recommendedSchemeId
     scheme_name = scheme_id

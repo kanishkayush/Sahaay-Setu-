@@ -9,20 +9,31 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
   const { t } = useTranslation();
   if (!cards || cards.length === 0) return null;
 
+  const schemeCards = cards.filter((card) => card.type === 'SCHEME_CARD');
+  const otherCards = cards.filter((card) => card.type !== 'SCHEME_CARD');
+
   return (
     <View style={styles.container}>
-      {cards.map((card, idx) => {
-        switch (card.type) {
-          case 'SCHEME_CARD':
-            return (
-              <Card key={idx} style={styles.schemeCard}>
-                <View style={styles.headerRow}>
-                  <Icon name="check" size={20} color={colors.success} />
-                  <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
-                </View>
+      {schemeCards.length > 0 ? (
+        <View style={styles.schemeGroup}>
+          {schemeCards.length > 1 ? (
+            <Text variant="label">{t('uiCards.relevantOptions')}</Text>
+          ) : null}
+          {schemeCards.map((card, idx) => (
+            <Card key={`scheme-${idx}`} style={styles.schemeCard}>
+              <View style={styles.headerRow}>
+                <Icon name="doc" size={20} color={colors.primary} />
+                <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
+              </View>
+              {card.reason ? (
                 <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
-              </Card>
-            );
+              ) : null}
+            </Card>
+          ))}
+        </View>
+      ) : null}
+      {otherCards.map((card, idx) => {
+        switch (card.type) {
           case 'NEXT_QUESTION_CARD':
             return (
               <Card key={idx} style={styles.questionCard}>
@@ -102,7 +113,8 @@ const styles = StyleSheet.create({
   container: { gap: spacing.md, marginVertical: spacing.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
-  schemeCard: { borderColor: colors.success, borderWidth: 1 },
+  schemeGroup: { gap: spacing.sm },
+  schemeCard: { borderColor: colors.primary, borderWidth: 1 },
   questionCard: { backgroundColor: colors.surface },
   checklistCard: { backgroundColor: colors.surface },
   partnerCard: { borderColor: colors.primary, borderWidth: 1 },
