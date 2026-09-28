@@ -2,5 +2,16 @@
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
   "devCommand": "npm run web",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/scheme/:schemeId",
+      "destination": "/scheme/%5Bid%5D.html"
+    },
+    {
+      "source": "/partner/:partnerId",
+      "destination": "/partner/%5Bid%5D.html"
+    }
+  ]
 }
