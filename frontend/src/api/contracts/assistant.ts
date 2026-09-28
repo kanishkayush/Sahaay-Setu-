@@ -135,7 +135,15 @@ export const AssistantQueryResponseSchema = z.object({
    * rather than inferring from translated question text.
    */
   expectedField: z
-    .enum(['pinCode', 'existingBusiness', 'estimatedProjectCost', 'general'])
+    .enum([
+      'pinCode',
+      'existingBusiness',
+      'estimatedProjectCost',
+      'activity',
+      'annualFamilyIncome',
+      'scEligibilityStatus',
+      'general',
+    ])
     .nullish(),
 });
 export type AssistantQueryResponse = z.infer<typeof AssistantQueryResponseSchema>;

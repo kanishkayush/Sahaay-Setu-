@@ -12,14 +12,14 @@
       "te": "కాల రుణం"
     },
     "shortDescription": {
-      "en": "For larger self-employment projects — manufacturing, transport, service ventures.",
-      "hi": "बड़ी स्वरोजगार परियोजनाओं के लिए — विनिर्माण, परिवहन और सेवा उद्यम।"
+      "en": "Term finance for viable income-generating activities, including agriculture and allied activities, manufacturing, services, shops and transport.",
+      "hi": "कृषि व संबद्ध गतिविधियों, विनिर्माण, सेवाओं, दुकान और परिवहन सहित व्यवहार्य आय-सृजन गतिविधियों के लिए सावधि वित्त।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
     "recommendationCategory": [
       "RECOMMENDED"
     ],
-    "channelPartnerRequired": false,
+    "channelPartnerRequired": true,
     "minLoanAmount": 125001,
     "maxLoanAmount": 4500000,
     "fundingSharePct": 0.9,
@@ -93,15 +93,69 @@
       }
     ],
     "verified": true,
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z",
+    "officialUrl": "https://nsfdc.nic.in/scheme",
+    "lastVerified": "2026-09-28",
+    "verificationStatus": "VERIFIED"
   },
   "organization": "NSFDC",
   "organization_code": "NSFDC",
   "domain": "BUSINESS",
   "scheme_type": "TERM_LOAN",
-  "purpose": "BUSINESS",
+  "purpose": "SELF_EMPLOYMENT",
   "assistance_type": "LOAN",
   "verified": true,
   "source": "Official Documentation",
-  "source_url": "https://nsfdc.nic.in"
+  "source_url": "https://nsfdc.nic.in/scheme",
+  "status": "CURRENT_ACTIVE",
+  "supported_domains": [
+    "BUSINESS",
+    "AGRICULTURE",
+    "LIVESTOCK",
+    "SERVICES",
+    "MANUFACTURING",
+    "TRANSPORT"
+  ],
+  "supported_purposes": [
+    "BUSINESS_STARTUP",
+    "BUSINESS_EXPANSION",
+    "SELF_EMPLOYMENT",
+    "FARMING",
+    "CROP_CULTIVATION",
+    "DAIRY",
+    "POULTRY",
+    "MANUFACTURING",
+    "SERVICE_BUSINESS",
+    "TRANSPORT"
+  ],
+  "provenance": [
+    {
+      "source_url": "https://nsfdc.nic.in/scheme",
+      "source_title": "NSFDC — Current Schemes",
+      "source_document": "Official scheme catalogue page",
+      "source_date": "2026",
+      "retrieved_at": "2026-09-28"
+    },
+    {
+      "source_url": "https://nsfdc.nic.in/faqs",
+      "source_title": "NSFDC — Frequently Asked Questions",
+      "source_document": "Official FAQ",
+      "source_date": "2026",
+      "retrieved_at": "2026-09-28"
+    },
+    {
+      "source_url": "https://nsfdc.nic.in/eligibility-requirements",
+      "source_title": "NSFDC — Eligibility Requirements",
+      "source_document": "Official eligibility page",
+      "source_date": "2026-01-07",
+      "retrieved_at": "2026-09-28"
+    },
+    {
+      "source_url": "https://nsfdc.nic.in/how-to-apply-2",
+      "source_title": "NSFDC — How to Apply",
+      "source_document": "Official application procedure",
+      "source_date": "2026",
+      "retrieved_at": "2026-09-28"
+    }
+  ]
 }

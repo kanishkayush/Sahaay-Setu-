@@ -181,8 +181,17 @@ def generate_chat_answer(
         user_profile_dict = {k: v for k, v in user_profile_dict.items() if v is not None}
         
         # Run deterministic eligibility
-        eval_res = evaluate_all_schemes(user_profile_dict)
-        ranked = generate_recommendations(eval_res)
+        eval_res = evaluate_all_schemes(user_profile_dict, organization="NSFDC")
+        from app.recommendation_engine import RelevanceQuery
+        domain = request.profile.projectType if request.profile else None
+        ranked = generate_recommendations(
+            eval_res,
+            relevance=RelevanceQuery(
+                assistance_type="LOAN",
+                domain=domain,
+                amount_inr=request.profile.estimatedProjectCost if request.profile else None,
+            ) if domain else None,
+        )
         
         # Build deterministic facts for chat context
         eligibility_facts = {

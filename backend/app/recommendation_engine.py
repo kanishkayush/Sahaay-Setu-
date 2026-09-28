@@ -12,6 +12,7 @@ from app.eligibility_engine import (
     evaluate_all_schemes,
     load_scheme,
 )
+from app.scheme_catalogue import is_recommendable
 
 STATUS_TIER = {
     "eligible": 1,
@@ -81,6 +82,7 @@ _NON_LOAN_SCHEME_TYPES = frozenset({
 })
 _EXCLUSIVE_NON_LOAN = (
     "scholarship", "coaching", "fellowship", "free coaching", "stipend",
+    "interest subsidy",
 )
 _EXCLUSIVE_EDUCATION = ("educational loan", "education loan", "शैक्षिक ऋण")
 _EXCLUSIVE_GREEN_ASSET = ("e-rickshaw", "e rickshaw", "solar", "clean-energy", "ई-रिक्शा", "सौर")
@@ -97,6 +99,18 @@ def _explicit_agriculture_support(scheme: dict) -> bool:
     Classified domain/purpose tags are not enough: some NSFDC files were
     auto-tagged AGRICULTURE/FARMING while the scheme text is about other assets.
     """
+    supported = {
+        str(value).upper()
+        for value in (
+            list(scheme.get("supported_domains") or [])
+            + list(scheme.get("supported_purposes") or [])
+        )
+    }
+    if supported & {
+        "AGRICULTURE", "LIVESTOCK", "FARMING", "CROP_CULTIVATION",
+        "DAIRY", "POULTRY",
+    }:
+        return True
     desc = _description_text(scheme)
     if not desc:
         return False
@@ -165,6 +179,8 @@ def _is_loan_product(scheme: dict) -> bool:
 
 
 def _has_sufficient_metadata(scheme: dict) -> bool:
+    if not is_recommendable(scheme):
+        return False
     assistance = str(scheme.get("assistance_type") or "").upper()
     scheme_type = str(scheme.get("scheme_type") or "").upper()
     domain = str(scheme.get("domain") or "").upper()

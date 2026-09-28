@@ -62,7 +62,9 @@ def test_hindi_agriculture_rice_then_two_lakh():
     assert profile.estimatedProjectCost == 200000
     assert profile.activity == "RICE_FARMING"
     _assert_nsfdc_loan_answer(r2, profile)
-    assert profile.recommendedSchemeId in {None, ""}
+    # Current NSFDC FAQ explicitly includes agriculture/allied activities in
+    # Term Loan. This is a general IGA match, not a rice-specific product.
+    assert profile.recommendedSchemeId == "nsfdc-term-loan"
     assert "free coaching" not in (r2.answer or "").lower()
     assert r2.language == "hi"
 
@@ -76,7 +78,7 @@ def test_english_agriculture_rice_then_amount():
     )
     assert profile.estimatedProjectCost == 200000
     assert profile.activity == "RICE_FARMING"
-    assert profile.recommendedSchemeId in {None, ""}
+    assert profile.recommendedSchemeId == "nsfdc-term-loan"
     assert r2.language == "en"
 
 
@@ -132,6 +134,36 @@ def test_ambiguous_loan_asks_clarification():
     assert any(w in (resp.answer or "") for w in ("पढ़ाई", "खेती", "business", "education", "farming", "loan"))
 
 
+def test_complete_education_adviser_journey_keeps_retrieval_separate_from_eligibility():
+    session = "sess-edu-complete"
+    clear_session(session)
+    queries = [
+        "मुझे पढ़ाई के लिए लोन चाहिए",
+        "BTech",
+        "चार लाख",
+        "मेरी सालाना पारिवारिक आय तीन लाख है",
+        "हाँ",
+        "दस्तावेज़ बताइए",
+        "302001",
+    ]
+    with patch("app.rag.guided_journey.litellm.completion", side_effect=RuntimeError("no llm")):
+        responses = [process_chat_request(_req(q, session, "hi")) for q in queries]
+
+    profile = get_session_profile(session)
+    assert profile.projectType == "EDUCATION"
+    assert profile.activity == "BTECH"
+    assert profile.estimatedProjectCost == 400000
+    assert profile.annualFamilyIncome == 300000
+    assert profile.scEligibilityStatus is True
+    assert profile.recommendedSchemeId == "nsfdc-education"
+    assert responses[0].related_scheme_ids  # Retrieval succeeds before eligibility is known.
+    assert responses[2].expected_field == "annualFamilyIncome"
+    assert responses[3].expected_field == "scEligibilityStatus"
+    assert responses[5].ui_cards[0].type.value == "DOCUMENT_CHECKLIST"
+    assert responses[5].ui_cards[0].requiredByScheme
+    assert responses[6].answer
+
+
 def test_nsfdc_filter_still_blocks_coaching():
     from app.eligibility_engine import evaluate_all_schemes
     from app.recommendation_engine import generate_recommendations
@@ -170,7 +202,7 @@ def test_context_acre_and_city_do_not_reset_rice_profile():
     assert profile.estimatedProjectCost == 200000
     assert profile.districtCode == "Jaipur"
     assert profile.landHoldingAcres == 3
-    assert profile.recommendedSchemeId in {None, ""}
+    assert profile.recommendedSchemeId == "nsfdc-term-loan"
     assert r4.language == "hi"
 
 

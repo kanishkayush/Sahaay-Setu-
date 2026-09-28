@@ -8,8 +8,8 @@
       "hi": "Pradhan Mantri Dakshta Aur Kushalta Sampann Hitgrahi (PM-DAKSH) Yojana"
     },
     "shortDescription": {
-      "en": "Official scheme details are currently being fetched.",
-      "hi": "आधिकारिक योजना विवरण वर्तमान में प्राप्त किए जा रहे हैं।"
+      "en": "Free NSQF-compliant skill development for eligible Scheduled Caste persons aged 18–45 under PM-DAKSH; NSFDC is an implementing agency.",
+      "hi": "पीएम-दक्ष के अंतर्गत 18–45 वर्ष के पात्र अनुसूचित जाति व्यक्तियों के लिए निःशुल्क NSQF-अनुरूप कौशल प्रशिक्षण; NSFDC एक कार्यान्वयन एजेंसी है।"
     },
     "officialCategory": "ECONOMIC_DEVELOPMENT",
     "recommendationCategory": [
@@ -18,23 +18,53 @@
     "documentsRequired": [],
     "channelPartnerTypes": [],
     "channelPartnerRequired": false,
-    "officialUrl": "https://socialjustice.gov.in/schemes/100",
+    "officialUrl": "https://nsfdc.nic.in/faqs",
     "applicationUrl": "https://pmdaksh.dosje.gov.in/",
     "sourceUrl": "https://socialjustice.gov.in/schemes/100",
     "sourceName": "Ministry Official Catalogue",
-    "lastVerified": "2026-09-08",
-    "verificationStatus": "UNVERIFIED",
+    "lastVerified": "2026-09-28",
+    "verificationStatus": "VERIFIED",
     "citations": [],
-    "verified": false,
+    "verified": true,
     "lastUpdatedAt": "2026-09-08T11:52:40.920889Z"
   },
   "organization": "MINISTRY/DEPARTMENT",
-  "organization_code": "MINISTRY/DEPARTMENT",
-  "domain": "OTHER",
-  "scheme_type": "OTHER_FINANCIAL_ASSISTANCE",
-  "purpose": "GENERAL",
-  "assistance_type": "OTHER_FINANCIAL_ASSISTANCE",
+  "organization_code": "MOSJE",
+  "domain": "SKILL_DEVELOPMENT",
+  "scheme_type": "SKILL_TRAINING",
+  "purpose": "SKILL_DEVELOPMENT",
+  "assistance_type": "TRAINING",
   "verified": true,
   "source": "Official Documentation",
-  "source_url": "Unknown"
+  "source_url": "https://nsfdc.nic.in/faqs",
+  "status": "CURRENT_ACTIVE",
+  "implementing_organizations": [
+    "NSFDC"
+  ],
+  "supported_domains": [
+    "SKILL_DEVELOPMENT"
+  ],
+  "supported_purposes": [
+    "UPSKILLING",
+    "RESKILLING",
+    "SHORT_TERM_TRAINING",
+    "LONG_TERM_TRAINING",
+    "ENTREPRENEURSHIP_DEVELOPMENT"
+  ],
+  "provenance": [
+    {
+      "source_url": "https://nsfdc.nic.in/faqs",
+      "source_title": "NSFDC — Frequently Asked Questions",
+      "source_document": "Official FAQ",
+      "source_date": "2026",
+      "retrieved_at": "2026-09-28"
+    },
+    {
+      "source_url": "https://nsfdc.nic.in/en/schemes/",
+      "source_title": "NSFDC — PM-DAKSH Skill Development",
+      "source_document": "Official NSFDC skill-development section",
+      "source_date": "2024",
+      "retrieved_at": "2026-09-28"
+    }
+  ]
 }

@@ -117,6 +117,9 @@ def check_beneficiary_category(user_profile: UserProfile, scheme: dict, result: 
 def check_income_eligibility(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
     income_param = scheme.get("parameters", {}).get("maximum_family_income_inr", {})
     limit = income_param.get("current_value")
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
+    if limit is None:
+        limit = api.get("maxAnnualFamilyIncome")
     
     if limit is None:
         return "eligible"
@@ -154,6 +157,14 @@ def check_income_eligibility(user_profile: UserProfile, scheme: dict, result: Sc
 def check_purpose_match(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
     eligible_purposes = scheme.get("parameters", {}).get("eligible_purposes", [])
     if not eligible_purposes:
+        eligible_purposes = [
+            str(value).lower()
+            for value in (
+                list(scheme.get("supported_purposes") or [])
+                + list(scheme.get("supported_domains") or [])
+            )
+        ]
+    if not eligible_purposes:
         return "eligible"
         
     user_purpose = user_profile.purpose
@@ -178,7 +189,10 @@ def check_purpose_match(user_profile: UserProfile, scheme: dict, result: SchemeE
         return "eligible"
         
     # Check bounds
-    scheme_category = scheme.get("officialCategory", "")
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
+    scheme_category = str(
+        scheme.get("domain") or api.get("officialCategory") or scheme.get("category") or ""
+    )
     is_edu_purpose = "education" in normalized_purpose or "tech" in normalized_purpose or "college" in normalized_purpose
     is_edu_scheme = "education" in scheme_category.lower()
     
@@ -209,6 +223,7 @@ def check_purpose_match(user_profile: UserProfile, scheme: dict, result: SchemeE
 
 def check_cost_limits(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
     params = scheme.get("parameters", {})
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
     
     if "cost_limits" in params:
         cost_limits = params["cost_limits"]
@@ -265,8 +280,23 @@ def check_cost_limits(user_profile: UserProfile, scheme: dict, result: SchemeEva
             
     min_cost = params.get("minimum_project_cost_inr")
     max_cost = params.get("maximum_project_cost_inr")
+    if min_cost is None or max_cost is None:
+        for rule in api.get("eligibilityRules") or []:
+            if not isinstance(rule, dict) or str(rule.get("field")) != "projectCost":
+                continue
+            value = rule.get("value")
+            if rule.get("operator") == "between" and isinstance(value, list) and len(value) == 2:
+                min_cost = value[0] if min_cost is None else min_cost
+                max_cost = value[1] if max_cost is None else max_cost
+            elif rule.get("operator") == "lte" and max_cost is None:
+                max_cost = value
+    if str(scheme.get("domain") or "").upper() == "EDUCATION":
+        user_cost = user_profile.course_cost_inr
+        if max_cost is None:
+            max_cost = api.get("maxLoanAmount")
+    else:
+        user_cost = user_profile.project_cost_inr
     
-    user_cost = user_profile.project_cost_inr
     if user_cost is None:
         result.checks.append(EvaluationCheck(
             check="project_cost",
@@ -315,6 +345,7 @@ def check_cost_limits(user_profile: UserProfile, scheme: dict, result: SchemeEva
 
 def check_financing_and_loan_limits(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
     params = scheme.get("parameters", {})
+    api = scheme.get("api") if isinstance(scheme.get("api"), dict) else {}
     req_loan = user_profile.requested_loan_amount_inr
     
     max_loan_param = params.get("maximum_loan_amount_inr", {})
@@ -325,12 +356,16 @@ def check_financing_and_loan_limits(user_profile: UserProfile, scheme: dict, res
         max_loan_val = max_loan_param.get("current_value")
     elif isinstance(max_loan_param, (int, float)):
         max_loan_val = max_loan_param
+    if max_loan_val is None:
+        max_loan_val = api.get("maxLoanAmount")
         
     max_fin_val = None
     if isinstance(max_fin_param, dict):
         max_fin_val = max_fin_param.get("current_value")
     elif isinstance(max_fin_param, (int, float)):
         max_fin_val = max_fin_param
+    if max_fin_val is None and api.get("fundingSharePct") is not None:
+        max_fin_val = float(api["fundingSharePct"]) * 100.0
 
     needs_manual_verification = False
     verification_parameters = []
@@ -359,7 +394,7 @@ def check_financing_and_loan_limits(user_profile: UserProfile, scheme: dict, res
             return "manual_verification_required"
         return "potentially_eligible"
 
-    is_edu = "education" in scheme.get("category", "")
+    is_edu = str(scheme.get("domain") or "").upper() == "EDUCATION"
     cost = user_profile.course_cost_inr if is_edu else user_profile.project_cost_inr
     
     max_possible_fin = None
@@ -424,7 +459,7 @@ def check_financing_and_loan_limits(user_profile: UserProfile, scheme: dict, res
     return status
 
 def check_education_status(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
-    is_edu = "education" in scheme.get("category", "")
+    is_edu = str(scheme.get("domain") or "").upper() == "EDUCATION"
     if not is_edu:
         return "eligible"
         

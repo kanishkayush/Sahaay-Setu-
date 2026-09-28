@@ -34,7 +34,18 @@
   "scheme_type": "EDUCATION_SCHOLARSHIP",
   "purpose": "HIGHER_EDUCATION",
   "assistance_type": "SCHOLARSHIP",
-  "verified": true,
+  "verified": false,
   "source": "Official Documentation",
-  "source_url": "Unknown"
+  "source_url": "Unknown",
+  "status": "UNCLEAR_STATUS",
+  "catalogue_visible": true,
+  "provenance": [
+    {
+      "source_url": "https://socialjustice.gov.in/schemes/25",
+      "source_title": "Ministry Official Catalogue",
+      "source_document": "Imported catalogue record",
+      "source_date": "2026-09-08",
+      "retrieved_at": "2026-09-28"
+    }
+  ]
 }

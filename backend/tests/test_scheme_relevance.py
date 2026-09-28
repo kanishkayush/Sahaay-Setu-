@@ -22,7 +22,7 @@ def _rank(profile: dict, domain: str, amount: Optional[float], organization: Opt
     return evaluated, ranked
 
 
-def test_agriculture_two_lakh_does_not_force_term_loan():
+def test_agriculture_two_lakh_uses_officially_supported_term_finance():
     _, ranked = _rank(
         {
             "purpose": "RICE_FARMING",
@@ -33,24 +33,25 @@ def test_agriculture_two_lakh_does_not_force_term_loan():
         domain="AGRICULTURE",
         amount=200000,
     )
-    assert ranked.top_recommendation is None
+    assert ranked.top_recommendation is not None
+    assert ranked.top_recommendation.scheme_id == "nsfdc-term-loan"
     assert all(a.scheme_id != FREE_COACHING_ID for a in ranked.alternatives)
     assert all("coach" not in a.scheme_name.lower() for a in ranked.alternatives)
     assert all("scholarship" not in a.scheme_name.lower() for a in ranked.alternatives)
 
 
-def test_term_loan_is_not_agriculture_relevant_from_catalogue():
+def test_term_loan_has_verified_agriculture_support_from_catalogue():
     scheme = load_scheme("nsfdc-term-loan")
     assert scheme.get("domain") == "BUSINESS"
-    assert scheme.get("purpose") == "BUSINESS"
+    assert scheme.get("purpose") == "SELF_EMPLOYMENT"
     desc = ((scheme.get("api") or {}).get("shortDescription") or {}).get("en", "").lower()
     assert "manufacturing" in desc or "transport" in desc or "service" in desc
-    assert "agricultur" not in desc and "farm" not in desc
+    assert "agricultur" in desc or "farm" in desc
     priority = scheme_relevance_priority(
         scheme,
         RelevanceQuery(assistance_type="LOAN", domain="AGRICULTURE", amount_inr=200000),
     )
-    assert priority == 0
+    assert priority > 0
     biz = scheme_relevance_priority(
         scheme,
         RelevanceQuery(assistance_type="LOAN", domain="BUSINESS", amount_inr=200000),

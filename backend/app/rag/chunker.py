@@ -35,6 +35,10 @@ class Chunk:
     metadata_quality: str = "UNKNOWN"
     min_loan_amount: float | None = None
     max_loan_amount: float | None = None
+    lifecycle_status: str = "UNCLEAR_STATUS"
+    supported_domains: str = ""
+    supported_purposes: str = ""
+    provenance_url: str = "unknown"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -59,6 +63,10 @@ class Chunk:
             "metadata_quality": self.metadata_quality,
             "min_loan_amount": self.min_loan_amount,
             "max_loan_amount": self.max_loan_amount,
+            "lifecycle_status": self.lifecycle_status,
+            "supported_domains": self.supported_domains,
+            "supported_purposes": self.supported_purposes,
+            "provenance_url": self.provenance_url,
         }
 
 def _normalize_section_name(name: str) -> str:

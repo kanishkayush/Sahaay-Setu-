@@ -107,15 +107,19 @@ export function speak(text: string, language: LanguageCode, handlers: SpeakHandl
         voices.filter((v) => v.language.startsWith(baseCode)).map((v) => v.language));
     }
 
-    Speech.speak(normalizedText, {
-      language: speechLocale,
-      voice: voiceIdentifier,
-      rate: RATE,
-      pitch: 1.0,
-      onDone: handlers.onDone,
-      onStopped: handlers.onDone,
-      onError: handlers.onError ?? handlers.onDone,
-    });
+    try {
+      Speech.speak(normalizedText, {
+        language: speechLocale,
+        voice: voiceIdentifier,
+        rate: RATE,
+        pitch: 1.0,
+        onDone: handlers.onDone,
+        onStopped: handlers.onDone,
+        onError: handlers.onError ?? handlers.onDone,
+      });
+    } catch {
+      handlers.onError?.();
+    }
   };
 
   Speech.isSpeakingAsync()

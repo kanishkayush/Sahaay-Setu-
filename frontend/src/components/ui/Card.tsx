@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { Platform, Pressable, StyleSheet, View, type ViewProps, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 import { colors, radius, shadow, spacing } from '@/theme';
 
 export type CardProps = ViewProps & {
@@ -8,7 +8,7 @@ export type CardProps = ViewProps & {
   /** Use 'glass' for translucent cards, 'solid' for form containers */
   variant?: 'solid' | 'glass';
   accessibilityLabel?: string;
-  style?: ViewStyle | ViewStyle[];
+  style?: StyleProp<ViewStyle>;
 };
 
 /**
@@ -31,10 +31,10 @@ const OUTER_PROPS = new Set([
   'marginHorizontal', 'marginVertical', 'marginStart', 'marginEnd',
 ]);
 
-function splitStyle(style) {
+function splitStyle(style: StyleProp<ViewStyle>): { outer: ViewStyle; inner: ViewStyle } {
   const flat = StyleSheet.flatten(style) ?? {};
-  const outer = {};
-  const inner = {};
+  const outer: Record<string, unknown> = {};
+  const inner: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(flat)) {
     if (OUTER_PROPS.has(key)) {
       outer[key] = val;
@@ -42,7 +42,7 @@ function splitStyle(style) {
       inner[key] = val;
     }
   }
-  return { outer, inner };
+  return { outer: outer as ViewStyle, inner: inner as ViewStyle };
 }
 
 export function Card({
@@ -52,7 +52,7 @@ export function Card({
   style,
   children,
   ...rest
-}) {
+}: CardProps) {
   const isGlass = variant === 'glass';
 
   let content;

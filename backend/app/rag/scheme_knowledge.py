@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from app.rag.chunker import Chunk
+from app.scheme_catalogue import lifecycle_status, provenance_issues
 
 SCHEMES_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "schemes"
 PLACEHOLDER_MARKERS = (
@@ -72,6 +73,7 @@ def audit_scheme(scheme: dict) -> dict[str, Any]:
         issues.append("missing_source_url")
     if api.get("minLoanAmount") is None and api.get("maxLoanAmount") is None:
         issues.append("missing_loan_amounts")
+    issues.extend(provenance_issues(scheme))
     sid = str(scheme.get("scheme_id") or "")
     if len(sid) == 36 and sid.count("-") == 4 and not str(api.get("code") or "").startswith("NSFDC"):
         issues.append("uuid_id")
@@ -85,6 +87,7 @@ def audit_scheme(scheme: dict) -> dict[str, Any]:
         "domain": scheme.get("domain"),
         "assistance_type": scheme.get("assistance_type"),
         "scheme_type": scheme.get("scheme_type"),
+        "status": lifecycle_status(scheme),
         "quality": quality,
         "issues": issues,
     }
@@ -136,6 +139,10 @@ def _chunk(
     except (TypeError, ValueError):
         max_f = None
     sid = str(scheme.get("scheme_id") or "unknown")
+    provenance = scheme.get("provenance") if isinstance(scheme.get("provenance"), list) else []
+    provenance_url = source_url
+    if provenance and isinstance(provenance[0], dict):
+        provenance_url = str(provenance[0].get("source_url") or source_url)
     return Chunk(
         chunk_id=f"{sid}__{section}__{idx}",
         scheme_id=sid,
@@ -158,6 +165,10 @@ def _chunk(
         metadata_quality=quality,
         min_loan_amount=min_f,
         max_loan_amount=max_f,
+        lifecycle_status=lifecycle_status(scheme),
+        supported_domains=",".join(str(x) for x in scheme.get("supported_domains", [])),
+        supported_purposes=",".join(str(x) for x in scheme.get("supported_purposes", [])),
+        provenance_url=provenance_url,
     )
 
 
@@ -183,7 +194,14 @@ def chunks_for_scheme(scheme: dict) -> list[Chunk]:
         f"Assistance type: {assistance}",
         f"Scheme type: {scheme_type}",
         f"Purpose: {purpose}",
+        f"Lifecycle status: {lifecycle_status(scheme)}",
     ]
+    supported_domains = scheme.get("supported_domains") or []
+    supported_purposes = scheme.get("supported_purposes") or []
+    if supported_domains:
+        overview_lines.append("Supported domains: " + ", ".join(str(x) for x in supported_domains))
+    if supported_purposes:
+        overview_lines.append("Supported purposes: " + ", ".join(str(x) for x in supported_purposes))
     if desc and not _is_placeholder(desc):
         overview_lines.append(desc)
     else:
@@ -197,6 +215,10 @@ def chunks_for_scheme(scheme: dict) -> list[Chunk]:
     if desc and not _is_placeholder(desc):
         purpose_text.append(f"Who this scheme is for / purpose:\n{desc}")
     purpose_text.append(f"Recorded purpose: {purpose}. Domain: {domain}.")
+    if supported_domains:
+        purpose_text.append("Verified supported domains: " + ", ".join(str(x) for x in supported_domains) + ".")
+    if supported_purposes:
+        purpose_text.append("Verified supported purposes: " + ", ".join(str(x) for x in supported_purposes) + ".")
     chunks.append(_chunk(scheme, "purpose", "\n".join(purpose_text), idx, quality))
     idx += 1
 
@@ -236,7 +258,15 @@ def chunks_for_scheme(scheme: dict) -> list[Chunk]:
         chunks.append(_chunk(
             scheme,
             "eligible_activities",
-            f"Eligible activity notes for {name}:\n{desc}\nRecorded purpose: {purpose}.",
+            (
+                f"Eligible activity notes for {name}:\n{desc}\nRecorded purpose: {purpose}."
+                + (
+                    "\nVerified supported purposes: "
+                    + ", ".join(str(x) for x in supported_purposes)
+                    + "."
+                    if supported_purposes else ""
+                )
+            ),
             idx,
             quality,
         ))

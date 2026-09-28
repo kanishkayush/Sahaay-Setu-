@@ -127,8 +127,6 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     marginTop: 2,
     paddingHorizontal: 2,
-    // Prevent long translated labels from pushing icons out of alignment
-    numberOfLines: 1,
   },
   item: {
     // Ensure every tab item allocates the same space for the icon row

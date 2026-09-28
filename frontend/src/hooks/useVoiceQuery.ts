@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { AssistantAction, Citation, LanguageCode } from '@/api/contracts';
 import { askAssistant } from '@/api/services';
-import { speak, stopSpeaking } from '@/features/voice/textToSpeech';
+import { canSpeak as canSpeakLanguage, speak, stopSpeaking } from '@/features/voice/textToSpeech';
 import { useCanSpeak } from './useCanSpeak';
 import { useSpeechInput, type SpeechInputError } from './useSpeechInput';
 import { useQueryClient } from '@tanstack/react-query';
+import { acceptAdviserSessionId, getAdviserSessionId } from '@/features/adviser/session';
 
 /**
  * The voice pipeline, as one state machine.
@@ -32,7 +33,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export type VoicePhase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
-export type VoiceError = SpeechInputError | 'CHAT_FAILED' | 'EMPTY_TRANSCRIPT';
+export type VoiceError = SpeechInputError | 'CHAT_FAILED' | 'EMPTY_TRANSCRIPT' | 'TTS_ERROR';
 
 export type VoiceTurn = {
   question: string;
@@ -41,25 +42,13 @@ export type VoiceTurn = {
   actions: AssistantAction[];
   uiCards: import('@/api/contracts').AssistantUICard[];
   followUps: string[];
+  answerLanguage: LanguageCode;
   /** False → the assistant could not ground the answer; the UI must warn. */
   grounded: boolean;
   sessionId?: string;
   /** Which Guided Journey field the backend is waiting for next. */
-  expectedField?: 'pinCode' | 'existingBusiness' | 'estimatedProjectCost' | 'general' | null;
+  expectedField?: 'pinCode' | 'existingBusiness' | 'estimatedProjectCost' | 'activity' | 'annualFamilyIncome' | 'scEligibilityStatus' | 'general' | null;
 };
-
-// Generate a UUID (RFC 4122 v4) without any external dependency.
-function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  // Fallback for environments that lack crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 export function useVoiceQuery(language: LanguageCode) {
   const queryClient = useQueryClient();
@@ -84,6 +73,7 @@ export function useVoiceQuery(language: LanguageCode) {
    */
   const generation = useRef(0);
   const abortController = useRef<AbortController | null>(null);
+  const requestInFlight = useRef(false);
 
   const ask = useCallback(
     async (question: string) => {
@@ -94,15 +84,21 @@ export function useVoiceQuery(language: LanguageCode) {
         setBusyPhase('idle');
         return;
       }
+      // A recognition engine may emit the same final event twice. One active
+      // utterance owns exactly one adviser request.
+      if (requestInFlight.current) return;
+      requestInFlight.current = true;
 
       // Ensure we have a stable session ID before the first request.
       if (!sessionId.current) {
-        sessionId.current = generateUUID();
+        sessionId.current = getAdviserSessionId();
       }
 
       generation.current += 1;
       const mine = generation.current;
-      setTranscript(trimmed);
+      // Keep the visible transcript faithful to the STT provider. Trimming is
+      // only used for the backend query.
+      setTranscript(question);
       setBusyPhase('thinking');
       setChatError(null);
 
@@ -146,16 +142,17 @@ export function useVoiceQuery(language: LanguageCode) {
 
         // Update sessionId if backend echoes one (it should match what we sent).
         if (response.sessionId) {
-          sessionId.current = response.sessionId;
+          sessionId.current = acceptAdviserSessionId(response.sessionId);
         }
 
         setTurn({
-          question: trimmed,
+          question,
           answer: response.answer,
           citations: response.citations,
           actions: response.suggestedActions,
           uiCards: response.uiCards ?? [],
           followUps: response.followUpQuestions,
+          answerLanguage: response.answerLanguage,
           grounded: response.grounded,
           sessionId: sessionId.current,
           expectedField: response.expectedField ?? null,
@@ -167,14 +164,26 @@ export function useVoiceQuery(language: LanguageCode) {
 
         // No voice for this language: leave the answer on screen rather than
         // reading it in the wrong phonetics and reporting success.
-        if (!canRead) {
+        const responseCanRead = await canSpeakLanguage(response.answerLanguage);
+        if (!responseCanRead) {
+          requestInFlight.current = false;
           setBusyPhase('idle');
           return;
         }
         setBusyPhase('speaking');
-        speak(response.answer, language, {
+        speak(response.answer, response.answerLanguage, {
           onDone: () => {
-            if (generation.current === mine) setBusyPhase('idle');
+            if (generation.current === mine) {
+              requestInFlight.current = false;
+              setBusyPhase('idle');
+            }
+          },
+          onError: () => {
+            if (generation.current === mine) {
+              setChatError('TTS_ERROR');
+              requestInFlight.current = false;
+              setBusyPhase('idle');
+            }
           },
         });
       } catch (e) {
@@ -182,10 +191,11 @@ export function useVoiceQuery(language: LanguageCode) {
         if (generation.current !== mine) return;
         console.error('[VOICE] API Error:', e);
         setChatError('CHAT_FAILED');
+        requestInFlight.current = false;
         setBusyPhase('idle');
       }
     },
-    [canRead, language, queryClient],
+    [language, queryClient],
   );
 
   const speech = useSpeechInput(language, {
@@ -214,6 +224,7 @@ export function useVoiceQuery(language: LanguageCode) {
     abortController.current = null;
     speech.cancel();
     stopSpeaking();
+    requestInFlight.current = false;
     setBusyPhase('idle');
   }, [speech]);
 
@@ -221,6 +232,7 @@ export function useVoiceQuery(language: LanguageCode) {
   const clearLastResponse = useCallback(() => {
     generation.current += 1; // Discard any pending results for this generation
     stopSpeaking();
+    requestInFlight.current = false;
     setTranscript('');
     setTurn(null);
     setChatError(null);
@@ -232,12 +244,12 @@ export function useVoiceQuery(language: LanguageCode) {
     if (!turn || !canRead) return;
     const mine = generation.current;
     setBusyPhase('speaking');
-    speak(turn.answer, language, {
+    speak(turn.answer, turn.answerLanguage, {
       onDone: () => {
         if (generation.current === mine) setBusyPhase('idle');
       },
     });
-  }, [canRead, language, turn]);
+  }, [canRead, turn]);
 
   /** Expose the current sessionId for display in the debug panel. */
   const currentSessionId = sessionId.current;

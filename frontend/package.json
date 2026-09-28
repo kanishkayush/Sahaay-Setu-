@@ -42,7 +42,8 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "^10.0.0",
     "prettier": "^3.9.6",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
   },
   "scripts": {
     "start": "expo start",
@@ -56,6 +57,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/check-i18n.mjs",
+    "test": "vitest run src/features/voice",
     "verify": "npm run typecheck && npm run lint && npm run i18n:check",
     "build": "npx expo export -p web",
     "vercel-build": "npx expo export -p web"

@@ -34,7 +34,18 @@
   "scheme_type": "OTHER_FINANCIAL_ASSISTANCE",
   "purpose": "GENERAL",
   "assistance_type": "OTHER_FINANCIAL_ASSISTANCE",
-  "verified": true,
+  "verified": false,
   "source": "Official Documentation",
-  "source_url": "https://nsfdc.nic.in"
+  "source_url": "https://nsfdc.nic.in",
+  "status": "UNCLEAR_STATUS",
+  "catalogue_visible": true,
+  "provenance": [
+    {
+      "source_url": "https://socialjustice.gov.in/schemes/34",
+      "source_title": "Ministry Official Catalogue",
+      "source_document": "Imported catalogue record",
+      "source_date": "2026-09-08",
+      "retrieved_at": "2026-09-28"
+    }
+  ]
 }

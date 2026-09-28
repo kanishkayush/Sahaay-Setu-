@@ -57,7 +57,9 @@
     ],
     "citations": [],
     "verified": false,
-    "lastUpdatedAt": "2026-09-07T00:00:00.000Z"
+    "lastUpdatedAt": "2026-09-07T00:00:00.000Z",
+    "lastVerified": "2026-09-28",
+    "verificationStatus": "STATUS_UNCLEAR"
   },
   "organization": "NSFDC",
   "organization_code": "NSFDC",
@@ -67,5 +69,15 @@
   "assistance_type": "LOAN",
   "verified": true,
   "source": "Official Documentation",
-  "source_url": "https://nsfdc.nic.in"
+  "source_url": "https://nsfdc.nic.in/en/schemes/",
+  "status": "UNCLEAR_STATUS",
+  "provenance": [
+    {
+      "source_url": "https://nsfdc.nic.in/en/schemes/",
+      "source_title": "NSFDC — Legacy English Scheme Catalogue",
+      "source_document": "Older official English catalogue",
+      "source_date": "2024-04-16",
+      "retrieved_at": "2026-09-28"
+    }
+  ]
 }

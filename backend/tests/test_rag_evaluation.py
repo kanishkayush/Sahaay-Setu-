@@ -76,14 +76,15 @@ def test_devanagari_padhai_is_education_loan_not_generic(rag_store):
         ("mujhe chawal ki kheti ke liye loan chahiye", "hi"),
     ],
 )
-def test_agriculture_has_no_grounded_nsfdc_match(rag_store, query, lang):
+def test_agriculture_retrieves_verified_general_term_finance(rag_store, query, lang):
     det = detect_language_and_intent(query)
     spec, ranked = _top(query)
     assert det.detected_language == lang
     assert spec.assistance_type == "LOAN"
     assert spec.domain == "AGRICULTURE"
     assert spec.organization_scope == "NSFDC"
-    assert ranked == []
+    assert ranked and ranked[0].scheme_id == "nsfdc-term-loan"
+    assert ranked[0].lifecycle_status == "CURRENT_ACTIVE"
     ids = {s.scheme_id for s in ranked}
     assert FREE_COACHING not in ids
 
@@ -113,7 +114,7 @@ def test_amount_followup_keeps_agriculture_context(rag_store):
     assert spec.domain == "AGRICULTURE"
     assert spec.requested_amount == 200000
     assert spec.activity == "RICE_FARMING"
-    assert ranked == []
+    assert ranked and ranked[0].scheme_id == "nsfdc-term-loan"
 
 
 def test_btech_keeps_education_loan(rag_store):
@@ -130,7 +131,7 @@ def test_btech_keeps_education_loan(rag_store):
 
 def test_agriculture_negative_not_coaching_or_scholarship(rag_store):
     _, ranked = _top("maine chawal ki kheti ke liye loan manga tha")
-    assert ranked == []
+    assert ranked and ranked[0].scheme_id == "nsfdc-term-loan"
     chunks = retrieve("chawal kheti loan", organization_filter="NSFDC", domain_filter="AGRICULTURE", assistance_type_filter="LOAN")
     assert all(c.chunk.scheme_id != FREE_COACHING for c in chunks)
     assert all("scholarship" not in c.chunk.scheme_name.lower() for c in chunks)
@@ -167,7 +168,8 @@ def test_dairy_and_poultry_not_forced_to_gbs(rag_store):
     for q, act in (("dairy farming loan", "DAIRY_FARMING"), ("poultry loan", "POULTRY")):
         profile = ChatProfile(activity=act)
         _, ranked = _top(q, profile)
-        assert ranked == []
+        assert ranked and ranked[0].scheme_id == "nsfdc-term-loan"
+        assert all(s.scheme_id != "nsfdc-gbs" for s in ranked)
 
 
 def test_ambiguous_loan_does_not_return_coaching(rag_store):
@@ -205,7 +207,7 @@ def test_short_activity_replies_keep_loan_intent(rag_store):
     agri = ChatProfile(activity="FARMING")
     rice_spec, rice_ranked = _top("chawal", agri)
     assert rice_spec.domain == "AGRICULTURE"
-    assert rice_ranked == []
+    assert rice_ranked and rice_ranked[0].scheme_id == "nsfdc-term-loan"
     rice2, _ = _top("rice", agri)
     assert rice2.domain == "AGRICULTURE"
     edu = ChatProfile(projectType="EDUCATION", activity="EDUCATION_LOAN")

@@ -1,7 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { askAssistant } from '@/api/services';
-import type { ChatMessage, LanguageCode } from '@/api/contracts';
-import { useAppStore } from '@/store/useAppStore';
+import type { ChatMessage, LanguageCode, UserProfile } from '@/api/contracts';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  acceptAdviserSessionId,
+  getAdviserSessionId,
+  resetAdviserSession,
+} from '@/features/adviser/session';
 
 let idCounter = 0;
 const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
@@ -13,7 +18,7 @@ const nextId = () => `local-${Date.now()}-${(idCounter += 1)}`;
  * session-scoped — we deliberately do not persist question history to disk.
  */
 export function useAssistant(language: LanguageCode) {
-  const profile = useAppStore((state) => state.profile);
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const sessionId = useRef<string | undefined>(undefined);
@@ -38,18 +43,20 @@ export function useAssistant(language: LanguageCode) {
       setIsThinking(true);
 
       try {
+        const persistentProfile = queryClient.getQueryData<UserProfile>(['profile']);
+        const coordinates = persistentProfile?.address.coordinates;
         const response = await askAssistant({
           query: trimmed,
           responseLanguage: language,
           history,
-          profileContext: profile?.address?.coordinates ? {
-            latitude: profile.address.coordinates.latitude,
-            longitude: profile.address.coordinates.longitude,
+          profileContext: coordinates ? {
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
           } : undefined,
-          sessionId: sessionId.current,
+          sessionId: sessionId.current ?? getAdviserSessionId(),
           guideMe: true,
         });
-        sessionId.current = response.sessionId ?? sessionId.current;
+        sessionId.current = acceptAdviserSessionId(response.sessionId ?? undefined);
 
         setMessages((prev) => [
           ...prev,
@@ -80,12 +87,13 @@ export function useAssistant(language: LanguageCode) {
         setIsThinking(false);
       }
     },
-    [isThinking, language, messages],
+    [isThinking, language, messages, queryClient],
   );
 
   const clear = useCallback(() => {
     setMessages([]);
     sessionId.current = undefined;
+    resetAdviserSession();
   }, []);
 
   return { messages, isThinking, send, clear };

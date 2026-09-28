@@ -177,8 +177,8 @@ def assistant_query_adapter(
     return AssistantQueryResponse(
         messageId=str(uuid.uuid4()),
         answer=chat_response.answer,
-        answerLanguage=request.responseLanguage,
-        detectedQueryLanguage=request.responseLanguage,
+        answerLanguage=chat_response.language,
+        detectedQueryLanguage=chat_request.language or request.responseLanguage,
         citations=chat_response.citations,
         suggestedActions=[],
         uiCards=[card.model_dump(exclude_none=True) if hasattr(card, 'model_dump') else card for card in getattr(chat_response, 'ui_cards', [])],
@@ -197,23 +197,17 @@ from app.schemas.assistant import TranscriptionRequest, TranscriptionResponse
 def transcribe_audio(request: TranscriptionRequest) -> TranscriptionResponse:
     """
     Backend STT proxy. Accepts base64 audio from the frontend, sends it to 
-    Sarvam AI (or fallback), and returns the transcript.
+    Sarvam AI and returns the verbatim transcript.
     """
     sarvam_api_key = os.getenv("SARVAM_API_KEY", "")
-    
+    if not sarvam_api_key or sarvam_api_key == "test":
+        raise HTTPException(
+            status_code=503,
+            detail="Speech transcription is not configured.",
+        )
+
     try:
         audio_bytes = base64.b64decode(request.audioBase64)
-        
-        if not sarvam_api_key or sarvam_api_key == "test":
-            # Mock response for local development when no real key is provided
-            fallback_text = "This is a fallback transcription from the backend."
-            if request.language == "hi":
-                fallback_text = "मुझे डेयरी फार्मिंग के लिए लोन चाहिए।"
-            return TranscriptionResponse(
-                text=fallback_text,
-                detectedLanguage=request.language or "en",
-                confidence=0.9
-            )
             
         url = "https://api.sarvam.ai/speech-to-text"
         headers = {"api-subscription-key": sarvam_api_key}
@@ -238,5 +232,4 @@ def transcribe_audio(request: TranscriptionRequest) -> TranscriptionResponse:
         )
     except Exception as e:
         print(f"Transcription error: {e}")
-        # Return empty string instead of failing, to let the UI handle it gracefully
-        return TranscriptionResponse(text="")
+        raise HTTPException(status_code=502, detail="Speech transcription failed.") from e

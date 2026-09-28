@@ -1,0 +1,1388 @@
+{
+  "dataset_version": "v1",
+  "evaluated_on": "2026-09-28",
+  "single_turn_cases": 220,
+  "voice_like_cases": 20,
+  "multi_turn_conversations": 20,
+  "overall": {
+    "recall_1": 0.525,
+    "recall_3": 0.5375,
+    "recall_5": 0.5375,
+    "mrr": 0.5312,
+    "language": 0.9667,
+    "domain": 0.7708,
+    "assistance": 0.95,
+    "organization": 1.0,
+    "contamination_free": 1.0,
+    "active_grounded": 0.5458,
+    "count": 240
+  },
+  "groups": {
+    "education": {
+      "recall_1": 0.95,
+      "recall_3": 0.95,
+      "recall_5": 0.95,
+      "mrr": 0.95,
+      "language": 0.9833,
+      "domain": 0.95,
+      "assistance": 0.9833,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.05,
+      "count": 60
+    },
+    "business": {
+      "recall_1": 0.6833,
+      "recall_3": 0.6833,
+      "recall_5": 0.6833,
+      "mrr": 0.6833,
+      "language": 0.9833,
+      "domain": 0.6833,
+      "assistance": 0.9167,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.3167,
+      "count": 60
+    },
+    "agriculture": {
+      "recall_1": 0.0,
+      "recall_3": 0.0167,
+      "recall_5": 0.0167,
+      "mrr": 0.0083,
+      "language": 0.9667,
+      "domain": 0.7167,
+      "assistance": 0.95,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.9833,
+      "count": 60
+    },
+    "livestock": {
+      "recall_1": 0.0,
+      "recall_3": 0.1,
+      "recall_5": 0.1,
+      "mrr": 0.05,
+      "language": 1.0,
+      "domain": 0.75,
+      "assistance": 1.0,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.9,
+      "count": 20
+    },
+    "ambiguous": {
+      "recall_1": 1.0,
+      "recall_3": 1.0,
+      "recall_5": 1.0,
+      "mrr": 1.0,
+      "language": 0.9,
+      "domain": 0.6,
+      "assistance": 1.0,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 1.0,
+      "count": 20
+    },
+    "voice": {
+      "recall_1": 0.4,
+      "recall_3": 0.4,
+      "recall_5": 0.4,
+      "mrr": 0.4,
+      "language": 0.9,
+      "domain": 0.85,
+      "assistance": 0.85,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.6,
+      "count": 20
+    }
+  },
+  "language_variants": {
+    "english": {
+      "recall_1": 0.5833,
+      "recall_3": 0.5833,
+      "recall_5": 0.5833,
+      "mrr": 0.5833,
+      "language": 0.95,
+      "domain": 0.8667,
+      "assistance": 0.9833,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.4167,
+      "count": 60
+    },
+    "hindi": {
+      "recall_1": 0.4667,
+      "recall_3": 0.4833,
+      "recall_5": 0.4833,
+      "mrr": 0.475,
+      "language": 1.0,
+      "domain": 0.6833,
+      "assistance": 0.9167,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.5167,
+      "count": 60
+    },
+    "roman_hindi": {
+      "recall_1": 0.5833,
+      "recall_3": 0.5833,
+      "recall_5": 0.5833,
+      "mrr": 0.5833,
+      "language": 0.9833,
+      "domain": 0.8,
+      "assistance": 0.95,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.4167,
+      "count": 60
+    },
+    "mixed": {
+      "recall_1": 0.0,
+      "recall_3": 0.1,
+      "recall_5": 0.1,
+      "mrr": 0.05,
+      "language": 1.0,
+      "domain": 0.75,
+      "assistance": 1.0,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.9,
+      "count": 20
+    },
+    "other": {
+      "recall_1": 0.7,
+      "recall_3": 0.7,
+      "recall_5": 0.7,
+      "mrr": 0.7,
+      "language": 0.9,
+      "domain": 0.725,
+      "assistance": 0.925,
+      "organization": 1.0,
+      "contamination_free": 1.0,
+      "active_grounded": 0.8,
+      "count": 40
+    }
+  },
+  "no_match_precision": 1.0,
+  "multi_turn": {
+    "count": 20,
+    "context_retention": 0.7,
+    "topic_switch_accuracy": 0.9,
+    "final_retrieval_relevance": 0.4,
+    "failures": [
+      {
+        "id": "multi-04",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-05",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-06",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-07",
+        "domains": [
+          "BUSINESS",
+          "BUSINESS",
+          null
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-08",
+        "domains": [
+          "BUSINESS",
+          "OTHER",
+          null
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-09",
+        "domains": [
+          "BUSINESS",
+          null,
+          null
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-10",
+        "domains": [
+          "EDUCATION",
+          "EDUCATION",
+          "EDUCATION",
+          "EDUCATION"
+        ],
+        "actual": [
+          "nsfdc-education"
+        ]
+      },
+      {
+        "id": "multi-11",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-13",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-15",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-17",
+        "domains": [
+          "OTHER",
+          "BUSINESS",
+          null
+        ],
+        "actual": []
+      },
+      {
+        "id": "multi-18",
+        "domains": [
+          "AGRICULTURE",
+          "AGRICULTURE",
+          "AGRICULTURE"
+        ],
+        "actual": []
+      }
+    ]
+  },
+  "top_1_failures": [
+    {
+      "id": "education-hindi-03",
+      "query": "बीटेक के लिए चार लाख चाहिए",
+      "expected": [
+        "nsfdc-education"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "education-hindi-09",
+      "query": "डिप्लोमा पढ़ने के लिए लोन चाहिए",
+      "expected": [
+        "nsfdc-education"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "education-hindi-15",
+      "query": "बीसीए की फीस हेतु ऋण",
+      "expected": [
+        "nsfdc-education"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-english-03",
+      "query": "Finance for self employment",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-english-05",
+      "query": "Credit to start tailoring",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-english-07",
+      "query": "Money to open a salon",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-english-10",
+      "query": "Loan to start catering",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-english-16",
+      "query": "Credit for an income generating activity",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "business-hindi-03",
+      "query": "स्वरोजगार के लिए पैसा चाहिए",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-05",
+      "query": "सिलाई का काम शुरू करने के लिए लोन",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-07",
+      "query": "सैलून खोलने के लिए पैसा",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-08",
+      "query": "छोटे उद्यम के लिए लोन",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-09",
+      "query": "काम के औजार खरीदने हैं",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "business-hindi-14",
+      "query": "निर्माण इकाई के लिए लोन",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-16",
+      "query": "आय वाला काम शुरू करने के लिए ऋण",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-hindi-17",
+      "query": "व्यावसायिक वाहन खरीदना है",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "business-hindi-18",
+      "query": "सूक्ष्म उद्यम के लिए वित्त",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-roman_hindi-03",
+      "query": "swarozgar ke liye paisa",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-roman_hindi-05",
+      "query": "silai ka kaam shuru karna hai",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "business-roman_hindi-07",
+      "query": "salon kholne ke liye paisa",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "business-roman_hindi-09",
+      "query": "apne kaam ke tools kharidne hain",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "business-roman_hindi-16",
+      "query": "income generating kaam ka loan",
+      "expected": [
+        "nsfdc-uny",
+        "nsfdc-amy",
+        "nsfdc-mfs",
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-english-01",
+      "query": "I need a loan for farming",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-02",
+      "query": "Finance for crop cultivation",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-03",
+      "query": "Loan to grow rice",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-04",
+      "query": "Credit for wheat farming",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-05",
+      "query": "Money for vegetable cultivation",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-english-06",
+      "query": "Agriculture activity loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-07",
+      "query": "I need finance for my farm",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-08",
+      "query": "Loan for horticulture work",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-09",
+      "query": "Credit for allied agriculture",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-10",
+      "query": "Funds to start crop production",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-11",
+      "query": "I need two lakh for farming",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-12",
+      "query": "Finance for farm inputs",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-13",
+      "query": "Loan for cultivation work",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-english-14",
+      "query": "Support for an income generating farm activity",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-15",
+      "query": "Agriculture self employment loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-16",
+      "query": "I want to grow crops commercially",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-17",
+      "query": "Farm enterprise finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-18",
+      "query": "Loan for seasonal cultivation",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-english-19",
+      "query": "Funding for a small agriculture project",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-english-20",
+      "query": "Credit for my crop business",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-01",
+      "query": "मुझे खेती के लिए लोन चाहिए",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-02",
+      "query": "फसल उगाने के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-hindi-03",
+      "query": "चावल की खेती के लिए पैसा",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-04",
+      "query": "गेहूं की खेती के लिए लोन",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-05",
+      "query": "सब्जी उगाने के लिए वित्त",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-hindi-06",
+      "query": "कृषि काम के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-07",
+      "query": "अपने खेत के लिए पैसा चाहिए",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-hindi-08",
+      "query": "बागवानी के लिए लोन",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-hindi-09",
+      "query": "कृषि से जुड़े काम के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-10",
+      "query": "फसल उत्पादन शुरू करना है",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "agriculture-hindi-11",
+      "query": "खेती के लिए दो लाख चाहिए",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-12",
+      "query": "खेती की सामग्री के लिए वित्त",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-13",
+      "query": "खेती के काम के लिए लोन",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-14",
+      "query": "आय देने वाली कृषि गतिविधि के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-15",
+      "query": "कृषि स्वरोजगार के लिए पैसा",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-16",
+      "query": "व्यावसायिक फसल उगानी है",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "agriculture-hindi-17",
+      "query": "कृषि उद्यम के लिए वित्त",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-18",
+      "query": "मौसमी खेती के लिए लोन",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-19",
+      "query": "छोटी कृषि परियोजना के लिए धन",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-hindi-20",
+      "query": "मेरे फसल व्यवसाय के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [
+        "nsfdc-mfs",
+        "nsfdc-term-loan",
+        "nsfdc-msy",
+        "nsfdc-amy"
+      ],
+      "domain": "BUSINESS"
+    },
+    {
+      "id": "agriculture-roman_hindi-01",
+      "query": "mujhe kheti ke liye loan chahiye",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-02",
+      "query": "fasal ugane ke liye rin",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-03",
+      "query": "chawal ki kheti ke liye paisa",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-04",
+      "query": "gehun farming ka loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-05",
+      "query": "sabji ugane ke liye finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-06",
+      "query": "krishi kaam ke liye loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-07",
+      "query": "apne khet ke liye paisa",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-08",
+      "query": "bagwani ke liye loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-09",
+      "query": "agriculture allied kaam ka rin",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-10",
+      "query": "crop production shuru karna hai",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-11",
+      "query": "kheti ke liye do lakh",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-12",
+      "query": "farm inputs ke liye finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-13",
+      "query": "cultivation work ka loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-14",
+      "query": "income wali agriculture activity chahiye",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-15",
+      "query": "krishi self employment ka loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-16",
+      "query": "commercial fasal mujhe ugani hai",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "agriculture-roman_hindi-17",
+      "query": "farm enterprise ke liye finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-18",
+      "query": "seasonal cultivation ka loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "agriculture-roman_hindi-19",
+      "query": "small agriculture project ke liye funding",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "agriculture-roman_hindi-20",
+      "query": "meri crop business ke liye credit",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-01",
+      "query": "I want to start a dairy farm",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-02",
+      "query": "मुझे डेयरी फार्म शुरू करना है",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-03",
+      "query": "mujhe dairy ke liye loan chahiye",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-04",
+      "query": "Loan for milk production",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "livestock-05",
+      "query": "दूध का व्यवसाय शुरू करने के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [
+        "nsfdc-mfs",
+        "nsfdc-term-loan",
+        "nsfdc-msy",
+        "nsfdc-amy"
+      ],
+      "domain": "BUSINESS"
+    },
+    {
+      "id": "livestock-06",
+      "query": "pashupalan ke liye finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-07",
+      "query": "I need a poultry loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-08",
+      "query": "मुर्गी पालन के लिए लोन चाहिए",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-09",
+      "query": "murgi farm shuru karna hai",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-10",
+      "query": "Finance for a poultry unit",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-11",
+      "query": "Loan for goat rearing",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "livestock-12",
+      "query": "बकरी पालन के लिए ऋण",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-13",
+      "query": "bakri palan ka loan",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-14",
+      "query": "Credit for livestock activity",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-15",
+      "query": "पशुधन व्यवसाय के लिए पैसा",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [
+        "nsfdc-mfs",
+        "nsfdc-term-loan",
+        "nsfdc-msy",
+        "nsfdc-amy"
+      ],
+      "domain": "BUSINESS"
+    },
+    {
+      "id": "livestock-16",
+      "query": "doodh dairy business ke liye finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-17",
+      "query": "Small dairy enterprise finance",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-18",
+      "query": "डेयरी इकाई के लिए दो लाख",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-19",
+      "query": "poultry business ke liye paisa",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "livestock-20",
+      "query": "Self employment loan for animal husbandry",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "OTHER"
+    },
+    {
+      "id": "voice-01",
+      "query": "Farming",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-02",
+      "query": "खेती",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-03",
+      "query": "kheti",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-05",
+      "query": "बीटेक",
+      "expected": [
+        "nsfdc-education"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "voice-06",
+      "query": "dairy",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-07",
+      "query": "डेयरी",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-08",
+      "query": "poultry",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-09",
+      "query": "मुर्गी",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-15",
+      "query": "crop",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-16",
+      "query": "फसल",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    },
+    {
+      "id": "voice-17",
+      "query": "rice",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": "AGRICULTURE"
+    },
+    {
+      "id": "voice-18",
+      "query": "चावल",
+      "expected": [
+        "nsfdc-term-loan"
+      ],
+      "actual": [],
+      "domain": null
+    }
+  ]
+}

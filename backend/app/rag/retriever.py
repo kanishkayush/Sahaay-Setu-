@@ -59,6 +59,11 @@ class RankedScheme:
     score: float
     relevance_priority: int
     chunks: list[RetrievedChunk]
+    semantic_score: float = 0.0
+    lexical_score: float = 0.0
+    evidence_count: int = 0
+    lifecycle_status: str = "UNCLEAR_STATUS"
+    why_retrieved: str = ""
 
 
 def _get_store() -> VectorStore:
@@ -163,6 +168,8 @@ def retrieve_ranked_schemes(
         (retrieval_query.organization_scope if retrieval_query else None)
         or organization_filter
     )
+    if org == "":
+        org = None
     if not scheme_id_filter and (not domain or str(domain).upper() == "OTHER"):
         return []
     relevance = None
@@ -174,56 +181,82 @@ def retrieve_ranked_schemes(
             amount_inr=amount,
         )
 
-    def keep(chunk: Chunk) -> bool:
-        if strict_scheme_filter and scheme_id_filter and chunk.scheme_id != scheme_id_filter:
-            return False
-        return _keep_chunk(chunk, org, relevance)
-
     query_vec = embed([search_text])[0]
-    raw = store.search(query_vec, top_k=max(80, top_k * 12), keep=keep)
 
-    by_scheme: dict[str, RankedScheme] = {}
-    for chunk, cosine in raw:
-        if scheme_id_filter and strict_scheme_filter and chunk.scheme_id != scheme_id_filter:
-            continue
-        try:
-            scheme = load_scheme(chunk.scheme_id)
-            priority = scheme_relevance_priority(scheme, relevance) if relevance else 1
-        except Exception:
-            continue
-        if relevance and priority <= 0:
-            continue
-        lexical = _lexical_score(search_text, chunk)
-        quality_penalty = 0.0 if chunk.metadata_quality == "SUFFICIENT" else (
-            -4.0 if chunk.metadata_quality == "INSUFFICIENT" else -1.0
-        )
-        combined = (priority * 10.0) + (lexical * 4.0) + (float(cosine) * 1.0) + quality_penalty
-        rc = RetrievedChunk(chunk, combined)
-        existing = by_scheme.get(chunk.scheme_id)
-        if existing is None:
-            by_scheme[chunk.scheme_id] = RankedScheme(
-                scheme_id=chunk.scheme_id,
-                scheme_name=chunk.scheme_name,
-                organization=chunk.organization,
-                domain=chunk.domain,
-                assistance_type=chunk.assistance_type,
-                score=combined,
-                relevance_priority=priority,
-                chunks=[rc],
+    def rank_for_org(org_filter: str | None) -> list[RankedScheme]:
+        def keep(chunk: Chunk) -> bool:
+            if strict_scheme_filter and scheme_id_filter and chunk.scheme_id != scheme_id_filter:
+                return False
+            return _keep_chunk(chunk, org_filter, relevance)
+
+        raw = store.search(query_vec, top_k=max(80, top_k * 12), keep=keep)
+        by_scheme: dict[str, RankedScheme] = {}
+        for chunk, cosine in raw:
+            if scheme_id_filter and strict_scheme_filter and chunk.scheme_id != scheme_id_filter:
+                continue
+            try:
+                scheme = load_scheme(chunk.scheme_id)
+                priority = scheme_relevance_priority(scheme, relevance) if relevance else 1
+            except Exception:
+                continue
+            if relevance and priority <= 0:
+                continue
+            lexical = _lexical_score(search_text, chunk)
+            quality_penalty = 0.0 if chunk.metadata_quality == "SUFFICIENT" else (
+                -4.0 if chunk.metadata_quality == "INSUFFICIENT" else -1.0
             )
-        else:
-            existing.chunks.append(rc)
-            if combined > existing.score:
-                existing.score = combined
-            if priority > existing.relevance_priority:
-                existing.relevance_priority = priority
+            combined = (priority * 10.0) + (lexical * 4.0) + (float(cosine) * 1.0) + quality_penalty
+            rc = RetrievedChunk(chunk, combined)
+            existing = by_scheme.get(chunk.scheme_id)
+            if existing is None:
+                by_scheme[chunk.scheme_id] = RankedScheme(
+                    scheme_id=chunk.scheme_id,
+                    scheme_name=chunk.scheme_name,
+                    organization=chunk.organization,
+                    domain=chunk.domain,
+                    assistance_type=chunk.assistance_type,
+                    score=combined,
+                    relevance_priority=priority,
+                    chunks=[rc],
+                    semantic_score=float(cosine),
+                    lexical_score=lexical,
+                    evidence_count=1,
+                    lifecycle_status=chunk.lifecycle_status,
+                    why_retrieved=(
+                        f"purpose/domain compatibility={priority}; "
+                        f"semantic={float(cosine):.3f}; lexical={lexical:.3f}"
+                    ),
+                )
+            else:
+                existing.chunks.append(rc)
+                existing.evidence_count += 1
+                if combined > existing.score:
+                    existing.score = combined
+                if float(cosine) > existing.semantic_score:
+                    existing.semantic_score = float(cosine)
+                if lexical > existing.lexical_score:
+                    existing.lexical_score = lexical
+                if priority > existing.relevance_priority:
+                    existing.relevance_priority = priority
 
-    ranked = list(by_scheme.values())
-    ranked.sort(key=lambda s: (s.relevance_priority, s.score), reverse=True)
-    if min_similarity is not None:
-        ranked = [s for s in ranked if s.score >= min_similarity]
-    for item in ranked:
-        item.chunks.sort(key=lambda rc: rc.similarity_score, reverse=True)
+        ranked_local = list(by_scheme.values())
+        ranked_local.sort(key=lambda s: (s.relevance_priority, s.score), reverse=True)
+        if min_similarity is not None:
+            ranked_local = [s for s in ranked_local if s.score >= min_similarity]
+        for item in ranked_local:
+            item.chunks.sort(key=lambda rc: rc.similarity_score, reverse=True)
+            # Scheme-level evidence: several moderately relevant sections should
+            # beat a single accidental chunk without letting chunk count dominate.
+            supporting = [rc.similarity_score for rc in item.chunks[1:3]]
+            item.score += 0.15 * sum(supporting)
+            item.why_retrieved += f"; supporting_sections={min(item.evidence_count, 3)}"
+        ranked_local.sort(key=lambda s: (s.relevance_priority, s.score), reverse=True)
+        return ranked_local
+
+    # NSFDC-first: prefer that organisation, then other verified compatible schemes.
+    ranked = rank_for_org(org)
+    if not ranked and org:
+        ranked = rank_for_org(None)
     return ranked[:top_k]
 
 

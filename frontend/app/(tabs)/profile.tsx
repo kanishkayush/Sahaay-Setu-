@@ -16,6 +16,7 @@ import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, radius, spacing } from '@/theme';
 import { formatTriBool } from '@/profile/canonical';
+import { formatCurrency } from '@/utils/format';
 import {
   getProfile,
   updateProfile,
@@ -28,11 +29,12 @@ import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_TYPES_BY_CATEGORY,
   type DocumentCategory,
+  type UserProfile,
 } from '@/api/contracts';
 
 const APP_VERSION = '0.1.0';
 
-const EMPTY_PROFILE = {
+const EMPTY_PROFILE: UserProfile = {
   id: 'pending',
   user_id: 'pending',
   savedSchemes: [] as string[],

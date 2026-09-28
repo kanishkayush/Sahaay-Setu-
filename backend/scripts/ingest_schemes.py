@@ -60,26 +60,7 @@ def main():
             
     print(f"Ingested {len(items)} schemes.")
     
-    # Generate mock variants to reach 120 total
-    current_files = len(list(Path(BACKEND_SCHEMES_DIR).glob("*.json")))
-    target = 120
-    to_generate = target - current_files
-    
-    if to_generate > 0:
-        base_item = backend_schema # use last one
-        for i in range(to_generate):
-            new_id = f"mock-scheme-{i}"
-            mock_schema = json.loads(json.dumps(base_item))
-            mock_schema["scheme_id"] = new_id
-            mock_schema["api"]["id"] = new_id
-            mock_schema["api"]["code"] = f"MOCK-{i}"
-            mock_schema["api"]["name"]["en"] = f"Mock Scheme {i} (Generated to test scale)"
-            
-            file_path = os.path.join(BACKEND_SCHEMES_DIR, f"{new_id}.json")
-            with open(file_path, "w", encoding="utf-8") as out:
-                json.dump(mock_schema, out, indent=2, ensure_ascii=False)
-                
-        print(f"Generated {to_generate} mock schemes to reach {target}.")
+    print("No synthetic schemes generated. Production ingestion accepts sourced records only.")
 
 if __name__ == "__main__":
     main()

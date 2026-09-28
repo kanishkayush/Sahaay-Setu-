@@ -1,4 +1,8 @@
 import datetime
+import hashlib
+import json
+import os
+from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from app.core.interfaces.memory import MemoryProtocol
@@ -6,14 +10,47 @@ from app.schemas.chat import ChatProfile, ConversationState
 
 class InMemorySessionStore(MemoryProtocol):
     """
-    In-memory store for SIH demo. 
-    WARNING: This resets when the server restarts.
+    Bounded memory store with optional durable production snapshots.
+
+    When PERSISTENT_DATA_DIR is configured (Render), session state survives a
+    process restart. Filenames are hashes, and only the latest ten turns are
+    retained.
     """
     def __init__(self):
         self._SESSIONS: Dict[str, Dict[str, Any]] = {}
+        root = os.environ.get("PERSISTENT_DATA_DIR")
+        self._root = Path(root) / "sessions" if root else None
+        if self._root:
+            self._root.mkdir(parents=True, exist_ok=True)
+
+    def _path(self, conversation_id: str) -> Path | None:
+        if not self._root:
+            return None
+        digest = hashlib.sha256(conversation_id.encode("utf-8")).hexdigest()
+        return self._root / f"{digest}.json"
+
+    def _persist(self, conversation_id: str) -> None:
+        path = self._path(conversation_id)
+        if not path:
+            return
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(
+            json.dumps(self._SESSIONS[conversation_id], ensure_ascii=False),
+            encoding="utf-8",
+        )
+        tmp.replace(path)
 
     def _ensure_session(self, conversation_id: str):
         if conversation_id not in self._SESSIONS:
+            path = self._path(conversation_id)
+            if path and path.exists():
+                try:
+                    loaded = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(loaded, dict) and isinstance(loaded.get("profile"), dict):
+                        self._SESSIONS[conversation_id] = loaded
+                        return
+                except (OSError, ValueError, TypeError):
+                    pass
             self._SESSIONS[conversation_id] = {
                 "turns": [],
                 "profile": ChatProfile().model_dump()
@@ -32,9 +69,9 @@ class InMemorySessionStore(MemoryProtocol):
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
         })
         
-        # Keep only the last 5 turns maximum
-        if len(self._SESSIONS[conversation_id]["turns"]) > 5:
-            self._SESSIONS[conversation_id]["turns"] = self._SESSIONS[conversation_id]["turns"][-5:]
+        if len(self._SESSIONS[conversation_id]["turns"]) > 10:
+            self._SESSIONS[conversation_id]["turns"] = self._SESSIONS[conversation_id]["turns"][-10:]
+        self._persist(conversation_id)
 
     def get_recent_turns(self, conversation_id: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Retrieves the most recent conversation turns."""
@@ -66,14 +103,19 @@ class InMemorySessionStore(MemoryProtocol):
         self._ensure_session(conversation_id)
         # Merge existing profile with new non-null values
         existing = self._SESSIONS[conversation_id]["profile"]
-        new_data = profile.model_dump(exclude_unset=True, exclude_none=True)
+        # Explicit None is meaningful (topic switches clear stale activity/cost).
+        new_data = profile.model_dump(exclude_unset=True)
         existing.update(new_data)
         self._SESSIONS[conversation_id]["profile"] = existing
+        self._persist(conversation_id)
 
     def clear_session(self, conversation_id: str) -> None:
         """Clears a specific conversation session."""
         if conversation_id in self._SESSIONS:
             del self._SESSIONS[conversation_id]
+        path = self._path(conversation_id)
+        if path and path.exists():
+            path.unlink()
 
 # Global instance for use by endpoints
 store = InMemorySessionStore()

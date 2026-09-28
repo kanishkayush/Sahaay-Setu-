@@ -16,17 +16,39 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.rag.scheme_knowledge import load_knowledge_chunks
 from app.rag.vector_store import build_store
 from app.rag.embeddings import embed
+from app.scheme_catalogue import validate_catalogue
 
 STORE_PATH = Path(__file__).resolve().parent.parent / "data" / "rag" / "vector_store.npz"
 
 
 def main():
+    catalogue_failures = validate_catalogue(
+        Path(__file__).resolve().parent.parent / "data" / "schemes"
+    )
+    blocking = [
+        failure for failure in catalogue_failures
+        if any(
+            issue in {
+                "duplicate_scheme_id", "invalid_status",
+                "recommendable_missing_source", "missing_scheme_id",
+            }
+            for issue in failure["issues"]
+        )
+    ]
+    if blocking:
+        raise RuntimeError(f"Catalogue validation failed: {blocking[:5]}")
     chunks = load_knowledge_chunks()
     if not chunks:
         raise RuntimeError("No RAG chunks were produced from the scheme catalogue")
     missing_meta = [
         c.chunk_id for c in chunks
-        if not c.scheme_id or not c.organization or not c.assistance_type
+        if (
+            not c.scheme_id
+            or not c.organization
+            or not c.assistance_type
+            or not c.lifecycle_status
+            or not c.provenance_url
+        )
     ]
     if missing_meta:
         raise RuntimeError(f"Chunks missing required metadata: {missing_meta[:5]}")

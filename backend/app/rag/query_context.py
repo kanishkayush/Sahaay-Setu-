@@ -11,13 +11,14 @@ from dataclasses import dataclass, replace
 from typing import Optional
 
 from app.rag.language_detect import DetectionResult, detect_language_and_intent
+from app.rag.ontology import semantic_expansion
 from app.schemas.chat import ChatProfile
 
 
 _AGRI_ACTIVITIES = {
     "RICE_FARMING", "WHEAT_FARMING", "VEGETABLE_FARMING", "HORTICULTURE",
     "DAIRY_FARMING", "POULTRY", "FISHERY", "GOAT_REARING", "PIG_REARING",
-    "FARMING", "AGRICULTURE",
+    "CROP_FARMING", "FARMING", "AGRICULTURE",
 }
 _EDU_MARKERS = {
     "EDUCATION_LOAN", "EDUCATION", "BTECH", "BE", "MBBS", "BCA", "MCA", "MBA",
@@ -63,6 +64,11 @@ def _domain_from_profile(profile: Optional[ChatProfile]) -> Optional[str]:
         return "EDUCATION"
     if profile.projectType == "AGRICULTURE":
         return "AGRICULTURE"
+    if profile.projectType in {
+        "BUSINESS", "MICRO_ENTERPRISE", "MANUFACTURING",
+        "SERVICES", "TRANSPORT_VEHICLE",
+    }:
+        return "BUSINESS"
     act = str(profile.activity or "").upper()
     if act in _AGRI_ACTIVITIES or "FARM" in act or "RICE" in act:
         return "AGRICULTURE"
@@ -73,8 +79,12 @@ def _domain_from_profile(profile: Optional[ChatProfile]) -> Optional[str]:
     return None
 
 
-def _search_text(rq: RetrievalQuery) -> str:
+def _search_text(rq: RetrievalQuery, english_gloss: str | None = None) -> str:
     parts = [rq.utterance]
+    if english_gloss and english_gloss.strip() != (rq.utterance or "").strip():
+        parts.append(english_gloss)
+    if rq.intent:
+        parts.append(str(rq.intent).replace("_", " ").lower())
     if rq.domain:
         parts.append(rq.domain.lower())
     if rq.activity:
@@ -91,12 +101,13 @@ def _search_text(rq: RetrievalQuery) -> str:
         parts.append(rq.location)
     if rq.land_context:
         parts.append(rq.land_context)
-    if rq.domain == "AGRICULTURE":
-        parts.append("agriculture farming self-employment loan")
-    elif rq.domain == "EDUCATION":
-        parts.append("education loan professional technical course")
-    elif rq.domain == "BUSINESS":
-        parts.append("business self-employment loan")
+    parts.append(
+        semantic_expansion(
+            rq.domain,
+            rq.activity or rq.intent or rq.purpose,
+            rq.assistance_type,
+        )
+    )
     return " ".join(p for p in parts if p)
 
 
@@ -109,12 +120,27 @@ def build_retrieval_query(
     detection = detection or detect_language_and_intent(utterance)
     prior_domain = _domain_from_profile(profile)
     domain = detection.domain or prior_domain
-    # Short contextual answers must not wipe a known domain.
+    # Short follow-ups (amount, course, yes/no) must not wipe a known domain.
+    # Full loan utterances such as "I need an education loan" are also short
+    # (≤6 tokens) and MUST be allowed to switch domain.
     words = utterance.strip().split()
-    if prior_domain and len(words) <= 6:
+    strong_new_domain = bool(
+        detection.intent in {"EDUCATION_LOAN", "AGRICULTURE", "BUSINESS"}
+        and detection.domain
+        and detection.domain != "OTHER"
+        and not detection.is_low_info
+        and detection.domain != prior_domain
+    )
+    if prior_domain and len(words) <= 6 and not strong_new_domain:
         domain = prior_domain
 
     activity = _specific_activity(profile, detection)
+    if strong_new_domain:
+        activity = (
+            detection.activity
+            if detection.activity and str(detection.activity).upper() not in _GENERIC_ACTIVITIES
+            else None
+        )
     education_course = None
     if profile and profile.activity:
         if prior_domain == "EDUCATION" or str(profile.activity).upper() in _EDU_MARKERS:
@@ -133,7 +159,12 @@ def build_retrieval_query(
     assistance = detection.assistance_type or "LOAN"
     if detection.intent or prior_domain or (profile and profile.activity):
         assistance = "LOAN"
-    if profile and profile.projectType == "EDUCATION":
+    if strong_new_domain:
+        domain = detection.domain
+        amount = None
+        if detection.domain != "EDUCATION":
+            education_course = None
+    elif profile and profile.projectType == "EDUCATION":
         assistance = "LOAN"
         domain = "EDUCATION"
 
@@ -160,4 +191,7 @@ def build_retrieval_query(
         search_text="",
         utterance=utterance,
     )
-    return replace(rq, search_text=_search_text(rq))
+    return replace(
+        rq,
+        search_text=_search_text(rq, english_gloss=detection.translated_query_en),
+    )
