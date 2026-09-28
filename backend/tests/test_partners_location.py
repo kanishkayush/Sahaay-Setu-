@@ -114,3 +114,85 @@ def test_search_nearby_uses_nested_location():
     assert hits
     assert hits[0].get("distance_km") is not None
     assert hits[0]["distance_km"] <= 1
+
+
+def test_all_partners_works_without_location():
+    res = client.post(
+        "/v1/partners/search",
+        json={"allPartners": True, "onlyAccepting": False, "language": "en", "radiusKm": 1000},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert "searchedFrom" in body
+    assert body["searchedFrom"] is None
+    assert len(body["items"]) >= 1
+
+
+def test_all_partners_accepting_only_zero_is_success_not_error():
+    res = client.post(
+        "/v1/partners/search",
+        json={"allPartners": True, "onlyAccepting": True, "language": "en", "radiusKm": 1000},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert "searchedFrom" in body
+    assert body["searchedFrom"] is None
+    assert isinstance(body.get("items"), list)
+    for p in body["items"]:
+        assert (p.get("eligibility") or {}).get("status") == "ACCEPTING"
+
+
+def test_only_accepting_false_does_not_drop_unknown_partners():
+    accepting = client.post(
+        "/v1/partners/search",
+        json={"allPartners": True, "onlyAccepting": True, "language": "en", "radiusKm": 1000},
+    ).json()["items"]
+    all_items = client.post(
+        "/v1/partners/search",
+        json={"allPartners": True, "onlyAccepting": False, "language": "en", "radiusKm": 1000},
+    ).json()["items"]
+    assert len(all_items) >= len(accepting)
+    assert any((p.get("eligibility") or {}).get("status") == "UNKNOWN" for p in all_items)
+
+
+def test_nearby_is_not_the_national_catalogue():
+    nearby = client.post(
+        "/v1/partners/search",
+        json={"location": JAIPUR, "radiusKm": 25, "onlyAccepting": False, "allPartners": False},
+    ).json()["items"]
+    catalogue = client.post(
+        "/v1/partners/search",
+        json={"allPartners": True, "onlyAccepting": False, "radiusKm": 1000},
+    ).json()["items"]
+    assert len(catalogue) > len(nearby)
+
+
+def test_profile_coordinates_persist_through_put_get():
+    headers = {"X-User-Id": "validation-loc-user"}
+    put = client.put(
+        "/v1/profile",
+        headers=headers,
+        json={
+            "address": {
+                "pinCode": "302017",
+                "city": "Jaipur",
+                "district": "Jaipur",
+                "state": "Rajasthan",
+                "coordinates": JAIPUR,
+            }
+        },
+    )
+    assert put.status_code == 200
+    got = client.get("/v1/profile", headers=headers)
+    assert got.status_code == 200
+    coords = ((got.json().get("address") or {}).get("coordinates") or {})
+    assert coords.get("latitude") == JAIPUR["latitude"]
+    assert coords.get("longitude") == JAIPUR["longitude"]
+    nearby = client.post(
+        "/v1/partners/search",
+        json={"location": coords, "radiusKm": 50, "onlyAccepting": False, "allPartners": False},
+    )
+    assert nearby.status_code == 200
+    for p in nearby.json()["items"]:
+        assert p.get("distanceKm") is not None
+        assert p["distanceKm"] <= 50

@@ -69,3 +69,30 @@ def test_education_is_els_not_scholarship():
     assert "nsfdc-mfs" not in brief.related_ids
     assert "scholarship" not in brief.answer.lower()
     assert "शैक्षिक" in brief.answer or "educational" in brief.answer.lower()
+
+
+def test_ui_cards_carry_canonical_scheme_ids_for_find_scheme():
+    from app.api.scheme_loader import get_scheme
+    from app.rag.scheme_advisor import ui_cards
+
+    brief = build_brief(domain="BUSINESS", amount=None, activity=None, lang="en")
+    cards = ui_cards(brief, "en")
+    ids = [c.schemeId for c in cards]
+    assert "nsfdc-term-loan" in ids
+    assert "nsfdc-uny" in ids
+    assert "nsfdc-mfs" in ids
+    for sid in ids:
+        scheme = get_scheme(sid)
+        assert scheme is not None
+        assert scheme.get("id") == sid
+
+
+def test_education_card_points_at_els_catalogue_id():
+    from app.api.scheme_loader import get_scheme
+    from app.rag.scheme_advisor import ui_cards
+
+    brief = build_brief(domain="EDUCATION", amount=None, activity="EDUCATION_LOAN", lang="hi")
+    cards = ui_cards(brief, "hi")
+    assert cards
+    assert cards[0].schemeId == "nsfdc-education"
+    assert get_scheme("nsfdc-education")["id"] == "nsfdc-education"

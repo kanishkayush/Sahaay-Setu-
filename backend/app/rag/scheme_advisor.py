@@ -576,12 +576,18 @@ def ui_cards(brief: AdviserBrief, lang: str) -> list[AssistantUICard]:
         if sid in seen:
             continue
         seen.add(sid)
+        facts = fit.facts
+        blurb = (
+            facts.purpose_hi
+            if lang == "hi" and facts.purpose_hi
+            else facts.purpose
+        ) or (facts.short.get(lang) or facts.short.get("en") or "")
         cards.append(
             AssistantUICard(
                 type=AssistantUICardType.SCHEME_CARD,
                 schemeId=sid,
-                schemeName=_name(fit.facts, lang),
-                reason=fit.why,
+                schemeName=_name(facts, lang),
+                reason=blurb or fit.why,
                 eligible=None,
             )
         )

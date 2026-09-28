@@ -23,6 +23,7 @@ import { useCanSpeak } from '@/hooks/useCanSpeak';
 import { useSpeechInput } from '@/hooks/useSpeechInput';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, radius, spacing, typography, MIN_TOUCH_SIZE } from '@/theme';
+import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 /**
  * Multilingual AI assistant.
@@ -131,7 +132,7 @@ export default function AssistantScreen() {
   const runAction = (action: AssistantAction) => {
     switch (action.type) {
       case 'OPEN_SCHEME':
-        router.push(`/scheme/${action.schemeId}`);
+        router.push(schemeDetailPath(action.schemeId));
         break;
       case 'OPEN_PARTNER':
         router.push('/(tabs)/partners');
@@ -262,7 +263,12 @@ export default function AssistantScreen() {
             </View>
           ) : null}
 
-          {uiCards.length > 0 ? <UICardsRenderer cards={uiCards} /> : null}
+          {uiCards.length > 0 ? (
+            <UICardsRenderer
+              cards={uiCards}
+              onSelectScheme={(schemeId) => router.push(schemeDetailPath(schemeId))}
+            />
+          ) : null}
 
           {actions.length > 0 ? (
             <View style={styles.actionRow}>

@@ -5,7 +5,17 @@ import { AssistantUICard } from '@/api/contracts';
 import { colors, spacing } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
-export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { cards: AssistantUICard[], onOptionSelect?: (option: string) => void, onSelectPartner?: (id: string, name: string) => void }) {
+export function UICardsRenderer({
+  cards,
+  onOptionSelect,
+  onSelectPartner,
+  onSelectScheme,
+}: {
+  cards: AssistantUICard[],
+  onOptionSelect?: (option: string) => void,
+  onSelectPartner?: (id: string, name: string) => void,
+  onSelectScheme?: (schemeId: string) => void,
+}) {
   const { t } = useTranslation();
   if (!cards || cards.length === 0) return null;
 
@@ -16,17 +26,29 @@ export function UICardsRenderer({ cards, onOptionSelect, onSelectPartner }: { ca
     <View style={styles.container}>
       {schemeCards.length > 0 ? (
         <View style={styles.schemeGroup}>
-          {schemeCards.length > 1 ? (
-            <Text variant="label">{t('uiCards.relevantOptions')}</Text>
-          ) : null}
+          <Text variant="label">{t('uiCards.relevantOptions')}</Text>
           {schemeCards.map((card, idx) => (
-            <Card key={`scheme-${idx}`} style={styles.schemeCard}>
+            <Card
+              key={card.schemeId || `scheme-${idx}`}
+              style={styles.schemeCard}
+              onPress={
+                card.schemeId && onSelectScheme
+                  ? () => onSelectScheme(card.schemeId as string)
+                  : undefined
+              }
+              accessibilityLabel={card.schemeName}
+            >
               <View style={styles.headerRow}>
                 <Icon name="doc" size={20} color={colors.primary} />
                 <Text variant="label" style={{ flex: 1 }}>{card.schemeName}</Text>
               </View>
               {card.reason ? (
                 <Text variant="body" color={colors.textSecondary}>{card.reason}</Text>
+              ) : null}
+              {card.schemeId && onSelectScheme ? (
+                <Text variant="caption" color={colors.primary} style={{ marginTop: spacing.xs }}>
+                  {t('uiCards.viewDetails')}
+                </Text>
               ) : null}
             </Card>
           ))}

@@ -22,6 +22,7 @@ import { getProfile } from '@/api/services/profile.service';
 import { colors, radius, spacing, typography } from '@/theme';
 import { formatProfileLocation } from '@/profile/canonical';
 import { isValidCoordinate } from '@/utils/geo';
+import { partnerSearchUiState } from '@/features/partners/searchUiState';
 
 const RADII = [25, 50, 100];
 const SORT_OPTIONS = ['distance', 'name', 'type'] as const;
@@ -92,7 +93,16 @@ export default function PartnersScreen() {
   }
 
   // Log partner counts
-  console.log(`[PARTNERS] backend returned=${partners.length}`);
+  console.log(`[PARTNERS] backend returned=${partners.length} isError=${isError} isLoading=${isLoading}`);
+
+  const uiState = partnerSearchUiState({
+    viewMode,
+    locationAvailable: userLocationAvailable,
+    onlyAccepting,
+    isLoading,
+    isError,
+    resultCount: partners.length,
+  });
 
   const availableSortOptions = userLocationAvailable
     ? SORT_OPTIONS
@@ -218,7 +228,7 @@ export default function PartnersScreen() {
 
       {isError ? <Banner tone="danger" message={t('errors.generic')} /> : null}
 
-      {isLoading ? (
+      {uiState.kind === 'loading' ? (
         <ActivityIndicator
           color={colors.primary}
           style={styles.loader}
@@ -226,7 +236,7 @@ export default function PartnersScreen() {
         />
       ) : null}
 
-      {showMap ? (
+      {showMap && uiState.kind === 'results' ? (
         <PartnerMap
           partners={partners}
           center={locPoint ?? undefined}
@@ -236,27 +246,33 @@ export default function PartnersScreen() {
         />
       ) : null}
 
-      {!showMap && !isLoading && !isError && partners.length === 0 ? (
+      {!showMap && uiState.kind === 'idle-location-required' ? (
         <View style={styles.empty}>
-          {viewMode === 'nearby' && !userLocationAvailable ? (
-            <>
-              <Text variant="subheading" center>
-                {t('partners.locationRequired')}
-              </Text>
-              <Text variant="caption" color={colors.textMuted} center>
-                {t('partners.enableLocationOrEnterPin')}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text variant="subheading" center>
-                {t('partners.empty')}
-              </Text>
-              <Text variant="caption" color={colors.textMuted} center>
-                {t('partners.emptyBody')}
-              </Text>
-            </>
-          )}
+          <Text variant="subheading" center>
+            {t('partners.locationRequired')}
+          </Text>
+          <Text variant="caption" color={colors.textMuted} center>
+            {t('partners.enableLocationOrEnterPin')}
+          </Text>
+        </View>
+      ) : null}
+
+      {!showMap && uiState.kind === 'empty' ? (
+        <View style={styles.empty}>
+          <Text variant="subheading" center>
+            {uiState.reason === 'accepting'
+              ? t('partners.emptyAccepting')
+              : uiState.reason === 'all'
+                ? t('partners.emptyAll')
+                : t('partners.empty')}
+          </Text>
+          <Text variant="caption" color={colors.textMuted} center>
+            {uiState.reason === 'accepting'
+              ? t('partners.emptyAcceptingBody')
+              : uiState.reason === 'all'
+                ? t('partners.emptyAllBody')
+                : t('partners.emptyBody')}
+          </Text>
         </View>
       ) : null}
 
@@ -267,7 +283,7 @@ export default function PartnersScreen() {
         />
       ) : null}
 
-      {!showMap && !nearbyNeedsLocation ? (
+      {!showMap && uiState.kind === 'results' ? (
         <>
           <View style={{ marginTop: spacing.md, marginBottom: spacing.sm }}>
             <Text variant="subheading">

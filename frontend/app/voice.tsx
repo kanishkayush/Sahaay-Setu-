@@ -9,6 +9,7 @@ import type { AssistantAction } from '@/api/contracts';
 import { useVoiceQuery, type VoicePhase } from '@/hooks/useVoiceQuery';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 /**
  * Ask by voice.
@@ -84,7 +85,7 @@ export default function VoiceScreen() {
   const handleAction = (action: AssistantAction) => {
     switch (action.type) {
       case 'OPEN_SCHEME':
-        router.push(`/scheme/${action.schemeId}`);
+        router.push(schemeDetailPath(action.schemeId));
         break;
       case 'OPEN_PARTNER':
         router.push('/(tabs)/partners');
@@ -270,6 +271,7 @@ export default function VoiceScreen() {
             <UICardsRenderer
               cards={turn.uiCards}
               onOptionSelect={(opt) => void askText(opt)}
+              onSelectScheme={(schemeId) => router.push(schemeDetailPath(schemeId))}
               onSelectPartner={(id, name) => {
                 updateLoanJourney({
                   selectedChannelPartnerId: id,

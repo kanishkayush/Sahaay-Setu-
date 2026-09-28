@@ -251,6 +251,10 @@
     "mapView": "Map",
     "empty": "No partners found nearby.",
     "emptyBody": "Try widening the search radius or searching by PIN code.",
+    "emptyAll": "No channel partners match these filters.",
+    "emptyAllBody": "Try changing the partner type or search filters.",
+    "emptyAccepting": "No partners are currently verified as accepting applications.",
+    "emptyAcceptingBody": "NSFDC does not publish per-partner accepting status for most partners. Turn off “Only those accepting applications” to see the catalogue.",
     "fallbackWarning": "Every partner nearby is currently unable to take new applications. Showing them anyway so you can call ahead.",
     "distance": "{{distance}} away",
     "call": "Call",
@@ -484,6 +488,7 @@
     "noPartnerSelected": "No partner selected",
     "away": "km away",
     "selectPartner": "Select this Partner",
-    "relevantOptions": "Relevant NSFDC options"
+    "relevantOptions": "Relevant NSFDC options",
+    "viewDetails": "View scheme details →"
   }
 }

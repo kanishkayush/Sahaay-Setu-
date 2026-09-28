@@ -78,7 +78,7 @@ export default function PartnerDetailScreen() {
 
       <PartnerMap
         partners={[partner]}
-        center={partner.location}
+        center={partner.location ?? undefined}
         unavailableMessage={t('partners.listView')}
       />
 

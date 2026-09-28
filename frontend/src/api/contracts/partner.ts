@@ -52,9 +52,9 @@ export const ChannelPartnerSchema = z.object({
   district: z.string(),
   stateCode: z.string().length(2),
   pincode: z.string(),
-  location: GeoPointSchema.optional(),
+  location: GeoPointSchema.nullish(),
   phone: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().nullish(),
   /** Which scheme categories this branch is authorised to process. */
   supportedSchemeCategories: z.array(OfficialCategorySchema),
   supportedSchemeIds: z.array(z.string()).default([]),
@@ -76,9 +76,8 @@ export const PartnerSearchRequestSchema = z.object({
   schemeCategory: OfficialCategorySchema.optional(),
   partnerTypes: z.array(PartnerTypeSchema).optional(),
   /**
-   * Hide partners that cannot disburse. Default true — this is the whole point.
-   * UNKNOWN partners are still shown: we cannot assert they are unavailable
-   * either, and the UI tells the user to call ahead.
+   * Hide partners that are not verified as currently accepting applications.
+   * UNKNOWN is excluded: we cannot treat an unpublished status as accepting.
    */
   onlyAccepting: z.boolean().default(true),
   language: LanguageCodeSchema.optional(),
@@ -91,7 +90,7 @@ export const PartnerSearchResponseSchema = z.object({
   items: z.array(ChannelPartnerSchema),
   /** Set when every nearby partner was filtered out for poor fund health. */
   fallbackUsed: z.boolean().default(false),
-  searchedFrom: GeoPointSchema.optional(),
+  searchedFrom: GeoPointSchema.nullish(),
   radiusKm: z.number(),
 });
 export type PartnerSearchResponse = z.infer<typeof PartnerSearchResponseSchema>;
