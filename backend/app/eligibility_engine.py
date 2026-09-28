@@ -455,10 +455,40 @@ def check_education_status(user_profile: UserProfile, scheme: dict, result: Sche
     return "manual_verification_required"
 
 
+def _get_scheme_name(scheme: dict) -> str:
+    """Extract scheme name from either flat or nested api.name structure.
+    Handles both plain strings and multilingual dicts like {"en": "...", "hi": "..."}.
+    """
+    def _extract_name(name_val):
+        if isinstance(name_val, str):
+            return name_val
+        if isinstance(name_val, dict):
+            # Prefer English, then any available language
+            for lang in ("en", "hi", "mr", "bn", "ta", "te"):
+                if lang in name_val:
+                    return name_val[lang]
+            values = list(name_val.values())
+            if values:
+                return str(values[0])
+        return None
+
+    # Try top-level name first
+    top_name = _extract_name(scheme.get("name"))
+    if top_name:
+        return top_name
+    # Try api.name
+    api = scheme.get("api", {})
+    if isinstance(api, dict):
+        api_name = _extract_name(api.get("name"))
+        if api_name:
+            return api_name
+    return scheme.get("scheme_id", "Unknown Scheme")
+
+
 def evaluate_scheme(scheme: dict, user_profile: UserProfile) -> SchemeEvaluationResult:
     result = SchemeEvaluationResult(
         scheme_id=scheme["scheme_id"],
-        scheme_name=scheme["name"],
+        scheme_name=_get_scheme_name(scheme),
         eligibility_status="eligible"
     )
     

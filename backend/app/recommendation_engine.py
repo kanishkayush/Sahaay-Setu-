@@ -66,8 +66,16 @@ def get_status_tier(status: str) -> int:
 @lru_cache(maxsize=1)
 def load_recommendation_rules() -> List[dict]:
     rules_path = Path(__file__).parent.parent / "data" / "rules" / "recommendation_rules.json"
+    if not rules_path.exists():
+        return []
     with open(rules_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    # Handle both plain list format and {"rules": [...]} dict format
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get("rules", [])
+    return []
 
 
 def _positive_scoring_rules(scheme_rules: List[dict]) -> List[dict]:

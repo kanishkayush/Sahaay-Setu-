@@ -52,7 +52,6 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
             update_session_profile(session_id, profile)
     
     state = profile.conversationState or ConversationState.INITIAL_QUERY
-    
     try:
         # Simple state transition logic
         if state == ConversationState.INITIAL_QUERY:
