@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { LanguageCode, Scheme, SchemeRecommendation } from '@/api/contracts';
 import { Card, Chip, StatRow, Text } from '@/components/ui';
 import { pickLocalized } from '@/i18n/localized';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 import { formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
 
 /**
@@ -24,6 +24,7 @@ export type SchemeCardProps = {
 
 export function SchemeCard({ scheme, language, onPress, recommendation, rank }: SchemeCardProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const name = pickLocalized(scheme.name, language, scheme.code);
   const description = pickLocalized(scheme.shortDescription, language);
 
@@ -36,7 +37,7 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
     <Card variant="glass" onPress={onPress} accessibilityLabel={name}>
       <View style={styles.header}>
         {rank !== undefined ? (
-          <View style={styles.rank}>
+          <View style={[styles.rank, { backgroundColor: colors.inverse }]}>
             <Text variant="label" color={colors.textInverse}>
               {rank}
             </Text>
@@ -113,7 +114,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.inverse,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,

@@ -3,64 +3,25 @@
  *
  * Government financial services + modern fintech + subtle glass.
  * Every glass surface must maintain text readability (≥4.5:1 contrast).
+ *
+ * Live colors come from ThemeProvider via useTheme(). The exported `colors`
+ * object is the light palette so non-React helpers and tests keep a stable
+ * default. Screens and primitives must read colors from useTheme().
  */
 
-export const colors = {
-  // ── Surface ────────────────────────────────────────────────────────────
-  background: '#F4FAFF',     // Pale Ice
-  surface: '#FFFFFF',
-  surfaceAlt: '#F0F4F8',
-  inverse: '#102A43',        // Dark Navy
-  inverseAlt: '#063B9E',
+import { lightColors } from './palettes';
 
-  // ── Glass ──────────────────────────────────────────────────────────────
-  glass: 'rgba(255, 255, 255, 0.62)',
-  glassBorder: 'rgba(255, 255, 255, 0.70)',
-  glassStrong: 'rgba(255, 255, 255, 0.78)',
-  glassInput: 'rgba(255, 255, 255, 0.82)',
+export { lightColors, darkColors, palettes, COLOR_TOKEN_KEYS, THEME_PREFERENCE_KEY, resolveThemeMode } from './palettes';
+export type { ColorTokens, ThemeMode } from './palettes';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+export {
+  hydrateThemePreference,
+  readStoredThemePreference,
+  writeStoredThemePreference,
+} from './preference';
+export type { ThemePreference } from './preference';
 
-  // ── Foreground ramp ────────────────────────────────────────────────────
-  text: '#102A43',           // Dark Navy
-  textSecondary: '#52657A',  // Secondary Text
-  textMuted: '#7D8C9C',
-  textInverse: '#FFFFFF',
-  textOnInverse: '#B3CDE0',
-
-  // ── Border ─────────────────────────────────────────────────────────────
-  border: 'rgba(7, 87, 217, 0.15)', // Light blue border tint
-  borderSoft: 'rgba(7, 87, 217, 0.08)',
-  borderStrong: 'rgba(7, 87, 217, 0.3)',
-  borderGlass: 'rgba(255, 255, 255, 0.70)',
-
-  // ── Accent ─────────────────────────────────────────────────────────────
-  primary: '#0757D9',         // Royal Blue
-  primaryDark: '#063B9E',     // Deep Royal Blue
-  primaryLight: '#1677E8',    // Mid Blue
-  primarySurface: '#EAF6FF',  // Ice Blue
-  blue: '#0757D9',            // Vivid blue for links/icons
-
-  accent: '#E58A2B',          // Restrained saffron
-  accentSurface: '#FFF7E6',
-
-  // ── Semantic: vivid for fills and icons ────────────────────────────────
-  success: '#159447',
-  warning: '#E58A2B',
-  danger: '#D92D4F',          // Destructive Coral
-  info: '#0757D9',
-
-  // ── Semantic: darkened for TEXT (all ≥ 4.5:1 on white) ─────────────────
-  successText: '#159447',
-  warningText: '#B45309',
-  dangerText: '#D92D4F',
-  infoText: '#0757D9',
-
-  successSurface: '#EAF7EF',
-  warningSurface: '#FFF7E6',
-  dangerSurface: '#FEF2F2',
-  infoSurface: '#EAF6FF',
-
-  overlay: 'rgba(0, 0, 0, 0.45)',
-} as const;
+export const colors = lightColors;
 
 /** --space-* from the source, plus the xxxl step our screens already use. */
 export const spacing = {

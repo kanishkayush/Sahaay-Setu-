@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Screen, Text, Icon, Card } from '@/components/ui';
-import { colors, spacing, radius, typography } from '@/theme';
+import { spacing, radius, typography, useTheme, type ColorTokens } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { getProfile } from '@/api/services/profile.service';
 import { profileKeys } from '@/features/profile/queryKeys';
@@ -69,6 +69,8 @@ function useGreeting() {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createHomeStyles(colors);
   const greetingKey = useGreeting();
 
   const { data: persistentProfile } = useQuery({
@@ -170,6 +172,8 @@ export default function HomeScreen() {
 }
 
 function ActionCard({ icon, title, onPress }) {
+  const { colors } = useTheme();
+  const styles = createHomeStyles(colors);
   const { width } = useWindowDimensions();
   // Screen padding (lg=16) * 2 = 32. Gap (md=12).
   // max-width to avoid getting too large on tablets, limit to around 300
@@ -188,7 +192,8 @@ function ActionCard({ icon, title, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+function createHomeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -283,3 +288,4 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
 });
+}

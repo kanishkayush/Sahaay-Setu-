@@ -5,15 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { BlurView } from 'expo-blur';
 
 import { Icon, type IconName, Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+    <View style={[styles.iconWrap, focused && { backgroundColor: colors.navSelectedBackground }]}>
       <Icon
         name={name}
         size={23}
-        color={focused ? colors.primary : colors.textSecondary}
+        color={focused ? colors.navSelectedForeground : colors.textSecondary}
         strokeWidth={focused ? 2 : 1.7}
       />
     </View>
@@ -21,10 +22,11 @@ function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
 }
 
 function TabLabel({ children, focused }: { children: string; focused: boolean }) {
+  const { colors } = useTheme();
   return (
     <Text
       variant="label"
-      color={focused ? colors.primary : colors.textSecondary}
+      color={focused ? colors.navSelectedForeground : colors.textSecondary}
       numberOfLines={2}
       style={styles.label}
     >
@@ -35,9 +37,9 @@ function TabLabel({ children, focused }: { children: string; focused: boolean })
 
 export default function TabsLayout() {
   const { t } = useTranslation();
+  const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  // We compute total height dynamically: 60px base + bottom inset
   const barHeight = 60 + insets.bottom;
   const tabWidth = width / 5;
 
@@ -55,15 +57,20 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.navSelectedForeground,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: [
           styles.bar,
-          { height: barHeight, paddingBottom: insets.bottom + spacing.xs },
+          {
+            height: barHeight,
+            paddingBottom: insets.bottom + spacing.xs,
+            backgroundColor: Platform.OS === 'web' ? colors.glassStrong : 'transparent',
+            borderTopColor: colors.glassBorder,
+          },
         ],
         tabBarItemStyle: [styles.item, { width: tabWidth }],
         tabBarBackground: () => (
-          <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={30} tint={mode === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         ),
       }}
     >
@@ -113,14 +120,12 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   bar: {
-    backgroundColor: Platform.OS === 'web' ? colors.glassStrong : 'transparent',
-    borderTopColor: colors.glassBorder,
     borderTopWidth: 1,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    elevation: 0, // Remove shadow on Android for absolute bar
+    elevation: 0,
   },
   label: {
     textAlign: 'center',
@@ -129,18 +134,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   item: {
-    // Ensure every tab item allocates the same space for the icon row
     paddingVertical: 0,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
   iconWrap: {
-    // Fixed 32×32 container so all icons sit on the same baseline
     width: 56,
     height: 32,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: { backgroundColor: colors.primarySurface },
 });

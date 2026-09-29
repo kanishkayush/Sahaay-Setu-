@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui';
 import type { PartnerType } from '@/api/contracts';
 import { normsFor, requiredInputsFor, sourceFor } from '@/features/partners/eligibilityNorms';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 
 /**
  * The conditions NSFDC applies before it will release funds to this kind of
@@ -25,6 +25,7 @@ export type PartnerNormsProps = {
 
 export function PartnerNorms({ type }: PartnerNormsProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const norms = normsFor(type);
   const missing = requiredInputsFor(type).map((input) => t(`partners.norms.input.${input}`));
@@ -40,10 +41,10 @@ export function PartnerNorms({ type }: PartnerNormsProps) {
         {t('partners.norms.intro', { type: t(`partners.type.${type}`) })}
       </Text>
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
         {norms.map((norm) => (
           <View key={norm.id} style={styles.rule}>
-            <View style={styles.bullet} />
+            <View style={[styles.bullet, { backgroundColor: colors.textMuted }]} />
             <Text variant="caption" style={styles.ruleText}>
               {t(norm.labelKey, norm.values)}
             </Text>
@@ -76,7 +77,6 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   gap: { gap: spacing.xs },
   card: {
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
@@ -86,8 +86,6 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.textMuted,
-    // Aligns the dot to the cap height of the first line of caption text.
     marginTop: 9,
   },
   ruleText: { flex: 1 },

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card, Text, Chip, Icon, Button, StatRow } from '@/components/ui';
 import { AssistantUICard, SchemeFitReason } from '@/api/contracts';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme, type ColorTokens } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
 
@@ -13,11 +13,13 @@ function verificationTone(status?: string): 'success' | 'warning' | 'danger' | '
   return 'neutral';
 }
 
-const REASON_MARK: Record<string, { glyph: string; color: string }> = {
-  MATCH: { glyph: '✓', color: colors.successText },
-  MISMATCH: { glyph: '✕', color: colors.dangerText },
-  INFO: { glyph: 'ℹ', color: colors.infoText },
-};
+function reasonMarks(colors: ColorTokens): Record<string, { glyph: string; color: string }> {
+  return {
+    MATCH: { glyph: '✓', color: colors.successText },
+    MISMATCH: { glyph: '✕', color: colors.dangerText },
+    INFO: { glyph: 'ℹ', color: colors.infoText },
+  };
+}
 
 export function UICardsRenderer({
   cards,
@@ -31,6 +33,8 @@ export function UICardsRenderer({
   onSelectScheme?: (schemeId: string) => void,
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const REASON_MARK = reasonMarks(colors);
   if (!cards || cards.length === 0) return null;
 
   const verifyLabel = (status?: string) => {
@@ -85,8 +89,8 @@ export function UICardsRenderer({
       <Card
         key={card.schemeId || `scheme-${idx}`}
         style={[
-          styles.schemeCard,
-          card.verificationStatus === 'UNVERIFIED' ? styles.unverifiedCard : null,
+          { borderColor: colors.primary, borderWidth: 1 },
+          card.verificationStatus === 'UNVERIFIED' ? { borderColor: colors.warningText, borderWidth: 1 } : null,
         ]}
         onPress={open}
         accessibilityLabel={card.schemeName}
@@ -108,6 +112,9 @@ export function UICardsRenderer({
               label={verifyLabel(card.verificationStatus)}
               tone={verificationTone(card.verificationStatus)}
             />
+          ) : null}
+          {card.genderFit === 'MATCH' ? (
+            <Chip label={t('gender.FEMALE')} tone="info" />
           ) : null}
         </View>
         {card.reason ? (
@@ -182,7 +189,7 @@ export function UICardsRenderer({
         switch (card.type) {
           case 'COMPARISON_CARD':
             return (
-              <Card key={`cmp-${idx}`} style={styles.comparisonCard}>
+              <Card key={`cmp-${idx}`} style={{ backgroundColor: colors.surface, gap: spacing.xs }}>
                 <Text variant="label">{card.title || t('uiCards.comparisonTitle')}</Text>
                 <View style={styles.comparisonHeader}>
                   <Text variant="caption" style={styles.cmpCol}>{t('uiCards.colScheme')}</Text>
@@ -204,7 +211,7 @@ export function UICardsRenderer({
             );
           case 'NEXT_QUESTION_CARD':
             return (
-              <Card key={idx} style={styles.questionCard}>
+              <Card key={idx} style={{ backgroundColor: colors.surface }}>
                 <Text variant="bodyStrong">{card.question}</Text>
                 <View style={styles.chips}>
                   {card.options?.map(opt => (
@@ -215,7 +222,7 @@ export function UICardsRenderer({
             );
           case 'DOCUMENT_CHECKLIST':
             return (
-              <Card key={`docs-${idx}`} style={styles.checklistCard}>
+              <Card key={`docs-${idx}`} style={{ backgroundColor: colors.surface }}>
                 <View style={styles.headerRow}>
                   <Icon name="doc" size={20} color={colors.text} />
                   <Text variant="label">{t('uiCards.requiredDocuments')}</Text>
@@ -238,7 +245,7 @@ export function UICardsRenderer({
             );
           case 'PARTNER_CARD':
             return (
-              <Card key={`partner-${idx}`} style={styles.partnerCard}>
+              <Card key={`partner-${idx}`} style={{ borderColor: colors.primary, borderWidth: 1 }}>
                 <View style={styles.headerRow}>
                   <Icon name="pin" size={20} color={colors.primary} />
                   <Text variant="label">{card.name || t('uiCards.noPartnerSelected')}</Text>
@@ -262,7 +269,7 @@ export function UICardsRenderer({
             );
           case 'WARNING_CARD':
             return (
-              <Card key={`warn-${idx}`} style={styles.warningCard}>
+              <Card key={`warn-${idx}`} style={{ borderColor: colors.danger, borderWidth: 1 }}>
                 <View style={styles.headerRow}>
                   <Icon name="alert" size={20} color={colors.danger} />
                   <Text variant="bodyStrong" color={colors.danger}>{card.message}</Text>
@@ -283,15 +290,8 @@ const styles = StyleSheet.create({
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   schemeGroup: { gap: spacing.sm },
-  schemeCard: { borderColor: colors.primary, borderWidth: 1 },
-  unverifiedCard: { borderColor: colors.warningText, borderWidth: 1 },
   whyBlock: { gap: spacing.xs, marginTop: spacing.sm },
   whyRow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-start' },
-  questionCard: { backgroundColor: colors.surface },
-  checklistCard: { backgroundColor: colors.surface },
-  partnerCard: { borderColor: colors.primary, borderWidth: 1 },
-  warningCard: { borderColor: colors.danger, borderWidth: 1 },
-  comparisonCard: { backgroundColor: colors.surface, gap: spacing.xs },
   comparisonHeader: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
   comparisonRow: { flexDirection: 'row', gap: spacing.xs, paddingVertical: 2 },
   cmpCol: { flex: 1 },

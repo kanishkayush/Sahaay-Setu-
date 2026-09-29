@@ -111,6 +111,7 @@ def _map_to_user_profile(req: RecommendationRequest) -> dict[str, Any]:
         # BENEFICIARY_CATEGORY_UNVERIFIED rather than falsely claiming verified.
         "beneficiary_category_verified": None,
         "education_status": education_status_backend if is_education else None,
+        "gender": profile.gender,
     }
     return user_profile
 
@@ -327,6 +328,7 @@ def create_recommendations(request: RecommendationRequest) -> dict[str, Any]:
         request.profile.projectType,
         amount_inr=float(request.profile.estimatedProjectCost),
         activity=activity,
+        gender=request.profile.gender,
     )
 
     eval_response = evaluate_all_schemes(user_profile_dict, organization="NSFDC")

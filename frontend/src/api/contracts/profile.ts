@@ -31,6 +31,7 @@ export type ProfileAddress = z.infer<typeof ProfileAddressSchema>;
 export const ProfileEligibilitySchema = z.object({
   scEligibilityStatus: z.boolean().nullable().optional(),
   annualFamilyIncome: z.number().nonnegative().nullable().optional(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullable().optional(),
 });
 export type ProfileEligibility = z.infer<typeof ProfileEligibilitySchema>;
 

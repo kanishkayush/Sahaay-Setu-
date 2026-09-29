@@ -7,14 +7,14 @@ import * as FileSystem from 'expo-file-system';
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Banner, Button, Card, Chip, Screen, Text } from '@/components/ui';
+import { Banner, Button, Card, Chip, Screen, Text, ThemeToggle } from '@/components/ui';
 import { SchemeCard, EditProfileForm } from '@/components/domain';
 import { USE_MOCK_API } from '@/api/config';
 import { useSchemes } from '@/hooks/useSchemes';
 import { useLocation } from '@/hooks/useLocation';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 import { formatTriBool } from '@/profile/canonical';
 import { formatCurrency } from '@/utils/format';
 import { profileKeys } from '@/features/profile/queryKeys';
@@ -33,8 +33,6 @@ import {
   type UserProfile,
 } from '@/api/contracts';
 
-const APP_VERSION = '0.1.0';
-
 const EMPTY_PROFILE: UserProfile = {
   id: 'pending',
   user_id: 'pending',
@@ -49,6 +47,7 @@ const EMPTY_PROFILE: UserProfile = {
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const language = useAppStore((s) => s.language);
   const setLanguage = useAppStore((s) => s.setLanguage);
   const profile = useAppStore((s) => s.profile);
@@ -249,17 +248,28 @@ export default function ProfileScreen() {
                 onPress={() => void setLanguage(option.code)}
                 style={({ pressed }) => [
                   styles.langCard,
-                  selected && styles.langSelected,
+                  {
+                    backgroundColor: colors.glass,
+                    borderColor: colors.glassBorder,
+                  },
+                  selected && {
+                    borderColor: colors.controlSelectedBorder,
+                    backgroundColor: colors.controlSelectedBackground,
+                  },
                   pressed && styles.pressed,
                 ]}
               >
-                <Text variant="bodyStrong" color={selected ? colors.surface : colors.text}>
+                <Text variant="bodyStrong" color={selected ? colors.controlSelectedText : colors.text}>
                   {option.endonym}
                 </Text>
               </Pressable>
             );
           })}
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <ThemeToggle />
       </View>
 
       {/* Primary Location */}
@@ -275,25 +285,31 @@ export default function ProfileScreen() {
       </View>
 
       {/* Tab navigation */}
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
         <Pressable
-          style={[styles.tab, activeTab === 'profile' && styles.tabActive]}
+          style={[
+            styles.tab,
+            activeTab === 'profile' && { backgroundColor: colors.segmentSelectedBackground },
+          ]}
           onPress={() => setActiveTab('profile')}
         >
           <Text
             variant="bodyStrong"
-            color={activeTab === 'profile' ? colors.primary : colors.textMuted}
+            color={activeTab === 'profile' ? colors.segmentSelectedText : colors.textMuted}
           >
             {t('profile.myProfileTab')}
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.tab, activeTab === 'documents' && styles.tabActive]}
+          style={[
+            styles.tab,
+            activeTab === 'documents' && { backgroundColor: colors.segmentSelectedBackground },
+          ]}
           onPress={() => setActiveTab('documents')}
         >
           <Text
             variant="bodyStrong"
-            color={activeTab === 'documents' ? colors.primary : colors.textMuted}
+            color={activeTab === 'documents' ? colors.segmentSelectedText : colors.textMuted}
           >
             {t('profile.myDocumentsTab')}
           </Text>
@@ -546,23 +562,6 @@ export default function ProfileScreen() {
           )}
         </Card>
       </View>
-
-      {/* About */}
-      <View style={styles.section}>
-        <Text variant="subheading">{t('profile.about')}</Text>
-        <Card variant="glass">
-          <Text variant="body" color={colors.textSecondary}>
-            {t('profile.aboutBody')}
-          </Text>
-          <View style={styles.metaRow}>
-            <Chip label={t('profile.version', { version: APP_VERSION })} tone="neutral" />
-            <Chip
-              label={USE_MOCK_API ? t('profile.dataSourceMock') : t('profile.dataSourceLive')}
-              tone={USE_MOCK_API ? 'warning' : 'success'}
-            />
-          </View>
-        </Card>
-      </View>
     </Screen>
   );
 }
@@ -585,6 +584,7 @@ function ProfileField({
   last?: boolean;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -594,7 +594,7 @@ function ProfileField({
   };
 
   return (
-    <View style={[styles.row, !last && styles.rowBorder]}>
+    <View style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
       <Text variant="caption" color={colors.textMuted} style={styles.rowLabel}>
         {label}
       </Text>
@@ -604,7 +604,14 @@ function ProfileField({
             value={draft}
             onChangeText={setDraft}
             keyboardType={keyboardType ?? 'default'}
-            style={styles.editInput}
+            style={[
+              styles.editInput,
+              {
+                borderColor: colors.borderStrong,
+                color: colors.text,
+                backgroundColor: colors.inputBackground,
+              },
+            ]}
             autoFocus
             onSubmitEditing={handleSave}
             returnKeyType="done"
@@ -631,6 +638,7 @@ function LocationCard({
   onUpdate: (address: any) => void;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const { request, status } = useLocation();
   const [locationStatus, setLocationStatus] = useState<
     'idle' | 'detecting' | 'success' | 'error' | 'denied' | 'preview'
@@ -778,8 +786,9 @@ function LocationCard({
 }
 
 function Row({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.row, !last && styles.rowBorder]}>
+    <View style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
       <Text variant="caption" color={colors.textMuted} style={styles.rowLabel}>
         {label}
       </Text>
@@ -798,21 +807,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
-    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
     borderRadius: radius.md,
     minHeight: 52,
     justifyContent: 'center',
   },
-  langSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
   pressed: { opacity: 0.85 },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: colors.glass,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
     padding: 4,
     gap: 4,
   },
@@ -822,7 +826,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.sm + 2,
   },
-  tabActive: { backgroundColor: colors.surface },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -831,10 +834,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   rowLabel: { flex: 1 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowActions: { flexDirection: 'row', gap: spacing.sm },
   rowAction: { flex: 1 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   docRow: {
     flexDirection: 'row',
@@ -853,12 +854,9 @@ const styles = StyleSheet.create({
   editInput: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    color: colors.text,
     fontSize: 15,
-    backgroundColor: colors.surface,
   },
 });

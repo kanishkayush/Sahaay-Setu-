@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { ApplicantProfile, EducationStatus, ProjectType } from '@/api/contracts';
 import { AmountInput, Button, OptionList, Screen, Text } from '@/components/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 
 /**
  * Smart Scheme Recommender — the input wizard.
@@ -48,6 +48,7 @@ const INCOME_PRESETS = [60_000, 120_000, 250_000, 500_000];
 const TOTAL_STEPS = 5;
 
 export default function RecommendWizard() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const savedProfile = useAppStore((s) => s.profile);
   const setProfile = useAppStore((s) => s.setProfile);
@@ -121,7 +122,16 @@ export default function RecommendWizard() {
       <View style={styles.progressWrap}>
         <View style={styles.segments}>
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-            <View key={i} style={[styles.segment, i <= step && styles.segmentDone]} />
+            <View
+              key={i}
+              style={[
+                styles.segment,
+                {
+                  backgroundColor:
+                    i <= step ? colors.controlSelectedBackground : colors.borderSoft,
+                },
+              ]}
+            />
           ))}
         </View>
         <Text variant="label" color={colors.textMuted} style={styles.stepLabel}>
@@ -213,9 +223,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 5,
     borderRadius: radius.pill,
-    backgroundColor: colors.borderSoft,
   },
-  segmentDone: { backgroundColor: colors.inverse },
   stepLabel: { textTransform: 'uppercase' },
   stepBody: { gap: spacing.lg },
   footer: { gap: spacing.sm },

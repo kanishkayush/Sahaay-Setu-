@@ -11,6 +11,7 @@ class AssistantProfileContext(BaseModel):
     longitude: Optional[float] = None
     scEligibilityStatus: Optional[bool] = None
     pinCode: Optional[str] = None
+    gender: Optional[str] = None
 
 class AssistantQueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
@@ -63,6 +64,8 @@ class AssistantUICard(BaseModel):
     amountFit: Optional[str] = None
     incomeFit: Optional[str] = None
     courseFit: Optional[str] = None
+    genderFit: Optional[str] = None
+    purposeFit: Optional[str] = None
     eligibilityNotes: Optional[str] = None
     maxLoanAmount: Optional[float] = None
     interestRatePct: Optional[float] = None

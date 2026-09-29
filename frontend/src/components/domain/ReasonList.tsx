@@ -2,18 +2,13 @@ import { StyleSheet, View } from 'react-native';
 import type { LanguageCode, MatchReason } from '@/api/contracts';
 import { Icon, type IconName, Text } from '@/components/ui';
 import { pickLocalized } from '@/i18n/localized';
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 const MARKER: Record<MatchReason['kind'], string> = {
   MATCH: '✓',
   MISMATCH: '✕',
   INFO: 'ⓘ',
 };
-const MARKER_COLOR = {
-  MATCH: colors.successText,
-  MISMATCH: colors.dangerText,
-  INFO: colors.infoText,
-} as const;
 
 /**
  * "Why this scheme?" — the explainability surface.
@@ -27,12 +22,18 @@ export function ReasonList({
   reasons: MatchReason[];
   language: LanguageCode;
 }) {
+  const { colors } = useTheme();
+  const markerColor = {
+    MATCH: colors.successText,
+    MISMATCH: colors.dangerText,
+    INFO: colors.infoText,
+  } as const;
   return (
     <View style={styles.list}>
       {reasons.map((reason, index) => (
         <View key={`${reason.kind}-${index}`} style={styles.row}>
           <View style={styles.marker}>
-            <Text style={{ color: MARKER_COLOR[reason.kind], fontSize: 16, fontWeight: 'bold' }}>
+            <Text style={{ color: markerColor[reason.kind], fontSize: 16, fontWeight: 'bold' }}>
               {MARKER[reason.kind]}
             </Text>
           </View>

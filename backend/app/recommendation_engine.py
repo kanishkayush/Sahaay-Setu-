@@ -12,6 +12,7 @@ from app.eligibility_engine import (
     evaluate_all_schemes,
     load_scheme,
 )
+from app.gender import FIT_MATCH, FIT_MISMATCH, FIT_UNKNOWN, gender_fit_role, normalize_gender
 from app.scheme_catalogue import is_recommendable
 
 STATUS_TIER = {
@@ -70,6 +71,7 @@ class RelevanceQuery:
     domain: Optional[str] = None
     activity: Optional[str] = None
     amount_inr: Optional[float] = None
+    gender: Optional[str] = None
 
 
 _LOAN_SCHEME_TYPES = frozenset({
@@ -296,9 +298,22 @@ def _has_sufficient_metadata(scheme: dict) -> bool:
     return True
 
 
+def _is_gender_discovery(query: Optional[RelevanceQuery]) -> bool:
+    if query is None:
+        return False
+    user_domain = (query.domain or "").upper()
+    if user_domain in {"EDUCATION", "AGRICULTURE", "BUSINESS"}:
+        return False
+    return normalize_gender(query.gender) in {"FEMALE", "MALE"}
+
+
 def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
     """0 = not relevant enough to recommend. Higher is a better metadata match."""
-    if not _has_sufficient_metadata(scheme):
+    gender_role = gender_fit_role(scheme, query.gender)
+    if gender_role == FIT_MISMATCH:
+        return 0
+    gender_match = gender_role == FIT_MATCH
+    if not _has_sufficient_metadata(scheme) and not gender_match:
         return 0
     text = _scheme_text(scheme)
     assistance = str(scheme.get("assistance_type") or "").upper()
@@ -306,6 +321,11 @@ def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
     domain = str(scheme.get("domain") or "").upper()
     wanted = (query.assistance_type or "LOAN").upper()
     user_domain = (query.domain or "").upper()
+
+    if _is_gender_discovery(query):
+        if gender_match:
+            return 4
+        return 0
 
     if wanted == "LOAN":
         if assistance in {"SCHOLARSHIP", "GRANT", "COACHING"}:
@@ -348,16 +368,21 @@ def scheme_relevance_priority(scheme: dict, query: RelevanceQuery) -> int:
     if user_domain == "BUSINESS":
         if domain in {"EDUCATION", "AGRICULTURE"}:
             return 0
+        bonus = 1 if gender_match else 0
         if scheme_type == "MICRO_FINANCE" and (amount is None or amount <= 125000):
-            return 4
+            return 4 + bonus
         if scheme_type == "TERM_LOAN" and (amount is None or amount > 125000):
             return 4
         if scheme_type in {"BUSINESS_LOAN", "TERM_LOAN", "MICRO_FINANCE"}:
-            return 3
+            return 3 + bonus
         if domain == "BUSINESS" and _is_loan_product(scheme):
+            return 2 + bonus
+        if gender_match:
             return 2
         return 0
 
+    if gender_match:
+        return 3
     if _is_loan_product(scheme) and domain not in {"EDUCATION"}:
         return 1
     return 0
@@ -533,6 +558,28 @@ def generate_recommendations(
         related_scored.sort(
             key=lambda s: (s.status_tier, -s.recommendation_score, s.scheme_id)
         )
+    elif _is_gender_discovery(relevance):
+        match_only = []
+        for scored in scored_schemes:
+            try:
+                scheme = load_scheme(scored.scheme_id)
+            except Exception:
+                continue
+            if gender_fit_role(scheme, relevance.gender) == FIT_MATCH:
+                match_only.append(scored)
+        scored_schemes = match_only
+        if not match_only:
+            for eval_res in gated.evaluated_schemes:
+                if eval_res.eligibility_status != "not_eligible":
+                    continue
+                try:
+                    scheme = load_scheme(eval_res.scheme_id)
+                except Exception:
+                    continue
+                if gender_fit_role(scheme, relevance.gender) == FIT_MATCH:
+                    related_scored.append(
+                        _score_scheme(eval_res, rules_by_scheme.get(eval_res.scheme_id, []))
+                    )
 
     top = scored_schemes[0] if scored_schemes else None
     alternatives = scored_schemes[1:] if len(scored_schemes) > 1 else []

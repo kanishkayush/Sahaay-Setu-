@@ -1,4 +1,6 @@
 export type PartnerSearchUiState =
+  | { kind: 'loading-profile' }
+  | { kind: 'profile-unavailable' }
   | { kind: 'idle-location-required' }
   | { kind: 'loading' }
   | { kind: 'error' }
@@ -12,7 +14,13 @@ export function partnerSearchUiState(input: {
   isLoading: boolean;
   isError: boolean;
   resultCount: number;
+  profileStatus?: 'loading' | 'error' | 'ready';
 }): PartnerSearchUiState {
+  const profileStatus = input.profileStatus ?? 'ready';
+  if (profileStatus === 'loading') return { kind: 'loading-profile' };
+  if (profileStatus === 'error' && !input.locationAvailable) {
+    return { kind: 'profile-unavailable' };
+  }
   const nearbyNeedsLocation = input.viewMode === 'nearby' && !input.locationAvailable;
   if (nearbyNeedsLocation) return { kind: 'idle-location-required' };
   if (input.isLoading) return { kind: 'loading' };

@@ -4,12 +4,13 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Text, Card } from '@/components/ui';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@/theme';
+import { radius, spacing, typography, useTheme } from '@/theme';
 import { useAppStore } from '@/store/useAppStore';
 import { login } from '@/api/services/auth.service';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const setAuthStatus = useAppStore((s) => s.setAuthStatus);
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,14 +42,14 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <LinearGradient
-        colors={['#F4FAFF', '#EAF6FF', '#F8FCFF']}
+        colors={[...colors.gradient]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.brandingContainer}>
-          <Text variant="title" style={styles.title}>{t('login.title')}</Text>
+          <Text variant="title" style={[styles.title, { color: colors.primaryDark }]}>{t('login.title')}</Text>
           <Text variant="body" color={colors.textSecondary} style={styles.subtitle}>
             {t('login.subtitle')}
           </Text>
@@ -56,13 +57,20 @@ export default function LoginScreen() {
 
         <Card variant="glass" padded={false} style={styles.formContainer}>
           <>
-            <Text variant="bodyStrong" style={styles.label}>
+            <Text variant="bodyStrong" style={[styles.label, { color: colors.text }]}>
               {t('login.loginOrRegister', 'Login or Register')}
             </Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
+              ]}
               placeholder={t('login.placeholder', 'Mobile number (e.g. 9876543210)')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textMuted}
               value={inputValue}
               onChangeText={(text) => {
                 setInputValue(text);
@@ -107,7 +115,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    color: colors.primaryDark,
     textAlign: 'center',
     marginBottom: spacing.md,
     lineHeight: 40,
@@ -121,18 +128,14 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: spacing.lg,
-    color: colors.text,
   },
   input: {
     ...typography.body,
-    backgroundColor: colors.glassInput,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: spacing.lg,
     minHeight: 52,
     marginBottom: spacing.xxl,
-    color: colors.text,
   },
   button: {
     marginBottom: spacing.lg,

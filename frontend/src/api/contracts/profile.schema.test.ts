@@ -73,4 +73,18 @@ describe('UserProfileSchema', () => {
     });
     expect(parsed.success).toBe(true);
   });
+
+  it('coerces numeric string coordinates from GET /v1/profile', () => {
+    const parsed = UserProfileSchema.parse({
+      user_id: 'u1',
+      address: {
+        pinCode: '302017',
+        addressLine1: null,
+        coordinates: { latitude: '26.9124', longitude: '75.7873' },
+      },
+      eligibility: { scEligibilityStatus: null, annualFamilyIncome: null },
+    });
+    expect(parsed.address?.coordinates).toEqual({ latitude: 26.9124, longitude: 75.7873 });
+    expect(isValidCoordinate(parsed.address?.coordinates)).toBe(true);
+  });
 });

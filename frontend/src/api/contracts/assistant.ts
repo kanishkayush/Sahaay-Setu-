@@ -47,6 +47,7 @@ export const AssistantQueryRequestSchema = z.object({
         longitude: z.number().optional(),
         scEligibilityStatus: z.boolean().optional(),
         pinCode: z.string().optional(),
+        gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
       })
       .optional(),
     sessionId: z.string().optional(),
@@ -96,6 +97,8 @@ export const AssistantUICardSchema = z.discriminatedUnion('type', [
     amountFit: z.string().optional(),
     incomeFit: z.string().optional(),
     courseFit: z.string().optional(),
+    genderFit: z.string().optional(),
+    purposeFit: z.string().optional(),
     eligibilityNotes: z.string().optional(),
     maxLoanAmount: z.number().optional(),
     interestRatePct: z.number().optional(),

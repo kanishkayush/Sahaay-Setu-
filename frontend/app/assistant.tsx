@@ -22,7 +22,7 @@ import { useAssistant } from '@/hooks/useAssistant';
 import { useCanSpeak } from '@/hooks/useCanSpeak';
 import { useSpeechInput } from '@/hooks/useSpeechInput';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing, typography, MIN_TOUCH_SIZE } from '@/theme';
+import { colors, radius, spacing, typography, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 /**
@@ -65,6 +65,7 @@ import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 const STARTER_PROMPT_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5'] as const;
 export default function AssistantScreen() {
   const { t } = useTranslation();
+  const { colors: theme } = useTheme();
   const language = useAppStore((s) => s.language);
   const { messages, isThinking, send, clear } = useAssistant(language);
   const [input, setInput] = useState('');
@@ -156,7 +157,7 @@ export default function AssistantScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={['bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -171,18 +172,18 @@ export default function AssistantScreen() {
           {messages.length === 0 ? (
             <View style={styles.empty}>
               <View style={styles.emptyBadge}>
-                <Icon name="chat" size={30} color={colors.textInverse} strokeWidth={1.8} />
+                <Icon name="chat" size={30} color={theme.textInverse} strokeWidth={1.8} />
               </View>
               <Text variant="title" center>
                 {t('assistant.emptyTitle')}
               </Text>
               {/* Each language in its own script — the clearest way to say
                   "you may write in yours" to someone who cannot read English. */}
-              <Text variant="body" color={colors.textSecondary} center>
+              <Text variant="body" color={theme.textSecondary} center>
                 {t('assistant.emptyBody')} {SUPPORTED_LANGUAGES.map((l) => l.endonym).join(', ')}.
               </Text>
 
-              <Text variant="label" color={colors.textMuted} style={styles.suggestLabel}>
+              <Text variant="label" color={theme.textMuted} style={styles.suggestLabel}>
                 {t('assistant.suggestedTitle')}
               </Text>
               <View style={styles.suggestions}>
@@ -333,8 +334,15 @@ export default function AssistantScreen() {
             value={input}
             onChangeText={setInput}
             placeholder={speech.isListening ? t('assistant.listening') : t('assistant.placeholder')}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
+            placeholderTextColor={theme.textMuted}
+            style={[
+              styles.input,
+              {
+                color: theme.text,
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.border,
+              },
+            ]}
             multiline
             accessibilityLabel={t('assistant.placeholder')}
             onSubmitEditing={() => void submit(input)}
@@ -351,14 +359,15 @@ export default function AssistantScreen() {
               onPress={speech.toggle}
               style={({ pressed }) => [
                 styles.micBtn,
-                speech.isListening && styles.micListening,
+                { borderColor: theme.border, backgroundColor: theme.surface },
+                speech.isListening && { backgroundColor: theme.danger, borderColor: theme.danger },
                 pressed && styles.pressed,
               ]}
             >
               <Icon
                 name="mic"
                 size={20}
-                color={speech.isListening ? colors.textInverse : colors.primary}
+                color={speech.isListening ? theme.textInverse : theme.primary}
                 strokeWidth={2}
               />
             </Pressable>

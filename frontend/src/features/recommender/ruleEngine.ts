@@ -300,8 +300,31 @@ function scoreScheme(scheme: Scheme, profile: ApplicantProfile): Scored {
     score += Math.round(Math.max(0, (15 - rate) / 15) * 20);
   }
 
-  const fitStatus: Scored['fitStatus'] =
-    agriRole === 'related' ? 'RELATED' : blockers.length === 0 ? 'MATCH' : undefined;
+    const genderDiscovery =
+      profile.projectType === 'OTHER' &&
+      (profile.gender === 'FEMALE' || profile.gender === 'MALE');
+    if (genderDiscovery) {
+      if (scheme.eligibleGender === profile.gender) {
+        reasons.push(
+          reason(
+            'MATCH',
+            'The catalogue record is specifically for this gender',
+            'कैटलॉग रिकॉर्ड विशेष रूप से इस लिंग के लाभार्थियों के लिए है',
+          ),
+        );
+      } else {
+        blockers.push(
+          reason(
+            'INFO',
+            'Gender restriction is not published for this scheme',
+            'इस योजना के लिए लिंग संबंधी पाबंदी प्रकाशित नहीं है',
+          ),
+        );
+      }
+    }
+
+    const fitStatus: Scored['fitStatus'] =
+      agriRole === 'related' ? 'RELATED' : blockers.length === 0 ? 'MATCH' : undefined;
   return { scheme, score: Math.min(100, score), reasons, blockers, fitStatus };
 }
 

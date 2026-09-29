@@ -91,6 +91,8 @@ describe('education adviser cards', () => {
       maxTenureMonths: 84,
       isPrimary: true,
       action: 'VIEW_DETAILS',
+      genderFit: 'UNKNOWN',
+      purposeFit: 'MATCH',
     });
     expect(card.schemeId).toBe('nsfdc-term-loan');
     expect(card.action).toBe('VIEW_DETAILS');

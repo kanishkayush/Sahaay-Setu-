@@ -1,4 +1,5 @@
 import type { AssistantQueryRequest, UserProfile } from '@/api/contracts';
+import { normalizeProfileLocation } from '@/profile/canonical';
 
 type ProfileContext = NonNullable<AssistantQueryRequest['profileContext']>;
 
@@ -20,19 +21,17 @@ export function buildAssistantProfileContext(
   if (sc === true || sc === false) {
     ctx.scEligibilityStatus = sc;
   }
+  const gender = profile.eligibility?.gender;
+  if (gender === 'MALE' || gender === 'FEMALE' || gender === 'OTHER') {
+    ctx.gender = gender;
+  }
   const pin = profile.address?.pinCode;
   if (pin) ctx.pinCode = pin;
   const state = profile.address?.state;
   if (state) ctx.stateCode = state;
 
-  const coords = profile.address?.coordinates;
-  const hasCoords =
-    typeof coords?.latitude === 'number' &&
-    typeof coords?.longitude === 'number' &&
-    Number.isFinite(coords.latitude) &&
-    Number.isFinite(coords.longitude) &&
-    !(coords.latitude === 0 && coords.longitude === 0);
-  if (hasCoords) {
+  const coords = normalizeProfileLocation(profile);
+  if (coords) {
     ctx.latitude = coords.latitude;
     ctx.longitude = coords.longitude;
   }

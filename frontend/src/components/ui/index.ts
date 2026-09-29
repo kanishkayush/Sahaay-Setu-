@@ -14,3 +14,4 @@ export * from './ValueCard';
 export * from './SegmentedControl';
 export * from './SettingToggle';
 export * from './ResultCard';
+export * from './ThemeToggle';

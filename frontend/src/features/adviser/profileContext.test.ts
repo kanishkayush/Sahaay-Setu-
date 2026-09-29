@@ -28,6 +28,14 @@ describe('buildAssistantProfileContext', () => {
     expect(ctx).toEqual({ annualFamilyIncome: 300000 });
   });
 
+  it('includes saved gender as a first-class profile signal', () => {
+    const ctx = buildAssistantProfileContext({
+      ...base,
+      eligibility: { gender: 'FEMALE' },
+    });
+    expect(ctx).toEqual({ gender: 'FEMALE' });
+  });
+
   it('includes coordinates only when they are a real location', () => {
     const none = buildAssistantProfileContext({
       ...base,

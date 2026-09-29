@@ -45,4 +45,16 @@ describe('offline agriculture relevance', () => {
     expect(result.recommendations.map((r) => r.scheme.id)).toContain('nsfdc-education');
     expect(result.recommendations.map((r) => r.scheme.id)).not.toContain('nsfdc-term-loan');
   });
+
+  it('does not present generic Term Loan as a women-only primary match', () => {
+    const result = recommendSchemes(MOCK_SCHEMES, {
+      ...base,
+      projectType: 'OTHER',
+      gender: 'FEMALE',
+      estimatedProjectCost: 50000,
+    });
+    const ids = result.recommendations.map((r) => r.scheme.id);
+    expect(ids).not.toContain('nsfdc-term-loan');
+    expect(result.recommendations.every((r) => r.scheme.eligibleGender === 'FEMALE')).toBe(true);
+  });
 });

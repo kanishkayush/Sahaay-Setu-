@@ -39,6 +39,24 @@ profile_router = APIRouter(prefix="/v1", tags=["profile"])
 # Profile endpoints
 # ---------------------------------------------------------------------------
 
+def _canonicalize_stored_location(profile: dict[str, Any]) -> dict[str, Any]:
+    """Fold any legacy lat/lng onto address.coordinates without inventing a city."""
+    from app.profile_normalization import normalize_profile_location
+
+    point = normalize_profile_location(profile)
+    if point is None:
+        return profile
+    address = profile.get("address") if isinstance(profile.get("address"), dict) else {}
+    coords = address.get("coordinates") if isinstance(address, dict) else None
+    if isinstance(coords, dict) and coords.get("latitude") is not None:
+        return profile
+    next_profile = dict(profile)
+    next_address = dict(address)
+    next_address["coordinates"] = point
+    next_profile["address"] = next_address
+    return next_profile
+
+
 @profile_router.get("/profile")
 def get_profile(
     user_id: str = Depends(get_current_user_id)
@@ -51,7 +69,7 @@ def get_profile(
     # Backfill id for profiles saved before this field was introduced
     if "id" not in profile:
         profile = store.upsert(user_id, {})  # triggers id generation
-    return profile
+    return _canonicalize_stored_location(profile)
 
 
 @profile_router.put("/profile")
@@ -62,7 +80,7 @@ def update_profile(
     store = get_profile_store()
 
     update_data = request.model_dump(exclude_unset=True)
-    return store.upsert(user_id, update_data)
+    return _canonicalize_stored_location(store.upsert(user_id, update_data))
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import type { LanguageCode } from '@/api/contracts';
 import { Button, Screen, Text } from '@/components/ui';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { radius, spacing, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 
 /**
  * The first screen anyone sees.
@@ -17,6 +17,7 @@ import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
  * Selecting one switches the UI immediately so they get instant confirmation.
  */
 export default function LanguageScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const language = useAppStore((s) => s.language);
   const setLanguage = useAppStore((s) => s.setLanguage);
@@ -61,7 +62,11 @@ export default function LanguageScreen() {
               onPress={() => select(option.code)}
               style={({ pressed }) => [
                 styles.card,
-                selected && styles.cardSelected,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                selected && {
+                  borderColor: colors.controlSelectedBorder,
+                  backgroundColor: colors.primarySurface,
+                },
                 pressed && styles.pressed,
                 pending === option.code && styles.pending,
               ]}
@@ -90,12 +95,9 @@ const styles = StyleSheet.create({
     minHeight: MIN_TOUCH_SIZE + 36,
     gap: 2,
     padding: spacing.lg,
-    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.border,
     borderRadius: radius.lg,
   },
-  cardSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
   pressed: { opacity: 0.85 },
   pending: { opacity: 0.6 },
 });

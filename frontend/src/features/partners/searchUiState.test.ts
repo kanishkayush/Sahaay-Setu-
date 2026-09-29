@@ -61,4 +61,43 @@ describe('partnerSearchUiState', () => {
     });
     expect(nearby).toEqual({ kind: 'idle-location-required' });
   });
+
+  it('shows loading-profile instead of Location Required while GET /profile is in flight', () => {
+    const state = partnerSearchUiState({
+      viewMode: 'nearby',
+      locationAvailable: false,
+      onlyAccepting: true,
+      isLoading: false,
+      isError: false,
+      resultCount: 0,
+      profileStatus: 'loading',
+    });
+    expect(state).toEqual({ kind: 'loading-profile' });
+  });
+
+  it('keeps profile fetch failure distinct from Location Required', () => {
+    const state = partnerSearchUiState({
+      viewMode: 'nearby',
+      locationAvailable: false,
+      onlyAccepting: true,
+      isLoading: false,
+      isError: false,
+      resultCount: 0,
+      profileStatus: 'error',
+    });
+    expect(state).toEqual({ kind: 'profile-unavailable' });
+  });
+
+  it('Nearby with saved coordinates is not Location Required', () => {
+    const state = partnerSearchUiState({
+      viewMode: 'nearby',
+      locationAvailable: true,
+      onlyAccepting: false,
+      isLoading: false,
+      isError: false,
+      resultCount: 3,
+      profileStatus: 'ready',
+    });
+    expect(state).toEqual({ kind: 'results', count: 3 });
+  });
 });

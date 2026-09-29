@@ -10,11 +10,12 @@ import { ReasonList, SchemeCard } from '@/components/domain';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import { pickLocalized } from '@/i18n/localized';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, useTheme } from '@/theme';
 import { formatCompactCurrency, formatCurrency, formatPercent } from '@/utils/format';
 import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 export default function ResultsScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const profile = useAppStore((s) => s.profile);
   const language = useAppStore((s) => s.language);
@@ -85,7 +86,7 @@ export default function ResultsScreen() {
                 variant="primary"
                 size="sm"
                 fullWidth={false}
-                icon={<Icon name="edit" size={20} color={colors.surface} />}
+                icon={<Icon name="edit" size={20} color={colors.primaryText} />}
                 accessibilityLabel={t('recommender.editAnswers')}
                 onPress={() => router.replace('/recommend')}
               />

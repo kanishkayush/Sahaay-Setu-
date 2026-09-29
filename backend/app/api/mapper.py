@@ -66,6 +66,7 @@ _MATCH_CODES = frozenset({
     "REQUESTED_AMOUNT_WITHIN_LIMIT",
     "BENEFICIARY_CATEGORY_VERIFIED",
     "EDUCATION_STATUS_VERIFIED",
+    "GENDER_MATCH",
 })
 
 # Reason codes that map to a MISMATCH reason (blockers)
@@ -77,6 +78,7 @@ _MISMATCH_CODES = frozenset({
     "COURSE_COST_EXCEEDS_LIMIT",
     "COURSE_COST_BELOW_MINIMUM",
     "BENEFICIARY_CATEGORY_MISMATCH",
+    "GENDER_MISMATCH",
     "REQUESTED_AMOUNT_EXCEEDS_SCHEME_LIMIT",
     "REQUESTED_AMOUNT_EXCEEDS_DETERMINISTIC_FINANCING_LIMIT",
 })
@@ -109,6 +111,14 @@ _REASON_TEXT: dict[str, dict[str, str]] = {
     "EDUCATION_STATUS_VERIFIED": {
         "en": "Your education qualification meets the scheme requirement",
         "hi": "आपकी शैक्षिक योग्यता योजना की आवश्यकता को पूरा करती है",
+    },
+    "GENDER_MATCH": {
+        "en": "This scheme's catalogue record is for women beneficiaries",
+        "hi": "इस योजना का कैटलॉग रिकॉर्ड महिला लाभार्थियों के लिए है",
+    },
+    "GENDER_MISMATCH": {
+        "en": "This scheme's catalogue record does not match the selected gender",
+        "hi": "इस योजना का कैटलॉग रिकॉर्ड चुने गए लिंग से मेल नहीं खाता",
     },
     "INCOME_EXCEEDS_LIMIT": {
         "en": "Annual family income exceeds the ₹5.00 lakh ceiling",

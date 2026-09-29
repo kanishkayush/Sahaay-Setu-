@@ -1,20 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from './Icon';
 import { Text } from './Text';
-import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { radius, spacing, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 
-/**
- * Single-select list, grouped into one card — the pattern from the Open Design
- * iOS recommender sheet.
- *
- * Preferred over a native picker throughout the app: a picker hides its options
- * behind a tap, which is a real barrier for users new to smartphones. Every
- * option stays visible and readable.
- *
- * Selection is a checkmark on the chosen row ONLY. (The source mockup renders a
- * check on every row — a static artifact, not a spec; copying it would make the
- * selected state unreadable.)
- */
 export type Option<T extends string> = {
   value: T;
   label: string;
@@ -28,8 +16,9 @@ export type OptionListProps<T extends string> = {
 };
 
 export function OptionList<T extends string>({ options, value, onChange }: OptionListProps<T>) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.group}>
+    <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {options.map((option, index) => {
         const selected = option.value === value;
         return (
@@ -43,9 +32,9 @@ export function OptionList<T extends string>({ options, value, onChange }: Optio
             onPress={() => onChange(option.value)}
             style={({ pressed }) => [
               styles.option,
-              index < options.length - 1 && styles.divider,
-              selected && styles.selected,
-              pressed && styles.pressed,
+              index < options.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+              selected && { backgroundColor: colors.primarySurface },
+              pressed && { backgroundColor: colors.surfaceAlt },
             ]}
           >
             <View style={styles.body}>
@@ -59,7 +48,6 @@ export function OptionList<T extends string>({ options, value, onChange }: Optio
               ) : null}
             </View>
 
-            {/* Checkmark on the selected row only — the non-colour signal. */}
             {selected ? (
               <Icon name="check" size={21} color={colors.primary} strokeWidth={2.2} />
             ) : null}
@@ -72,10 +60,8 @@ export function OptionList<T extends string>({ options, value, onChange }: Optio
 
 const styles = StyleSheet.create({
   group: {
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
   },
   option: {
@@ -86,8 +72,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  selected: { backgroundColor: colors.primarySurface },
-  pressed: { backgroundColor: colors.surfaceAlt },
   body: { flex: 1, gap: 2 },
 });

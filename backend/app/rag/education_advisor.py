@@ -14,6 +14,7 @@ from functools import lru_cache
 from typing import Optional
 
 from app.rag.scheme_knowledge import audit_scheme, iter_schemes
+from app.gender import gender_fit_role
 from app.schemas.assistant import AssistantUICard, AssistantUICardType
 
 NSFDC_LOAN_INCOME_CEILING = 500_000  # Current NSFDC FAQ, effective 7 Jan 2026
@@ -578,7 +579,17 @@ def build_education_brief(
     )
 
 
-def education_ui_cards(brief: EducationBrief, lang: str) -> list[AssistantUICard]:
+def _education_gender_fit(scheme_id: str, gender: Optional[str]) -> Optional[str]:
+    if not gender:
+        return None
+    try:
+        from app.eligibility_engine import load_scheme
+        return gender_fit_role(load_scheme(scheme_id), gender)
+    except Exception:
+        return "UNKNOWN"
+
+
+def education_ui_cards(brief: EducationBrief, lang: str, gender: Optional[str] = None) -> list[AssistantUICard]:
     cards: list[AssistantUICard] = []
     ordered = list(brief.primary_loan_options) + list(brief.other_education_support)
     seen: set[str] = set()
@@ -692,6 +703,8 @@ def education_ui_cards(brief: EducationBrief, lang: str) -> list[AssistantUICard
                 amountFit=opt.amount_fit,
                 incomeFit=opt.income_fit,
                 courseFit=opt.course_fit,
+                genderFit=_education_gender_fit(opt.scheme_id, gender),
+                purposeFit="MATCH",
                 eligibilityNotes=opt.why_not if opt.requires_verification else None,
                 maxLoanAmount=float(opt.loan_amount_max) if verified_financials and opt.loan_amount_max else None,
                 isPrimary=is_primary,

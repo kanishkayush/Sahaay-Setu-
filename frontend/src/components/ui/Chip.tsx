@@ -1,50 +1,52 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme, type ColorTokens } from '@/theme';
 
 export type ChipTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
 
-/**
- * Pill chip, per the Open Design system: outlined when idle, solid dark when
- * selected — the filter row on the results screen.
- *
- * Status tones pair a low-saturation surface with an AA-passing text colour.
- * `icon` is how status stops depending on colour alone; keep passing it.
- */
-const tones: Record<ChipTone, { bg: string; fg: string; border: string }> = {
-  neutral: { bg: colors.surface, fg: colors.textSecondary, border: colors.border },
-  primary: { bg: colors.primarySurface, fg: colors.primary, border: colors.primarySurface },
-  success: { bg: colors.successSurface, fg: colors.successText, border: colors.successSurface },
-  warning: { bg: colors.warningSurface, fg: colors.warningText, border: colors.warningSurface },
-  danger: { bg: colors.dangerSurface, fg: colors.dangerText, border: colors.dangerSurface },
-  info: { bg: colors.infoSurface, fg: colors.infoText, border: colors.infoSurface },
-};
+function tones(colors: ColorTokens): Record<ChipTone, { bg: string; fg: string; border: string }> {
+  return {
+    neutral: { bg: colors.surface, fg: colors.textSecondary, border: colors.border },
+    primary: { bg: colors.primarySurface, fg: colors.primary, border: colors.primarySurface },
+    success: { bg: colors.successSurface, fg: colors.successText, border: colors.successSurface },
+    warning: { bg: colors.warningSurface, fg: colors.warningText, border: colors.warningSurface },
+    danger: { bg: colors.dangerSurface, fg: colors.dangerText, border: colors.dangerSurface },
+    info: { bg: colors.infoSurface, fg: colors.infoText, border: colors.infoSurface },
+  };
+}
 
 export type ChipProps = {
   label: string;
   tone?: ChipTone;
-  /** The non-colour signal for status. Always pass it on a status chip. */
   icon?: IconName;
   selected?: boolean;
   onPress?: () => void;
 };
 
 export function Chip({ label, tone = 'neutral', icon, selected, onPress }: ChipProps) {
-  const t = tones[tone];
-  const fg = selected ? colors.textInverse : t.fg;
+  const { colors } = useTheme();
+  const t = tones(colors)[tone];
+  const fg = selected ? colors.controlSelectedText : t.fg;
 
   const body = (
     <View
       style={[
         styles.chip,
         {
-          backgroundColor: selected ? colors.inverse : t.bg,
-          borderColor: selected ? colors.inverse : t.border,
+          backgroundColor: selected ? colors.controlSelectedBackground : t.bg,
+          borderColor: selected ? colors.controlSelectedBorder : t.border,
         },
       ]}
     >
-      {icon ? <Icon name={icon} size={15} color={fg} strokeWidth={2} /> : null}
+      {icon ? (
+        <Icon
+          name={icon}
+          size={15}
+          color={selected ? colors.controlSelectedIcon : fg}
+          strokeWidth={2}
+        />
+      ) : null}
       <Text variant="label" color={fg}>
         {label}
       </Text>

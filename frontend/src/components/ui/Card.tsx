@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
-import { colors, radius, shadow, spacing } from '@/theme';
+import { radius, shadow, spacing, useTheme } from '@/theme';
 
 export type CardProps = ViewProps & {
   onPress?: () => void;
@@ -11,18 +11,6 @@ export type CardProps = ViewProps & {
   style?: StyleProp<ViewStyle>;
 };
 
-/**
- * Layout vs shadow style splitter for the glass variant.
- *
- * Root cause of Issue 2 (icon misalignment):
- *   Previously `style` went to the outer shadow-bearing wrapper only. But
- *   padding, gap, and alignItems had zero effect there — the BlurView inside
- *   was 100% fill and children had no layout constraints applied to them.
- *
- * Fix: split the style prop:
- *   - OUTER_PROPS (width, flex, margin, position) → outer shadow wrapper
- *   - Everything else (padding, gap, alignItems, etc.) → content layer View
- */
 const OUTER_PROPS = new Set([
   'width', 'height', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight',
   'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'alignSelf',
@@ -53,6 +41,7 @@ export function Card({
   children,
   ...rest
 }: CardProps) {
+  const { colors, mode } = useTheme();
   const isGlass = variant === 'glass';
 
   let content;
@@ -60,16 +49,23 @@ export function Card({
   if (isGlass) {
     const { outer, inner } = splitStyle(style);
     content = (
-      <View style={[styles.glassShadow, outer]} {...rest}>
-        {/* Frosted blur layer fills the outer wrapper */}
+      <View
+        style={[
+          styles.glassShadow,
+          { borderColor: colors.glassBorder },
+          outer,
+        ]}
+        {...rest}
+      >
         <BlurView
           intensity={Platform.OS === 'web' ? 0 : 20}
-          tint="light"
+          tint={mode === 'dark' ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        {/* Solid glass tint — visible on web where BlurView is no-op */}
-        <View style={[styles.glassOverlay, StyleSheet.absoluteFill]} pointerEvents="none" />
-        {/* Content layer: layout/spacing props reach children here */}
+        <View
+          style={[styles.glassOverlay, StyleSheet.absoluteFill, { backgroundColor: colors.glass }]}
+          pointerEvents="none"
+        />
         <View style={[styles.contentLayer, padded && styles.padded, inner]}>
           {children}
         </View>
@@ -77,7 +73,18 @@ export function Card({
     );
   } else {
     content = (
-      <View style={[styles.card, padded && styles.padded, style]} {...rest}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+          padded && styles.padded,
+          style,
+        ]}
+        {...rest}
+      >
         {children}
       </View>
     );
@@ -98,24 +105,19 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     ...shadow.card,
   },
   glassShadow: {
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.glassBorder,
     ...shadow.glass,
   },
   glassOverlay: {
-    backgroundColor: colors.glass,
     borderRadius: radius.lg,
   },
-  /** Normal flex container that sits on top of the blur layer */
   contentLayer: {
     flexDirection: 'column',
   },

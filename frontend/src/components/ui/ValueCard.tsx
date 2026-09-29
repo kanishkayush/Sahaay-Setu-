@@ -1,15 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import { colors, radius, spacing } from '@/theme';
-
-/**
- * The high-contrast hero card from the Open Design system: an eyebrow, one
- * plain-language claim, and up to three supporting figures.
- *
- * It exists because financial literacy is the stated problem in the brief. A
- * user landing on Home should learn what is actually on offer — 90% of project
- * cost at 5–8% a year — before being asked to do anything.
- */
+import { radius, spacing, useTheme } from '@/theme';
 
 export type ValueStat = { value: string; label: string };
 
@@ -20,8 +11,9 @@ export type ValueCardProps = {
 };
 
 export function ValueCard({ eyebrow, headline, stats = [] }: ValueCardProps) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.inverse }]}>
       <Text variant="label" color={colors.textOnInverse} style={styles.eyebrow}>
         {eyebrow}
       </Text>
@@ -54,7 +46,6 @@ export function ValueCard({ eyebrow, headline, stats = [] }: ValueCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.inverse,
     borderRadius: radius.lg,
     padding: spacing.xxl,
     gap: spacing.md,

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { colors, spacing } from '@/theme';
-
 import { LinearGradient } from 'expo-linear-gradient';
+
+import { spacing, useTheme } from '@/theme';
 
 export type ScreenProps = {
   children: ReactNode;
@@ -24,6 +24,7 @@ export function Screen({
   style,
   footer,
 }: ScreenProps) {
+  const { colors } = useTheme();
   const content = scroll ? (
     <ScrollView
       style={styles.flex}
@@ -40,14 +41,26 @@ export function Screen({
   return (
     <View style={styles.flex}>
       <LinearGradient
-        colors={['#F4FAFF', '#EAF6FF', '#F8FCFF']}
+        colors={[...colors.gradient]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView edges={edges} style={[styles.safe, style]}>
         {content}
-        {footer ? <View style={styles.footer}>{footer}</View> : null}
+        {footer ? (
+          <View
+            style={[
+              styles.footer,
+              {
+                borderTopColor: colors.border,
+                backgroundColor: colors.glass,
+              },
+            ]}
+          >
+            {footer}
+          </View>
+        ) : null}
       </SafeAreaView>
     </View>
   );
@@ -63,7 +76,5 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.glass,
   },
 });

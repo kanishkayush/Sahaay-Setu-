@@ -22,13 +22,20 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import uuid
 
 
 class GeoPoint(BaseModel):
     latitude: float
     longitude: float
+
+    @field_validator("latitude", "longitude", mode="before")
+    @classmethod
+    def _coerce_coordinate(cls, value: object) -> object:
+        if isinstance(value, str) and value.strip():
+            return float(value)
+        return value
 
 class ProfileAddress(BaseModel):
     state: Optional[str] = None
@@ -42,6 +49,7 @@ class ProfileAddress(BaseModel):
 class ProfileEligibility(BaseModel):
     scEligibilityStatus: Optional[bool] = None
     annualFamilyIncome: Optional[int] = Field(None, ge=0)
+    gender: Optional[str] = None
 
 
 class ProfileBusiness(BaseModel):

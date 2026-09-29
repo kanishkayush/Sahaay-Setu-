@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 
 /**
  * Entry gate. Sends first-time users through language selection, and everyone
@@ -10,6 +10,7 @@ import { colors } from '@/theme';
  */
 export default function Index() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
+  const { colors } = useTheme();
 
   useEffect(() => {
     // Defer a tick so the root navigator is mounted before we redirect.

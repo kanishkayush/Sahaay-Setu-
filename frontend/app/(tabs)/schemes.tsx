@@ -10,7 +10,7 @@ import { SchemeCard } from '@/components/domain';
 import { useSchemes } from '@/hooks/useSchemes';
 import { pickLocalized } from '@/i18n/localized';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, useTheme } from '@/theme';
 
 const CATEGORIES: OfficialCategory[] = [
   'NGO',
@@ -20,6 +20,7 @@ const CATEGORIES: OfficialCategory[] = [
 ];
 
 export default function SchemesScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const language = useAppStore((s) => s.language);
   const { data, isLoading, isError } = useSchemes();

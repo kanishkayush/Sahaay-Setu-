@@ -1,10 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import { colors, radius, shadow, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { radius, shadow, spacing, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 
-/**
- * Premium glassmorphism segmented control.
- */
 export type Segment<T extends string> = { value: T; label: string };
 
 export type SegmentedControlProps<T extends string> = {
@@ -18,8 +15,14 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.track}>
+    <View
+      style={[
+        styles.track,
+        { backgroundColor: colors.glass, borderColor: colors.glassBorder },
+      ]}
+    >
       {segments.map((segment) => {
         const active = segment.value === value;
         return (
@@ -31,11 +34,14 @@ export function SegmentedControl<T extends string>({
             onPress={() => onChange(segment.value)}
             style={({ pressed }) => [
               styles.segment,
-              active && styles.segmentActive,
+              active && {
+                backgroundColor: colors.segmentSelectedBackground,
+                ...shadow.card,
+              },
               pressed && styles.pressed,
             ]}
           >
-            <Text variant="bodyStrong" color={active ? colors.text : colors.textMuted}>
+            <Text variant="bodyStrong" color={active ? colors.segmentSelectedText : colors.textMuted}>
               {segment.label}
             </Text>
           </Pressable>
@@ -48,10 +54,8 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: colors.glass,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
     padding: 4,
     gap: 4,
     ...shadow.glass,
@@ -63,10 +67,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.sm + 2,
     paddingHorizontal: spacing.md,
-  },
-  segmentActive: {
-    backgroundColor: colors.surface,
-    ...shadow.card,
   },
   pressed: { opacity: 0.7 },
 });

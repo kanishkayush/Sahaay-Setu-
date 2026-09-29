@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from './Text';
-import { colors, radius, spacing, shadow, MIN_TOUCH_SIZE } from '@/theme';
+import { radius, spacing, shadow, MIN_TOUCH_SIZE, useTheme, type ColorTokens } from '@/theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -23,6 +23,42 @@ export type ButtonProps = Omit<PressableProps, 'style'> & {
   style?: ViewStyle;
 };
 
+function variantStyle(variant: Variant, colors: ColorTokens): ViewStyle {
+  switch (variant) {
+    case 'primary':
+      return { backgroundColor: colors.primary, ...shadow.glass };
+    case 'secondary':
+      return {
+        backgroundColor: colors.glassInput,
+        borderWidth: 1,
+        borderColor: colors.border,
+      };
+    case 'outline':
+      return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary };
+    case 'ghost':
+      return { backgroundColor: 'transparent' };
+    case 'danger':
+      return { backgroundColor: colors.dangerText };
+    default:
+      return {};
+  }
+}
+
+function variantText(variant: Variant, colors: ColorTokens): string {
+  switch (variant) {
+    case 'primary':
+      return colors.primaryText;
+    case 'secondary':
+    case 'outline':
+    case 'ghost':
+      return colors.primary;
+    case 'danger':
+      return colors.textInverse;
+    default:
+      return colors.text;
+  }
+}
+
 export function Button({
   title,
   variant = 'primary',
@@ -35,7 +71,9 @@ export function Button({
   onPress,
   ...rest
 }: ButtonProps) {
+  const { colors } = useTheme();
   const isDisabled = disabled || loading;
+  const fg = variantText(variant, colors);
 
   return (
     <Pressable
@@ -50,7 +88,7 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         sizeStyles[size],
-        variantStyles[variant],
+        variantStyle(variant, colors),
         fullWidth && styles.fullWidth,
         pressed && !isDisabled && styles.pressed,
         isDisabled && styles.disabled,
@@ -59,13 +97,13 @@ export function Button({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={textColor[variant]} />
+        <ActivityIndicator color={fg} />
       ) : (
         <View style={styles.content}>
           {icon}
           <Text
             variant={size === 'lg' ? 'subheading' : 'bodyStrong'}
-            color={textColor[variant]}
+            color={fg}
             style={styles.label}
           >
             {title}
@@ -95,20 +133,4 @@ const sizeStyles: Record<Size, ViewStyle> = {
   sm: { minHeight: MIN_TOUCH_SIZE, paddingVertical: spacing.sm },
   md: { minHeight: 52, paddingVertical: spacing.md },
   lg: { minHeight: 58, paddingVertical: spacing.lg },
-};
-
-const variantStyles: Record<Variant, ViewStyle> = {
-  primary: { backgroundColor: colors.primary, ...shadow.glass }, // Subtle blue shadow
-  secondary: { backgroundColor: 'rgba(255, 255, 255, 0.75)', borderWidth: 1, borderColor: 'rgba(7,87,217,0.18)' },
-  outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
-  ghost: { backgroundColor: 'transparent' },
-  danger: { backgroundColor: colors.dangerText },
-};
-
-const textColor: Record<Variant, string> = {
-  primary: colors.textInverse,
-  secondary: colors.primary, // #0757D9
-  outline: colors.primary,
-  ghost: colors.primary,
-  danger: colors.textInverse,
 };

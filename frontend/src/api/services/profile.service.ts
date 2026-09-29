@@ -13,6 +13,7 @@ import {
   type DocumentMetadata,
   type DocumentListResponse,
 } from '@/api/contracts';
+import { enrichAddressWithCoordinates } from '@/profile/geocodeAddress';
 
 // ---------------------------------------------------------------------------
 // Stable device user ID
@@ -89,6 +90,11 @@ export async function getProfile(): Promise<UserProfile> {
 }
 
 export async function updateProfile(request: ProfileUpdateRequest): Promise<UserProfile> {
+  const payload: ProfileUpdateRequest = { ...request };
+  if (payload.address) {
+    payload.address = await enrichAddressWithCoordinates(payload.address);
+  }
+
   if (USE_MOCK_API) {
     return getProfile();
   }
@@ -96,7 +102,7 @@ export async function updateProfile(request: ProfileUpdateRequest): Promise<User
   const userId = await getDeviceUserId();
   return apiRequest(ENDPOINTS.profile.update, UserProfileSchema, {
     method: 'PUT',
-    body: request,
+    body: payload,
     headers: userHeaders(userId),
   });
 }

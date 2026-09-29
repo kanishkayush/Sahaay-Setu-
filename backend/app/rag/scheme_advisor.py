@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 from app.eligibility_engine import load_scheme
+from app.gender import FIT_MATCH, gender_fit_role, normalize_gender
 from app.schemas.assistant import AssistantUICard, AssistantUICardType
 
 _FAQ_PATH = Path(__file__).resolve().parents[2] / "data" / "rag" / "nsfdc_faq_current.json"
@@ -100,6 +101,7 @@ class AdviserBrief:
     activity: Optional[str] = None
     domain: Optional[str] = None
     sc_status: Optional[bool] = None
+    gender: Optional[str] = None
 
 
 @lru_cache(maxsize=1)
@@ -333,6 +335,20 @@ def _fit(scheme_id: str, amount: Optional[float], lang: str) -> Optional[SchemeF
     return SchemeFit(facts=facts, status=status, why=_why(facts, status, amount, lang))
 
 
+def _purpose_fit_code(domain: Optional[str], facts_domain: Optional[str]) -> str:
+    wanted = (domain or "").upper()
+    have = (facts_domain or "").upper()
+    if not wanted or wanted in {"OTHER", "UNKNOWN"}:
+        return "UNKNOWN"
+    if have and have == wanted:
+        return "MATCH"
+    if wanted == "BUSINESS" and have in {"BUSINESS", "MICRO_ENTERPRISE", "SELF_EMPLOYMENT"}:
+        return "MATCH"
+    if wanted in {"BUSINESS", "EDUCATION", "AGRICULTURE"} and have and have != wanted:
+        return "MISMATCH"
+    return "UNKNOWN"
+
+
 def _verification_status(facts: SchemeFacts) -> str:
     if facts.scheme_id in FAQ_CREDIT_IDS and facts.verified:
         return "VERIFIED"
@@ -373,10 +389,33 @@ def structured_why_selected(
     sc_status: Optional[bool] = None,
     course_fit: Optional[str] = None,
     related_agriculture: bool = False,
+    gender: Optional[str] = None,
+    gender_fit: Optional[str] = None,
 ) -> list[dict]:
     """Deterministic fit reasons. UNKNOWN stays UNKNOWN — never coerced to MATCH."""
     hi = lang == "hi"
     reasons: list[dict] = []
+    if gender_fit == "MATCH":
+        reasons.append(_reason(
+            "MATCH",
+            "The catalogue record is specifically for women beneficiaries.",
+            "कैटलॉग रिकॉर्ड विशेष रूप से महिला लाभार्थियों के लिए है।",
+            lang,
+        ))
+    elif gender_fit == "MISMATCH":
+        reasons.append(_reason(
+            "MISMATCH",
+            "The catalogue record does not match the stated gender.",
+            "कैटलॉग रिकॉर्ड बताए गए लिंग से मेल नहीं खाता।",
+            lang,
+        ))
+    elif gender:
+        reasons.append(_reason(
+            "INFO",
+            "Gender restriction is not published for this scheme.",
+            "इस योजना के लिए लिंग संबंधी पाबंदी प्रकाशित नहीं है।",
+            lang,
+        ))
     income_fit = _income_fit_code(income, facts.income_max)
     if income_fit == "WITHIN_LIMIT" and facts.income_max is not None:
         reasons.append(_reason(
@@ -526,6 +565,9 @@ def make_scheme_card(
     sc_status: Optional[bool] = None,
     course_fit: Optional[str] = None,
     eligibility_notes: Optional[str] = None,
+    gender: Optional[str] = None,
+    gender_fit: Optional[str] = None,
+    purpose_fit: Optional[str] = None,
 ) -> AssistantUICard:
     facts = fit.facts
     related = fit.fit_role == "related"
@@ -541,6 +583,8 @@ def make_scheme_card(
         sc_status=sc_status,
         course_fit=course_fit,
         related_agriculture=related and (domain or "").upper() == "AGRICULTURE",
+        gender=gender,
+        gender_fit=gender_fit,
     )
     if related:
         fit_status = "RELATED"
@@ -592,6 +636,8 @@ def make_scheme_card(
         amountFit=_amount_fit_code(fit.status, facts.assistance_type),
         incomeFit=_income_fit_code(income, facts.income_max),
         courseFit=course_fit,
+        genderFit=gender_fit,
+        purposeFit=purpose_fit,
         eligibilityNotes=eligibility_notes,
         maxLoanAmount=float(facts.loan_amount_max) if verified_financials and facts.loan_amount_max is not None else None,
         interestRatePct=float(facts.interest_rate_pct) if verified_financials and facts.interest_rate_pct is not None else None,
@@ -615,6 +661,7 @@ def _build_agriculture_brief(
     query: Optional[str],
     sc_status: Optional[bool],
     mode: str,
+    gender: Optional[str] = None,
 ) -> AdviserBrief:
     hi = lang == "hi"
     related_fits: list[SchemeFit] = []
@@ -705,6 +752,94 @@ def _build_agriculture_brief(
         activity=activity,
         domain="AGRICULTURE",
         sc_status=sc_status,
+        gender=gender,
+    )
+
+
+def _build_women_brief(
+    *,
+    gender: Optional[str],
+    amount: Optional[float],
+    lang: str,
+    income: Optional[float],
+    query: Optional[str],
+    sc_status: Optional[bool],
+    mode: str,
+    activity: Optional[str] = None,
+) -> AdviserBrief:
+    """Discover schemes from catalogue gender metadata. Do not invent a purpose."""
+    hi = lang == "hi"
+    from app.rag.scheme_knowledge import iter_schemes
+
+    matches: list[SchemeFit] = []
+    seen: set[str] = set()
+    for raw in iter_schemes():
+        sid = str(raw.get("scheme_id") or "")
+        if not sid or sid in seen:
+            continue
+        seen.add(sid)
+        if gender_fit_role(raw, gender) != FIT_MATCH:
+            continue
+        facts = load_scheme_facts(sid)
+        if facts is None:
+            continue
+        status = _in_project_range(amount, facts)
+        if status == "out_of_range":
+            status = "unknown"
+        fit = SchemeFit(
+            facts=facts,
+            status=status,
+            why=_why(facts, status, amount, lang),
+            fit_role="primary",
+        )
+        matches.append(fit)
+
+    primary = matches[0] if matches else None
+    alts = matches[1:4]
+    if primary is None:
+        answer = (
+            "मुझे उपलब्ध सत्यापित जानकारी में महिलाओं के लिए विशेष रूप से मेल खाने वाली योजना नहीं मिली। "
+            "मैं सामान्य योजनाएं भी दिखा सकता हूँ।"
+            if hi else
+            "I could not find a scheme that specifically matches women beneficiaries in the available verified information. "
+            "I can also show general schemes."
+        )
+        confidence = "low"
+    else:
+        verify = _verification_status(primary.facts)
+        name = _name(primary.facts, lang)
+        if verify == "VERIFIED":
+            answer = (
+                f"कैटलॉग में महिला लाभार्थियों के लिए {_name(primary.facts, lang)} विशेष रूप से दर्ज है। विवरण नीचे हैं।"
+                if hi else
+                f"The catalogue records {_name(primary.facts, lang)} specifically for women beneficiaries. Details are below."
+            )
+        else:
+            answer = (
+                f"कैटलॉग में महिला लाभार्थियों के लिए {name} विशेष रूप से दर्ज है। "
+                "वर्तमान विवरण की पूरी पुष्टि नहीं हो सकी है। विवरण नीचे हैं।"
+                if hi else
+                f"The catalogue records {name} specifically for women beneficiaries. "
+                "Current details could not be fully confirmed. Details are below."
+            )
+        confidence = "medium" if verify == "VERIFIED" else "low"
+    related_ids = [f.facts.scheme_id for f in matches]
+    return AdviserBrief(
+        mode=mode,
+        primary=primary,
+        alternatives=alts,
+        comparison=([primary] if primary else []) + alts,
+        missing=[],
+        next_question=None,
+        confidence=confidence,
+        answer=answer,
+        related_ids=related_ids,
+        amount=amount,
+        income=income,
+        activity=activity,
+        domain=None,
+        sc_status=sc_status,
+        gender=gender,
     )
 
 
@@ -728,11 +863,25 @@ def build_brief(
     income: Optional[float] = None,
     query: Optional[str] = None,
     sc_status: Optional[bool] = None,
+    gender: Optional[str] = None,
 ) -> AdviserBrief:
     lang = "hi" if lang == "hi" else "en"
     named_ids = named_ids or []
     retrieved_ids = retrieved_ids or []
-    if (domain or "").upper() == "AGRICULTURE" and mode != EXPLAIN:
+    gender = normalize_gender(gender)
+    domain_key = (domain or "").upper()
+    if gender and domain_key not in {"AGRICULTURE", "EDUCATION", "BUSINESS"} and mode != EXPLAIN:
+        return _build_women_brief(
+            gender=gender,
+            amount=amount,
+            lang=lang,
+            income=income,
+            query=query,
+            sc_status=sc_status,
+            mode=mode,
+            activity=activity,
+        )
+    if domain_key == "AGRICULTURE" and mode != EXPLAIN:
         return _build_agriculture_brief(
             amount=amount,
             activity=activity,
@@ -741,6 +890,7 @@ def build_brief(
             query=query,
             sc_status=sc_status,
             mode=mode,
+            gender=gender,
         )
     if (domain or "").upper() == "EDUCATION" and mode != EXPLAIN:
         from app.rag.education_advisor import (
@@ -803,8 +953,9 @@ def build_brief(
             activity=activity,
             domain="EDUCATION",
             sc_status=sc_status,
+            gender=gender,
         )
-        brief._education_cards = education_ui_cards(edu, lang)  # type: ignore[attr-defined]
+        brief._education_cards = education_ui_cards(edu, lang, gender=gender)  # type: ignore[attr-defined]
         return brief
     universe = list(_universe(domain))
     if mode == EXPLAIN and named_ids:
@@ -908,6 +1059,7 @@ def build_brief(
         activity=activity,
         domain=domain,
         sc_status=sc_status,
+        gender=gender,
     )
 
 
@@ -1085,6 +1237,23 @@ def ui_cards(brief: AdviserBrief, lang: str) -> list[AssistantUICard]:
                 activity=brief.activity,
                 domain=brief.domain,
                 sc_status=brief.sc_status,
+                gender=brief.gender,
+                gender_fit=_card_gender_fit(fit, brief.gender),
+                purpose_fit=(
+                    "RELATED"
+                    if fit.fit_role == "related"
+                    else _purpose_fit_code(brief.domain, fit.facts.domain)
+                ),
             )
         )
     return cards
+
+
+def _card_gender_fit(fit: SchemeFit, gender: Optional[str]) -> Optional[str]:
+    if not gender:
+        return None
+    try:
+        raw = load_scheme(fit.facts.scheme_id)
+    except Exception:
+        return "UNKNOWN"
+    return gender_fit_role(raw, gender)

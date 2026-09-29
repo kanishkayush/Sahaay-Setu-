@@ -23,9 +23,19 @@ export type LanguageCode = z.infer<typeof LanguageCodeSchema>;
 /** Amounts are always integer paise-free rupees to avoid float drift. */
 export const RupeesSchema = z.number().int().nonnegative();
 
+const CoercedLatitude = z.preprocess((value) => {
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return value;
+}, z.number().min(-90).max(90));
+
+const CoercedLongitude = z.preprocess((value) => {
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return value;
+}, z.number().min(-180).max(180));
+
 export const GeoPointSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: CoercedLatitude,
+  longitude: CoercedLongitude,
 });
 export type GeoPoint = z.infer<typeof GeoPointSchema>;
 

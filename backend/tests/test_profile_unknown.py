@@ -61,6 +61,23 @@ def test_profile_store_preserves_null_and_coordinates(tmp_path: Path):
     assert store.get("u1")["business"]["existingBusiness"] is True
 
 
+def test_normalize_profile_location_canonical_and_legacy():
+    from app.profile_normalization import normalize_profile_location
+
+    assert normalize_profile_location({
+        "address": {"coordinates": {"latitude": 26.9124, "longitude": 75.7873}}
+    }) == {"latitude": 26.9124, "longitude": 75.7873}
+    assert normalize_profile_location({
+        "address": {"coordinates": {"latitude": "26.9124", "longitude": "75.7873"}}
+    }) == {"latitude": 26.9124, "longitude": 75.7873}
+    assert normalize_profile_location({"latitude": 26.9, "longitude": 75.8}) == {
+        "latitude": 26.9,
+        "longitude": 75.8,
+    }
+    assert normalize_profile_location({"address": {"pinCode": "302017"}}) is None
+    assert normalize_profile_location({"address": {"coordinates": {"latitude": 0, "longitude": 0}}}) is None
+
+
 def test_explicit_existing_business_phrases_are_not_inverted():
     from app.rag.guided_journey import _try_deterministic_parse
     from app.schemas.chat import ChatProfile

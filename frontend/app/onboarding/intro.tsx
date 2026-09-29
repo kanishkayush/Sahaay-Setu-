@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Icon, Screen, Text } from '@/components/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, useTheme } from '@/theme';
 
 const SLIDES = [
   { icon: 'target', titleKey: 'onboarding.slide1Title', bodyKey: 'onboarding.slide1Body' },
@@ -14,6 +14,7 @@ const SLIDES = [
 ] as const;
 
 export default function IntroScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { ChannelPartner, LanguageCode } from '@/api/contracts';
 import { Button, Card, Chip, Icon, Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 import { formatDistance, isValidCoordinate } from '@/utils/geo';
 import { formatPercent } from '@/utils/format';
 
@@ -46,6 +46,7 @@ export type PartnerCardProps = {
 
 export function PartnerCard({ partner, language, onPress, onSelect, isSelected }: PartnerCardProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const name = partner.localizedNames?.[language] ?? partner.name;
   const status = partner.eligibility.status;
 
@@ -78,7 +79,7 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
         style={({ pressed }) => [styles.info, pressed && styles.pressed]}
       >
         <View style={styles.header}>
-          <View style={styles.typeBadge}>
+          <View style={[styles.typeBadge, { backgroundColor: colors.background }]}>
             <Text variant="label" color={colors.textSecondary}>
               {partner.type === 'NBFC_MFI' ? 'NBFC' : partner.type}
             </Text>
@@ -162,7 +163,7 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
             variant={isSelected ? ('primary' as const) : ('outline' as const)}
             size="sm"
             fullWidth={false}
-            style={isSelected ? StyleSheet.flatten([styles.action, styles.selectedBtn]) : styles.action}
+            style={isSelected ? StyleSheet.flatten([styles.action, { backgroundColor: colors.success }]) : styles.action}
             onPress={() => onSelect(partner)}
           />
         ) : null}
@@ -174,7 +175,7 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
 function Row({
   label,
   value,
-  tone = colors.text,
+  tone,
   last,
 }: {
   label: string;
@@ -182,12 +183,13 @@ function Row({
   tone?: string;
   last?: boolean;
 }) {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.kvRow, !last && styles.kvDivider]}>
+    <View style={[styles.kvRow, !last && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
       <Text variant="caption" color={colors.textMuted}>
         {label}
       </Text>
-      <Text variant="bodyStrong" color={tone}>
+      <Text variant="bodyStrong" color={tone ?? colors.text}>
         {value}
       </Text>
     </View>
@@ -203,7 +205,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderRadius: radius.sm,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.sm,
   },
-  kvDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
   reason: { marginTop: spacing.sm },
   actions: {
     flexDirection: 'row',
@@ -227,5 +227,4 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   action: { flex: 1 },
-  selectedBtn: { backgroundColor: colors.success },
 });

@@ -88,9 +88,7 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
 
         # Step 0.6: If guideMe is requested and we detected a loan intent,
         # start the guided journey — but with intent context
-        if request.guideMe and detection.intent:
-            # Pass the detected intent to the guided journey so it can
-            # provide a conversational RAG-grounded response first
+        if request.guideMe and (detection.intent or detection.gender):
             request._detected_intent = detection.intent
             gj_resp = process_guided_journey(request)
             if gj_resp:
@@ -126,6 +124,9 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
         profile_for_rag = None
         if request.conversation_id:
             profile_for_rag = memory.get_session_profile(request.conversation_id)
+        if detection.gender and profile_for_rag is not None and not profile_for_rag.gender:
+            profile_for_rag.gender = detection.gender
+            memory.update_session_profile(request.conversation_id, profile_for_rag)
         from app.rag.query_context import build_retrieval_query
         retrieval_spec = build_retrieval_query(
             request.query,
@@ -133,6 +134,33 @@ def process_chat_request(request: ChatRequest) -> ChatResponse:
             detection=detection,
             language=request.language,
         )
+
+        if detection.intent == "WOMEN_DISCOVERY" or (
+            detection.gender and not detection.intent
+        ):
+            from app.rag.scheme_advisor import build_brief, ui_cards as adviser_ui_cards, detect_adviser_mode
+            mode, named = detect_adviser_mode(request.query)
+            brief = build_brief(
+                domain=None if detection.intent == "WOMEN_DISCOVERY" else retrieval_spec.domain,
+                amount=retrieval_spec.requested_amount,
+                activity=retrieval_spec.activity,
+                lang=request.language or "en",
+                mode=mode,
+                named_ids=named,
+                income=float(profile_for_rag.annualFamilyIncome) if profile_for_rag and profile_for_rag.annualFamilyIncome is not None else None,
+                query=request.query,
+                sc_status=profile_for_rag.scEligibilityStatus if profile_for_rag else None,
+                gender=detection.gender or (profile_for_rag.gender if profile_for_rag else None),
+            )
+            return ChatResponse(
+                answer=brief.answer,
+                language=request.language or "en",
+                citations=[],
+                ui_cards=adviser_ui_cards(brief, request.language or "en"),
+                grounding_status="GROUNDED",
+                related_scheme_ids=brief.related_ids,
+                response_source=ResponseSource.RAG_LLM,
+            )
 
         # Step 3: Retrieve context (org/domain/assistance filters before ranking)
         retrieval_start = time.time()

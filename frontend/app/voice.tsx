@@ -8,7 +8,7 @@ import { UICardsRenderer } from '@/components/domain/UICardsRenderer';
 import type { AssistantAction } from '@/api/contracts';
 import { useVoiceQuery, type VoicePhase } from '@/hooks/useVoiceQuery';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { colors, radius, spacing, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 /**
@@ -22,15 +22,9 @@ import { schemeDetailPath } from '@/features/adviser/schemeNavigation';
 
 const MIC_SIZE = 128;
 
-const PHASE_TONE: Record<VoicePhase, string> = {
-  idle: colors.primary,
-  listening: colors.danger,
-  thinking: colors.textMuted,
-  speaking: colors.success,
-};
-
 export default function VoiceScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const language = useAppStore((s) => s.language);
   const updateLoanJourney = useAppStore((s) => s.updateLoanJourney);
   const {
@@ -56,6 +50,12 @@ export default function VoiceScreen() {
 
   // Derive input mode from the last backend response
   const inputMode = turn?.expectedField === 'pinCode' ? 'pin' : 'voice';
+  const PHASE_TONE: Record<VoicePhase, string> = {
+    idle: colors.primary,
+    listening: colors.danger,
+    thinking: colors.textMuted,
+    speaking: colors.success,
+  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -168,7 +168,11 @@ export default function VoiceScreen() {
           <Pressable onPress={() => pinInputRef.current?.focus()} style={{ alignItems: 'center' }}>
             <View style={styles.pinDisplayRow}>
               {[0, 1, 2, 3, 4, 5].map((i) => (
-                <View key={i} style={[styles.pinDigitBox, pin[i] ? styles.pinDigitFilled : undefined]}>
+                <View key={i} style={[
+                  styles.pinDigitBox,
+                  { borderColor: colors.border, backgroundColor: colors.inputBackground },
+                  pin[i] ? { borderColor: colors.primary } : undefined,
+                ]}>
                   <Text variant="subheading">{pin[i] ?? '–'}</Text>
                 </View>
               ))}
@@ -333,7 +337,14 @@ export default function VoiceScreen() {
             onChangeText={setTyped}
             placeholder={t('assistant.placeholder')}
             placeholderTextColor={colors.textMuted}
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.inputBackground,
+                color: colors.text,
+              },
+            ]}
             multiline
             accessibilityLabel={t('assistant.placeholder')}
             onSubmitEditing={submitTyped}
@@ -345,7 +356,8 @@ export default function VoiceScreen() {
             onPress={submitTyped}
             style={({ pressed }) => [
               styles.send,
-              (!typed.trim() || phase === 'thinking') && styles.sendDisabled,
+              { backgroundColor: colors.primary },
+              (!typed.trim() || phase === 'thinking') && { backgroundColor: colors.borderStrong },
               pressed && styles.pressed,
             ]}
           >

@@ -15,6 +15,8 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Optional
 
+from app.gender import extract_gender, is_gender_discovery_query
+
 
 @dataclass
 class DetectionResult:
@@ -28,6 +30,7 @@ class DetectionResult:
     purpose: Optional[str]
     assistance_type: Optional[str]
     activity: Optional[str] = None  # specific activity only when the utterance names it
+    gender: Optional[str] = None  # FEMALE | MALE | OTHER when the utterance names it
 
 
 # ── Script detection ───────────────────────────────────────────────
@@ -79,6 +82,7 @@ _ROMAN_HINDI_WORDS = frozenset({
     "dhanda", "kaam", "udyog",
     "laghu", "lagat",
     "aajeevika", "jeevan", "jiwan",
+    "mahila", "mahilaon", "mahilao", "aurat",
 })
 
 def _is_roman_hindi(text: str) -> bool:
@@ -195,6 +199,8 @@ def _extract_intent(text: str) -> Optional[str]:
         return "AGRICULTURE"
     if has_business:
         return "BUSINESS"
+    if is_gender_discovery_query(text, None):
+        return "WOMEN_DISCOVERY"
     if has_loan:
         return "GENERAL_LOAN"
     return None
@@ -210,6 +216,10 @@ _INTENT_TO_RETRIEVAL_QUERY = {
     "AGRICULTURE": "agriculture farming loan scheme",
     "BUSINESS": "business enterprise self-employment loan scheme",
     "GENERAL_LOAN": "loan financial assistance scheme",
+    "WOMEN_DISCOVERY": (
+        "women beneficiaries female mahila women entrepreneurs "
+        "women applicants women-specific scheme"
+    ),
 }
 
 # Specific activities are stored only when the utterance contains evidence.
@@ -294,11 +304,14 @@ def detect_language_and_intent(query: str) -> DetectionResult:
 
     # Extract intent
     intent = _extract_intent(stripped)
+    gender = extract_gender(stripped)
     if intent is None:
         from app.rag.scheme_advisor import COMPARE, EXPLAIN, OPTIONS, detect_adviser_mode
         mode, named = detect_adviser_mode(stripped)
-        if mode in {OPTIONS, EXPLAIN, COMPARE}:
+        if mode in {OPTIONS, EXPLAIN, COMPARE} and not gender:
             intent = "EDUCATION_LOAN" if named == ["nsfdc-education"] else "GENERAL_LOAN"
+        elif gender and is_gender_discovery_query(stripped, intent):
+            intent = "WOMEN_DISCOVERY"
     activity = extract_specific_activity(stripped)
 
     # Build a retrieval-friendly English translation from the utterance +
@@ -331,6 +344,10 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         domain = "BUSINESS"
         purpose = "BUSINESS"
         assistance_type = "LOAN"
+    elif intent == "WOMEN_DISCOVERY":
+        domain = None
+        purpose = "UNKNOWN"
+        assistance_type = "OTHER"
     elif intent == "GENERAL_LOAN":
         domain = "OTHER"
         assistance_type = "LOAN"
@@ -346,6 +363,7 @@ def detect_language_and_intent(query: str) -> DetectionResult:
         purpose=purpose,
         assistance_type=assistance_type,
         activity=activity,
+        gender=gender,
     )
 
 

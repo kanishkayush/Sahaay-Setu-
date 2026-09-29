@@ -1,21 +1,18 @@
 import { StyleSheet, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme, type ColorTokens } from '@/theme';
 
 type Tone = 'info' | 'warning' | 'danger' | 'success';
 
-/**
- * Inline notice. The icon is not decoration — it is what keeps the meaning
- * readable for colour-blind users and in direct sunlight, where our users
- * actually are. Text colours are the AA-passing variants.
- */
-const tones: Record<Tone, { bg: string; fg: string; icon: IconName }> = {
-  info: { bg: colors.infoSurface, fg: colors.infoText, icon: 'info' },
-  warning: { bg: colors.warningSurface, fg: colors.warningText, icon: 'alert' },
-  danger: { bg: colors.dangerSurface, fg: colors.dangerText, icon: 'alert' },
-  success: { bg: colors.successSurface, fg: colors.successText, icon: 'check' },
-};
+function tones(colors: ColorTokens): Record<Tone, { bg: string; fg: string; icon: IconName }> {
+  return {
+    info: { bg: colors.infoSurface, fg: colors.infoText, icon: 'info' },
+    warning: { bg: colors.warningSurface, fg: colors.warningText, icon: 'alert' },
+    danger: { bg: colors.dangerSurface, fg: colors.dangerText, icon: 'alert' },
+    success: { bg: colors.successSurface, fg: colors.successText, icon: 'check' },
+  };
+}
 
 export type BannerProps = {
   tone?: Tone;
@@ -24,7 +21,8 @@ export type BannerProps = {
 };
 
 export function Banner({ tone = 'info', title, message }: BannerProps) {
-  const t = tones[tone];
+  const { colors } = useTheme();
+  const t = tones(colors)[tone];
   return (
     <View accessibilityRole="alert" style={[styles.banner, { backgroundColor: t.bg }]}>
       <Icon name={t.icon} size={20} color={t.fg} strokeWidth={2} />

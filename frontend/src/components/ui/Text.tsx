@@ -1,5 +1,5 @@
 import { Text as RNText, type TextProps as RNTextProps, StyleSheet } from 'react-native';
-import { colors, typography } from '@/theme';
+import { typography, useTheme } from '@/theme';
 
 type Variant = keyof typeof typography;
 
@@ -13,11 +13,11 @@ export type TextProps = RNTextProps & {
  * The only Text component in the app. Using it everywhere guarantees Indic
  * scripts get the roomier line heights defined in the theme.
  */
-export function Text({ variant = 'body', color = colors.text, center, style, ...rest }: TextProps) {
+export function Text({ variant = 'body', color, center, style, ...rest }: TextProps) {
+  const { colors } = useTheme();
   return (
     <RNText
-      style={[typography[variant] as object, { color }, center && styles.center, style]}
-      // Respect the OS font-size setting, but cap it so layouts don't shatter.
+      style={[typography[variant] as object, { color: color ?? colors.text }, center && styles.center, style]}
       maxFontSizeMultiplier={1.6}
       {...rest}
     />

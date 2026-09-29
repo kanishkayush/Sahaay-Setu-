@@ -202,3 +202,25 @@ def test_profile_coordinates_persist_through_put_get():
     for p in body["items"]:
         assert p.get("distanceKm") is not None
         assert p["distanceKm"] <= 50
+
+
+def test_profile_string_coordinates_persist_through_put_get():
+    headers = {"X-User-Id": "string-coord-user"}
+    put = client.put(
+        "/v1/profile",
+        headers=headers,
+        json={
+            "address": {
+                "pinCode": "302017",
+                "city": "Jaipur",
+                "state": "Rajasthan",
+                "coordinates": {"latitude": "26.9124", "longitude": "75.7873"},
+            }
+        },
+    )
+    assert put.status_code == 200
+    got = client.get("/v1/profile", headers=headers)
+    assert got.status_code == 200
+    coords = ((got.json().get("address") or {}).get("coordinates") or {})
+    assert float(coords.get("latitude")) == 26.9124
+    assert float(coords.get("longitude")) == 75.7873

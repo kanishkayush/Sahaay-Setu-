@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { ChannelPartner, PartnerSearchRequest, PartnerType } from '@/api/contracts';
+import type { ChannelPartner, PartnerSearchRequest } from '@/api/contracts';
 import {
   Banner,
   Button,
@@ -18,10 +18,15 @@ import {
 import { PartnerCard, PartnerMap } from '@/components/domain';
 import { usePartnerSearch } from '@/hooks/usePartners';
 import { useAppStore } from '@/store/useAppStore';
-import { getProfile } from '@/api/services/profile.service';
-import { colors, radius, spacing, typography } from '@/theme';
-import { formatProfileLocation, profileSearchPoint } from '@/profile/canonical';
+import { getProfile, updateProfile } from '@/api/services/profile.service';
+import { spacing, useTheme } from '@/theme';
+import {
+  formatProfileLocation,
+  profileHasAddressText,
+  profileSearchPoint,
+} from '@/profile/canonical';
 import { partnerSearchUiState } from '@/features/partners/searchUiState';
+import { buildPartnerSearchRequest, nearbyRequestMustIncludeCoordinates } from '@/features/partners/searchRequest';
 import { profileKeys } from '@/features/profile/queryKeys';
 
 const RADII = [25, 50, 100];
@@ -30,12 +35,20 @@ type SortOption = typeof SORT_OPTIONS[number];
 
 export default function PartnersScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const language = useAppStore((s) => s.language);
   const loanJourney = useAppStore((s) => s.loanJourney);
   const updateLoanJourney = useAppStore((s) => s.updateLoanJourney);
+  const queryClient = useQueryClient();
+  const enrichingRef = useRef(false);
 
-  // Canonical location source: persistent profile from backend
-  const { data: persistentProfile, refetch: refetchProfile } = useQuery({
+  const {
+    data: persistentProfile,
+    refetch: refetchProfile,
+    isPending: profilePending,
+    isError: profileError,
+    isFetched: profileFetched,
+  } = useQuery({
     queryKey: profileKeys.profile,
     queryFn: getProfile,
     refetchOnMount: 'always',
@@ -54,6 +67,7 @@ export default function PartnersScreen() {
   const [onlyAccepting, setOnlyAccepting] = useState(true);
   const [showMap, setShowMap] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
+  const [resolvingSavedLocation, setResolvingSavedLocation] = useState(false);
 
   const handleSelectPartner = (partner: ChannelPartner) => {
     updateLoanJourney({
@@ -65,58 +79,77 @@ export default function PartnersScreen() {
     router.push('/(tabs)/calculator');
   };
 
-  // Strict coordinate validation — only valid, finite GPS coordinates count
   const locPoint = profileSearchPoint(persistentProfile);
   const userLocationAvailable = Boolean(locPoint);
+  const profileStatus = profilePending && !profileFetched
+    ? 'loading'
+    : profileError && !persistentProfile
+      ? 'error'
+      : 'ready';
 
-  // Log location source for diagnostics
-  console.log(`[PARTNERS] location source= persistentProfile.address.coordinates`);
-  console.log(`[PARTNERS] latitude=${locPoint?.latitude ?? 'null'} longitude=${locPoint?.longitude ?? 'null'}`);
-  console.log(`[PARTNERS] userLocationAvailable=${userLocationAvailable}`);
+  useEffect(() => {
+    if (profileStatus !== 'ready' || locPoint || enrichingRef.current) return;
+    if (!profileHasAddressText(persistentProfile)) return;
+    enrichingRef.current = true;
+    setResolvingSavedLocation(true);
+    void updateProfile({ address: persistentProfile?.address ?? {} })
+      .then(async (updated) => {
+        queryClient.setQueryData(profileKeys.profile, updated);
+        await queryClient.invalidateQueries({ queryKey: profileKeys.profile });
+        await queryClient.invalidateQueries({ queryKey: ['partners'] });
+      })
+      .catch((err) => {
+        console.error('[PARTNERS] failed to resolve saved address coordinates', err);
+      })
+      .finally(() => {
+        setResolvingSavedLocation(false);
+      });
+  }, [locPoint, persistentProfile, profileStatus, queryClient]);
 
   const request: PartnerSearchRequest = useMemo(() => {
-    const req: PartnerSearchRequest = {
+    const req = buildPartnerSearchRequest({
+      viewMode,
       location: locPoint,
-      radiusKm: viewMode === 'all' ? 1000 : radiusKm,
-      allPartners: viewMode === 'all',
+      radiusKm,
       onlyAccepting,
       language,
-    };
+    });
+    if (__DEV__ && !nearbyRequestMustIncludeCoordinates(viewMode, locPoint, req)) {
+      throw new Error('Nearby search omitted saved profile coordinates');
+    }
+    console.log(`[PARTNERS] location source= persistentProfile.address.coordinates`);
+    console.log(`[PARTNERS] latitude=${locPoint?.latitude ?? 'null'} longitude=${locPoint?.longitude ?? 'null'}`);
     console.log(`[PARTNERS] mode=${viewMode} request=`, JSON.stringify(req));
     return req;
-  }, [locPoint, userLocationAvailable, radiusKm, viewMode, onlyAccepting, language]);
+  }, [locPoint, radiusKm, viewMode, onlyAccepting, language]);
 
-  const nearbyNeedsLocation = viewMode === 'nearby' && !userLocationAvailable;
-  const { data, isLoading, isError } = usePartnerSearch(request, !nearbyNeedsLocation);
+  const nearbyNeedsLocation = viewMode === 'nearby' && !userLocationAvailable && profileStatus === 'ready' && !resolvingSavedLocation;
+  const { data, isLoading, isError } = usePartnerSearch(request, !nearbyNeedsLocation && profileStatus !== 'loading');
   let partners = data?.items ?? [];
   if (nearbyNeedsLocation) {
     partners = [];
   }
 
-  // Log partner counts
-  console.log(`[PARTNERS] backend returned=${partners.length} isError=${isError} isLoading=${isLoading}`);
-
   const uiState = partnerSearchUiState({
     viewMode,
     locationAvailable: userLocationAvailable,
     onlyAccepting,
-    isLoading,
+    isLoading: isLoading || resolvingSavedLocation,
     isError,
     resultCount: partners.length,
+    profileStatus: resolvingSavedLocation ? 'loading' : profileStatus,
   });
 
   const availableSortOptions = userLocationAvailable
     ? SORT_OPTIONS
     : (['name', 'type'] as const);
 
-  // Fallback sort if location becomes unavailable (via useEffect, not in render body)
   useEffect(() => {
     if (!userLocationAvailable && sortOption === 'distance') {
       setSortOption('name');
     }
   }, [userLocationAvailable, sortOption]);
 
-  // Sorting
   partners = useMemo(() => {
     const sorted = [...partners];
     if (sortOption === 'distance' && userLocationAvailable) {
@@ -130,11 +163,17 @@ export default function PartnersScreen() {
     } else if (sortOption === 'type') {
       sorted.sort((a, b) => a.type.localeCompare(b.type));
     }
-    console.log(`[PARTNERS] frontend rendered=${sorted.length}`);
     return sorted;
   }, [partners, sortOption, userLocationAvailable]);
 
   const locationText = formatProfileLocation(persistentProfile);
+  const locationCaption = userLocationAvailable
+    ? t('partners.usingSavedProfileLocation')
+    : uiState.kind === 'loading-profile'
+      ? t('partners.loadingProfile')
+      : uiState.kind === 'profile-unavailable'
+        ? t('partners.profileUnavailable')
+        : t('partners.setLocationHint');
 
   return (
     <Screen>
@@ -146,13 +185,23 @@ export default function PartnersScreen() {
         <Text variant="bodyStrong">
           {t('partners.yourLocation')}
           <Text variant="body" color={colors.textSecondary}>
-            {locationText || t('partners.notSet')}
+            {uiState.kind === 'loading-profile'
+              ? t('common.loading')
+              : locationText || t('partners.notSet')}
           </Text>
         </Text>
-        {!userLocationAvailable ? (
-          <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
-            {t('partners.setLocationHint')}
-          </Text>
+        <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+          {locationCaption}
+        </Text>
+        {uiState.kind === 'idle-location-required' ? (
+          <View style={{ marginTop: spacing.md }}>
+            <Button
+              title={t('partners.setLocationInProfile')}
+              variant="outline"
+              size="sm"
+              onPress={() => router.push('/(tabs)/profile')}
+            />
+          </View>
         ) : null}
       </Card>
 
@@ -229,7 +278,7 @@ export default function PartnersScreen() {
 
       {isError ? <Banner tone="danger" message={t('errors.generic')} /> : null}
 
-      {uiState.kind === 'loading' ? (
+      {uiState.kind === 'loading' || uiState.kind === 'loading-profile' ? (
         <ActivityIndicator
           color={colors.primary}
           style={styles.loader}
@@ -240,11 +289,22 @@ export default function PartnersScreen() {
       {showMap && uiState.kind === 'results' ? (
         <PartnerMap
           partners={partners}
-          center={locPoint}
+          center={locPoint ?? undefined}
           onSelect={(partner) => router.push(`/partner/${partner.id}`)}
           unavailableMessage={t('partners.listView')}
           userLocationText={locationText}
         />
+      ) : null}
+
+      {!showMap && uiState.kind === 'profile-unavailable' ? (
+        <View style={styles.empty}>
+          <Text variant="subheading" center>
+            {t('partners.profileUnavailable')}
+          </Text>
+          <Text variant="caption" color={colors.textMuted} center>
+            {t('partners.profileUnavailableBody')}
+          </Text>
+        </View>
       ) : null}
 
       {!showMap && uiState.kind === 'idle-location-required' ? (

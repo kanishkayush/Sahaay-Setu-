@@ -15,6 +15,7 @@ class UserProfile(BaseModel):
     course_cost_inr: Optional[float] = Field(default=None, ge=0)
     family_income_inr: Optional[float] = Field(default=None, ge=0)
     education_status: Optional[str] = None
+    gender: Optional[str] = None
     state: Optional[str] = None
     district: Optional[str] = None
     beneficiary_category_verified: Optional[bool] = None
@@ -113,6 +114,30 @@ def check_beneficiary_category(user_profile: UserProfile, scheme: dict, result: 
             reason_code="BENEFICIARY_CATEGORY_MISMATCH"
         ))
         return "not_eligible"
+
+def check_gender_eligibility(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
+    from app.gender import FIT_MATCH, FIT_MISMATCH, FIT_UNKNOWN, gender_fit_role, normalize_gender
+
+    user_gender = normalize_gender(getattr(user_profile, "gender", None))
+    role = gender_fit_role(scheme, user_gender)
+    if role == FIT_MISMATCH:
+        result.checks.append(EvaluationCheck(
+            check="gender",
+            status="not_eligible",
+            user_value=user_gender,
+            reason_code="GENDER_MISMATCH",
+        ))
+        return "not_eligible"
+    if role == FIT_MATCH:
+        result.checks.append(EvaluationCheck(
+            check="gender",
+            status="eligible",
+            user_value=user_gender,
+            reason_code="GENDER_MATCH",
+        ))
+        return "eligible"
+    return "eligible"
+
 
 def check_income_eligibility(user_profile: UserProfile, scheme: dict, result: SchemeEvaluationResult):
     income_param = scheme.get("parameters", {}).get("maximum_family_income_inr", {})
@@ -533,7 +558,8 @@ def evaluate_scheme(scheme: dict, user_profile: UserProfile) -> SchemeEvaluation
         check_purpose_match,
         check_cost_limits,
         check_financing_and_loan_limits,
-        check_education_status
+        check_education_status,
+        check_gender_eligibility,
     ]
     
     overall_status = "eligible"

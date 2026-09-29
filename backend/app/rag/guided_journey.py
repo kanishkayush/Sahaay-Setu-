@@ -15,6 +15,7 @@ from types import SimpleNamespace
 
 from app.rag.language_detect import detect_language_and_intent, extract_specific_activity
 from app.rag.query_context import build_retrieval_query
+from app.gender import extract_gender, is_gender_discovery_query, normalize_gender
 from app.rag.scheme_advisor import (
     BUSINESS_CREDIT_IDS,
     COMPARE,
@@ -44,6 +45,8 @@ _NO_MATCH_MARKERS = (
     "could not confirm",
     "no matching verified",
     "कोई योजना गढ़",
+    "महिलाओं के लिए विशेष रूप से मेल खाने वाली योजना नहीं मिली",
+    "specifically matches women",
 )
 
 def _llm_model() -> str:
@@ -68,6 +71,58 @@ def _unique_retrieved_schemes(retrieved_chunks: list) -> list:
         seen.add(chunk.scheme_id)
         out.append(chunk)
     return out
+
+
+def _sync_conversation_gender(query: str, profile: ChatProfile) -> Optional[str]:
+    """Set session gender from the utterance. Does not write Persistent Profile."""
+    gender = extract_gender(query) or normalize_gender(getattr(profile, "gender", None))
+    if gender:
+        profile.gender = gender
+    return profile.gender
+
+
+def _is_women_discovery(query: str, profile: ChatProfile) -> bool:
+    detection = detect_language_and_intent(query)
+    if detection.intent in {"EDUCATION_LOAN", "AGRICULTURE", "BUSINESS"}:
+        return False
+    if (profile.projectType or "").upper() in {"EDUCATION", "AGRICULTURE", "BUSINESS"}:
+        if not is_gender_discovery_query(query, detection.intent):
+            return False
+        if detection.intent != "WOMEN_DISCOVERY":
+            return False
+    return bool(
+        detection.intent == "WOMEN_DISCOVERY"
+        or (
+            extract_gender(query)
+            and not profile.projectType
+            and detection.intent in {None, "WOMEN_DISCOVERY", "GENERAL_LOAN"}
+        )
+    )
+
+
+def _adviser_domain(request: ChatRequest, profile: ChatProfile, named: list[str], mode: str) -> Optional[str]:
+    if _is_women_discovery(request.query, profile):
+        return None
+    domain = profile.projectType or (
+        "EDUCATION" if named and named[0] in EDUCATION_CREDIT_IDS else None
+    )
+    if named and named[0] in EDUCATION_CREDIT_IDS and mode in {EXPLAIN, COMPARE}:
+        return "EDUCATION"
+    if not profile.projectType and _query_suggests_education(request.query):
+        profile.projectType = "EDUCATION"
+        return "EDUCATION"
+    if (
+        named
+        and any(sid in BUSINESS_CREDIT_IDS for sid in named)
+        and (domain or "").upper() != "EDUCATION"
+        and not _query_suggests_education(request.query)
+    ):
+        return "BUSINESS"
+    if domain:
+        return domain
+    if mode in {EXPLAIN, COMPARE, OPTIONS} and not extract_gender(request.query):
+        return "BUSINESS"
+    return domain
 
 
 def _conversation_amount(profile: ChatProfile) -> Optional[int]:
@@ -139,19 +194,8 @@ def _adviser_chat_response(
 ) -> ChatResponse:
     lang = request.language or "en"
     mode, named = detect_adviser_mode(request.query)
-    domain = profile.projectType or ("EDUCATION" if named and named[0] in EDUCATION_CREDIT_IDS else "BUSINESS")
-    if named and named[0] in EDUCATION_CREDIT_IDS and mode in {EXPLAIN, COMPARE}:
-        domain = "EDUCATION"
-    elif not profile.projectType and _query_suggests_education(request.query):
-        domain = "EDUCATION"
-        profile.projectType = "EDUCATION"
-    elif (
-        named
-        and any(sid in BUSINESS_CREDIT_IDS for sid in named)
-        and (domain or "").upper() != "EDUCATION"
-        and not _query_suggests_education(request.query)
-    ):
-        domain = "BUSINESS"
+    _sync_conversation_gender(request.query, profile)
+    domain = _adviser_domain(request, profile, named, mode)
     live_ids = _retrieve_adviser_scheme_ids(request, profile, lang)
     retrieved_ids = live_ids or list(retrieved_ids or [])
     amount = _conversation_amount(profile)
@@ -166,10 +210,11 @@ def _adviser_chat_response(
         income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
         query=request.query,
         sc_status=profile.scEligibilityStatus,
+        gender=profile.gender,
     )
     if brief.primary:
         profile.recommendedSchemeId = brief.primary.facts.scheme_id
-    elif (domain or "").upper() == "AGRICULTURE":
+    elif (domain or "").upper() == "AGRICULTURE" or _is_women_discovery(request.query, profile):
         profile.recommendedSchemeId = None
     profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
     if (domain or "").upper() == "EDUCATION":
@@ -272,6 +317,11 @@ def _seed_chat_profile_from_persistent(profile: ChatProfile, persistent: dict) -
                 profile.longitude = float(coords["longitude"])
         except (TypeError, ValueError):
             pass
+    if profile.gender is None:
+        eligibility = persistent.get("eligibility") or {}
+        seeded = normalize_gender(eligibility.get("gender") or persistent.get("gender"))
+        if seeded:
+            profile.gender = seeded
     if persistent.get("educationLevel") and not profile.educationStatus:
         profile.educationStatus = persistent.get("educationLevel")
     business = persistent.get("business") or {}
@@ -459,13 +509,21 @@ def process_guided_journey(request: ChatRequest) -> ChatResponse:
             return restarted
         mode, _named = detect_adviser_mode(request.query)
         if mode in {EXPLAIN, COMPARE, OPTIONS}:
+            _sync_conversation_gender(request.query, profile)
             _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
+            if _is_women_discovery(request.query, profile):
+                profile.conversationState = profile.conversationState or ConversationState.COLLECTING_ELIGIBILITY
+                return _adviser_chat_response(
+                    request, profile, session_id,
+                    retrieved_ids=profile.alternativeSchemeIds or ([profile.recommendedSchemeId] if profile.recommendedSchemeId else []),
+                    expected_field="general",
+                )
             if not profile.projectType and (
                 (_named and _named[0] == "nsfdc-education")
                 or _query_suggests_education(request.query)
             ):
                 profile.projectType = "EDUCATION"
-            elif not profile.projectType:
+            elif not profile.projectType and not extract_gender(request.query):
                 profile.projectType = "BUSINESS"
             profile.conversationState = profile.conversationState or ConversationState.COLLECTING_ELIGIBILITY
             return _adviser_chat_response(
@@ -570,7 +628,14 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
 
     # Check if intent was already detected by chat.py
     pre_detected_intent = getattr(request, '_detected_intent', None)
-    
+    _sync_conversation_gender(request.query, profile)
+
+    if _is_women_discovery(request.query, profile) or pre_detected_intent == "WOMEN_DISCOVERY":
+        _extract_profile_data_from_query(request.query, profile, session_id, request.user_id)
+        profile.conversationState = ConversationState.COLLECTING_ELIGIBILITY
+        update_session_profile(session_id, profile)
+        return _adviser_chat_response(request, profile, session_id, expected_field="general")
+
     # Deterministic check
     data = _deterministic_intent_extraction(request.query)
     
@@ -640,6 +705,7 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
             for k, v in parsed.items():
                 if hasattr(profile, k):
                     setattr(profile, k, v)
+            _sync_conversation_gender(request.query, profile)
             update_session_profile(session_id, profile)
             
             # ── KEY FIX: Provide a conversational RAG-grounded first response ──
@@ -679,13 +745,14 @@ def _handle_initial_query(request: ChatRequest, profile: ChatProfile, session_id
                 income=float(profile.annualFamilyIncome) if profile.annualFamilyIncome is not None else None,
                 query=request.query,
                 sc_status=profile.scEligibilityStatus,
+                gender=profile.gender,
             )
             answer_text = brief.answer
             if brief.primary:
                 profile.recommendedSchemeId = brief.primary.facts.scheme_id
             elif is_agriculture:
                 profile.recommendedSchemeId = None
-            elif retrieved_ids:
+            elif retrieved_ids and not _is_women_discovery(request.query, profile):
                 profile.recommendedSchemeId = retrieved_ids[0]
             profile.alternativeSchemeIds = [f.facts.scheme_id for f in brief.alternatives]
             adviser_cards = adviser_ui_cards(brief, lang)
@@ -890,6 +957,7 @@ def _build_conversational_first_response(
         income=float(profile.annualFamilyIncome) if profile and profile.annualFamilyIncome is not None else None,
         query=user_query,
         sc_status=profile.scEligibilityStatus if profile else None,
+        gender=profile.gender if profile else None,
     )
     if brief.answer:
         return brief.answer
@@ -1495,6 +1563,10 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
     elif any(marker in q for marker in sc_positive):
         updates["scEligibilityStatus"] = True
 
+    gender = extract_gender(query)
+    if gender:
+        updates["gender"] = gender
+
     _CITY_HINTS = {
         "jaipur": ("RJ", "Jaipur"),
         "जयपुर": ("RJ", "Jaipur"),
@@ -1511,7 +1583,8 @@ def _try_deterministic_parse(query: str, profile: ChatProfile) -> dict:
 _PROFILE_SAVE_RE = re.compile(
     r"(?:profile|प्रोफाइल|प्रोफ़ाइल).{0,48}(?:save|update|सेव|अपडेट|डाल|कर\s*दो)"
     r"|(?:save|update|सेव).{0,48}(?:profile|प्रोफाइल|प्रोफ़ाइल)"
-    r"|remember.{0,32}(?:my\s+)?(?:income|profile|प्रोफाइल|प्रोफ़ाइल)",
+    r"|remember.{0,32}(?:my\s+)?(?:income|profile|प्रोफाइल|प्रोफ़ाइल)"
+    r"|remember.{0,40}(?:that\s+)?(?:i\s+am\s+a\s+)?(?:woman|female|mahila|महिला)",
     re.IGNORECASE,
 )
 
@@ -1535,9 +1608,11 @@ def _extract_profile_data_from_query(query: str, profile: ChatProfile, session_i
             merged["annualFamilyIncome"] = profile.annualFamilyIncome
         if "scEligibilityStatus" not in merged and profile.scEligibilityStatus is not None:
             merged["scEligibilityStatus"] = profile.scEligibilityStatus
+        if "gender" not in merged and profile.gender is not None:
+            merged["gender"] = profile.gender
         persistable = {
             k: merged[k]
-            for k in ("pinCode", "fullName", "annualFamilyIncome", "scEligibilityStatus")
+            for k in ("pinCode", "fullName", "annualFamilyIncome", "scEligibilityStatus", "gender")
             if k in merged
         }
         if not persistable:
@@ -1556,12 +1631,14 @@ def _extract_profile_data_from_query(query: str, profile: ChatProfile, session_i
             persistent["fullName"] = persistable["fullName"]
             print(f"[PROFILE] Saving Name: {persistable['fullName']}")
 
-        if "annualFamilyIncome" in persistable or "scEligibilityStatus" in persistable:
+        if "annualFamilyIncome" in persistable or "scEligibilityStatus" in persistable or "gender" in persistable:
             eligibility = persistent.get("eligibility") or {}
             if "annualFamilyIncome" in persistable:
                 eligibility["annualFamilyIncome"] = persistable["annualFamilyIncome"]
             if "scEligibilityStatus" in persistable:
                 eligibility["scEligibilityStatus"] = persistable["scEligibilityStatus"]
+            if "gender" in persistable:
+                eligibility["gender"] = persistable["gender"]
             persistent["eligibility"] = eligibility
 
         store.upsert(user_id, persistent)

@@ -7,7 +7,7 @@ import { PartnerMap, PartnerNorms } from '@/components/domain';
 import { usePartner } from '@/hooks/usePartners';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, useTheme } from '@/theme';
 
 const STATUS_TONE = {
   ACCEPTING: 'success',
@@ -23,6 +23,7 @@ const STATUS_ICON = {
 } as const;
 
 export default function PartnerDetailScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const language = useAppStore((s) => s.language);

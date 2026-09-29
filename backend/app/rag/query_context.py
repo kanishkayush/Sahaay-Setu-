@@ -13,6 +13,7 @@ from typing import Optional
 from app.rag.language_detect import DetectionResult, detect_language_and_intent
 from app.rag.ontology import semantic_expansion
 from app.schemas.chat import ChatProfile
+from app.gender import extract_gender, is_gender_discovery_query
 
 
 _AGRI_ACTIVITIES = {
@@ -42,6 +43,7 @@ class RetrievalQuery:
     land_context: Optional[str]
     search_text: str
     utterance: str
+    gender: Optional[str] = None
 
 
 _GENERIC_ACTIVITIES = {
@@ -101,6 +103,10 @@ def _search_text(rq: RetrievalQuery, english_gloss: str | None = None) -> str:
         parts.append(rq.location)
     if rq.land_context:
         parts.append(rq.land_context)
+    if rq.gender == "FEMALE":
+        parts.append("women beneficiaries female mahila")
+    elif rq.gender == "MALE":
+        parts.append("male beneficiaries")
     parts.append(
         semantic_expansion(
             rq.domain,
@@ -120,6 +126,8 @@ def build_retrieval_query(
     detection = detection or detect_language_and_intent(utterance)
     prior_domain = _domain_from_profile(profile)
     domain = detection.domain or prior_domain
+    gender = detection.gender or (profile.gender if profile else None) or extract_gender(utterance)
+    gender_discovery = is_gender_discovery_query(utterance, detection.intent)
     # Short follow-ups (amount, course, yes/no) must not wipe a known domain.
     # Full loan utterances such as "I need an education loan" are also short
     # (≤6 tokens) and MUST be allowed to switch domain.
@@ -131,7 +139,10 @@ def build_retrieval_query(
         and not detection.is_low_info
         and detection.domain != prior_domain
     )
-    if prior_domain and len(words) <= 6 and not strong_new_domain:
+    if gender_discovery and detection.intent == "WOMEN_DISCOVERY":
+        domain = None
+        prior_domain = None
+    elif prior_domain and len(words) <= 6 and not strong_new_domain:
         domain = prior_domain
 
     activity = _specific_activity(profile, detection)
@@ -178,6 +189,8 @@ def build_retrieval_query(
         intent = "EDUCATION_LOAN"
     if not intent and domain == "BUSINESS":
         intent = "BUSINESS"
+    if gender_discovery and not intent:
+        intent = "WOMEN_DISCOVERY"
 
     rq = RetrievalQuery(
         language=language or detection.detected_language or "en",
@@ -193,6 +206,7 @@ def build_retrieval_query(
         land_context=land,
         search_text="",
         utterance=utterance,
+        gender=gender,
     )
     return replace(
         rq,

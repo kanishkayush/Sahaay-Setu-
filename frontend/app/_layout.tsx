@@ -8,15 +8,7 @@ import 'react-native-gesture-handler';
 
 import { initI18n } from '@/i18n';
 import { useAppStore } from '@/store/useAppStore';
-import { colors } from '@/theme';
-
-/**
- * Root layout.
- *
- * Boot order matters: i18n must finish before the first screen paints, or the
- * user briefly sees English before their language loads — a jarring first
- * impression in an app whose whole point is speaking their language.
- */
+import { ThemeProvider, hydrateThemePreference, useTheme } from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,20 +20,52 @@ const queryClient = new QueryClient({
   },
 });
 
+function ThemedStack() {
+  const { colors, mode } = useTheme();
+  return (
+    <>
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.surface },
+          headerTitleStyle: { color: colors.text, fontSize: 18, fontWeight: '600' },
+          headerTintColor: colors.primary,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding/language" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding/intro" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="recommend/index" options={{ title: '' }} />
+        <Stack.Screen name="recommend/results" options={{ title: '' }} />
+        <Stack.Screen name="scheme/[id]" options={{ title: '' }} />
+        <Stack.Screen name="partner/[id]" options={{ title: '' }} />
+        <Stack.Screen name="assistant" options={{ title: '' }} />
+        <Stack.Screen name="voice" options={{ title: '' }} />
+      </Stack>
+    </>
+  );
+}
+
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const [initialMode, setInitialMode] = useState<'light' | 'dark'>('light');
+  const [initialPreference, setInitialPreference] = useState<'light' | 'dark' | null>(null);
   const setLanguageState = useAppStore((s) => s.setLanguage);
 
   useEffect(() => {
     let cancelled = false;
-    initI18n()
-      .then((language) => {
+    Promise.all([
+      initI18n().then((language) => {
+        if (!cancelled) void setLanguageState(language);
+      }).catch(() => {}),
+      hydrateThemePreference(),
+    ])
+      .then(([, theme]) => {
         if (cancelled) return;
-        // Keep the store in step with whatever i18n resolved (stored or device).
-        void setLanguageState(language);
-      })
-      .catch(() => {
-        // Never block the app on an i18n failure — English is already bundled.
+        setInitialMode(theme.mode);
+        setInitialPreference(theme.preference);
       })
       .finally(() => {
         if (!cancelled) setReady(true);
@@ -58,10 +82,10 @@ export default function RootLayout() {
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: colors.background,
+          backgroundColor: initialMode === 'dark' ? '#0B1220' : '#F4FAFF',
         }}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={initialMode === 'dark' ? '#4C8DFF' : '#0757D9'} />
       </View>
     );
   }
@@ -69,26 +93,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.surface },
-            headerTitleStyle: { color: colors.text, fontSize: 18, fontWeight: '600' },
-            headerTintColor: colors.primary,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="onboarding/language" options={{ headerShown: false }} />
-          <Stack.Screen name="onboarding/intro" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="recommend/index" options={{ title: '' }} />
-          <Stack.Screen name="recommend/results" options={{ title: '' }} />
-          <Stack.Screen name="scheme/[id]" options={{ title: '' }} />
-          <Stack.Screen name="partner/[id]" options={{ title: '' }} />
-          <Stack.Screen name="assistant" options={{ title: '' }} />
-          <Stack.Screen name="voice" options={{ title: '' }} />
-        </Stack>
+        <ThemeProvider initialMode={initialMode} initialPreference={initialPreference}>
+          <ThemedStack />
+        </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

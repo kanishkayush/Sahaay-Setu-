@@ -17,7 +17,7 @@ import {
 import { calculateEmi, type MoratoriumTreatment } from '@/features/calculator/emi';
 import { scheduleReminders, type ReminderSchedule } from '@/features/calculator/notifications';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, useTheme } from '@/theme';
 import { formatCurrency, formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
 
 const LOAN_PRESETS = [50_000, 140_000, 500_000, 2_000_000];
@@ -35,6 +35,7 @@ const LOAN_PRESETS = [50_000, 140_000, 500_000, 2_000_000];
  * Before that, the schedule is shown as ESTIMATES only.
  */
 export default function CalculatorScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const params = useLocalSearchParams<{
     principal?: string;

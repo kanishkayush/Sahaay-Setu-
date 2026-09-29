@@ -1,5 +1,5 @@
 import { Circle, Path, Rect, Svg } from 'react-native-svg';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 
 /**
  * Monoline 24x24 icon set, ported from the Open Design system
@@ -160,8 +160,10 @@ export type IconProps = {
 
 const ICON_ALIASES: Record<string, IconName> = { document: 'doc' };
 
-export function Icon({ name, size = 24, color = colors.text, strokeWidth = 1.7 }: IconProps) {
+export function Icon({ name, size = 24, color, strokeWidth = 1.7 }: IconProps) {
+  const { colors } = useTheme();
   const resolved = (ICON_ALIASES[name] ?? name) as IconName;
+  const stroke = color ?? colors.text;
   const els = PATHS[resolved] ?? PATHS.doc ?? [];
   return (
     <Svg
@@ -169,7 +171,7 @@ export function Icon({ name, size = 24, color = colors.text, strokeWidth = 1.7 }
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke={color}
+      stroke={stroke}
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"

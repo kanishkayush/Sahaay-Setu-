@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Text } from './Text';
 import { Chip } from './Chip';
-import { colors, radius, spacing, typography } from '@/theme';
+import { radius, spacing, typography, useTheme } from '@/theme';
 import { formatCompactCurrency, formatCurrency, parseAmountInput } from '@/utils/format';
 
 export type AmountInputProps = {
@@ -10,17 +10,12 @@ export type AmountInputProps = {
   hint?: string;
   value: number;
   onChange: (value: number) => void;
-  /** Tappable shortcuts — vital for users uncomfortable with number keypads. */
   presets?: number[];
   max?: number;
 };
 
-/**
- * Money entry. Shows the amount back in words-ish form ("₹1.4 lakh") under the
- * field, because a long digit string is easy to get wrong by an order of
- * magnitude — and that mistake changes which scheme someone is matched to.
- */
 export function AmountInput({ label, hint, value, onChange, presets = [], max }: AmountInputProps) {
+  const { colors } = useTheme();
   const [text, setText] = useState(value > 0 ? String(value) : '');
 
   const commit = (raw: string) => {
@@ -38,7 +33,15 @@ export function AmountInput({ label, hint, value, onChange, presets = [], max }:
         </Text>
       ) : null}
 
-      <View style={styles.field}>
+      <View
+        style={[
+          styles.field,
+          {
+            backgroundColor: colors.inputBackground,
+            borderColor: colors.borderStrong,
+          },
+        ]}
+      >
         <Text variant="heading" color={colors.textSecondary}>
           ₹
         </Text>
@@ -49,7 +52,7 @@ export function AmountInput({ label, hint, value, onChange, presets = [], max }:
           inputMode="numeric"
           placeholder="0"
           placeholderTextColor={colors.textMuted}
-          style={styles.input}
+          style={[styles.input, { color: colors.text }]}
           accessibilityLabel={label}
           maxFontSizeMultiplier={1.4}
         />
@@ -84,9 +87,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     minHeight: 60,
@@ -94,7 +95,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     ...typography.title,
-    color: colors.text,
     paddingVertical: spacing.md,
   },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },

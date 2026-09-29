@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import { colors, radius, spacing, MIN_TOUCH_SIZE } from '@/theme';
+import { radius, spacing, MIN_TOUCH_SIZE, useTheme } from '@/theme';
 
 export type StepperProps = {
   label: string;
@@ -9,7 +9,6 @@ export type StepperProps = {
   min: number;
   max: number;
   step: number;
-  /** Rendered next to the value, e.g. "months" or "%". */
   suffix?: string;
   format?: (value: number) => string;
   onChange: (value: number) => void;
@@ -17,13 +16,6 @@ export type StepperProps = {
   increaseLabel: string;
 };
 
-/**
- * A −/+ stepper rather than a drag slider.
- *
- * Deliberate: dragging a thin slider handle precisely is hard on a small, cheap
- * touchscreen, and impossible for users with limited dexterity. Two large
- * buttons are unambiguous and fully accessible to screen readers.
- */
 export function Stepper({
   label,
   hint,
@@ -37,6 +29,7 @@ export function Stepper({
   decreaseLabel,
   increaseLabel,
 }: StepperProps) {
+  const { colors } = useTheme();
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const display = format ? format(value) : String(value);
   const progress = max === min ? 0 : (value - min) / (max - min);
@@ -58,6 +51,10 @@ export function Stepper({
           onPress={() => onChange(clamp(value - step))}
           style={({ pressed }) => [
             styles.stepBtn,
+            {
+              backgroundColor: colors.primarySurface,
+              borderColor: colors.primary,
+            },
             value <= min && styles.stepDisabled,
             pressed && styles.pressed,
           ]}
@@ -67,7 +64,12 @@ export function Stepper({
           </Text>
         </Pressable>
 
-        <View style={styles.valueBox}>
+        <View
+          style={[
+            styles.valueBox,
+            { backgroundColor: colors.inputBackground, borderColor: colors.border },
+          ]}
+        >
           <Text variant="title" color={colors.primary} center>
             {display}
             {suffix ? (
@@ -86,6 +88,10 @@ export function Stepper({
           onPress={() => onChange(clamp(value + step))}
           style={({ pressed }) => [
             styles.stepBtn,
+            {
+              backgroundColor: colors.primarySurface,
+              borderColor: colors.primary,
+            },
             value >= max && styles.stepDisabled,
             pressed && styles.pressed,
           ]}
@@ -96,8 +102,8 @@ export function Stepper({
         </Pressable>
       </View>
 
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
+      <View style={[styles.track, { backgroundColor: colors.surfaceAlt }]}>
+        <View style={[styles.fill, { width: `${Math.round(progress * 100)}%`, backgroundColor: colors.primary }]} />
       </View>
     </View>
   );
@@ -112,9 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySurface,
     borderWidth: 1.5,
-    borderColor: colors.primary,
   },
   stepDisabled: { opacity: 0.35 },
   pressed: { opacity: 0.8 },
@@ -122,12 +126,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: MIN_TOUCH_SIZE + 8,
     justifyContent: 'center',
-    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
   },
-  track: { height: 6, borderRadius: 3, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
+  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  fill: { height: 6, borderRadius: 3 },
 });

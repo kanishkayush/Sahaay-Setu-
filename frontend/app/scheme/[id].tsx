@@ -7,10 +7,11 @@ import { Banner, Button, Card, Chip, Icon, Screen, Text } from '@/components/ui'
 import { useScheme } from '@/hooks/useSchemes';
 import { pickLocalized } from '@/i18n/localized';
 import { useAppStore } from '@/store/useAppStore';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, useTheme } from '@/theme';
 import { formatCompactCurrency, formatCurrency, formatMonths, formatPercent } from '@/utils/format';
 
 export default function SchemeDetailScreen() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const language = useAppStore((s) => s.language);

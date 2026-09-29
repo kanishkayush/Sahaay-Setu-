@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, Alert, type KeyboardTypeOptions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { colors, radius, spacing } from '../../../src/theme';
+import { radius, spacing, useTheme } from '../../../src/theme';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -34,12 +34,20 @@ function ProfileTextField({
   keyboardType?: KeyboardTypeOptions;
   testID?: string;
 }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.inputContainer}>
       <Text variant="caption" color={colors.textMuted} style={styles.inputLabel}>{label}</Text>
       <TextInput
         testID={testID}
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            borderColor: colors.borderStrong,
+            color: colors.text,
+            backgroundColor: colors.inputBackground,
+          },
+        ]}
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
@@ -201,13 +209,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    color: colors.text,
     fontSize: 16,
-    backgroundColor: colors.surface,
   },
   triRow: {
     flexDirection: 'row',

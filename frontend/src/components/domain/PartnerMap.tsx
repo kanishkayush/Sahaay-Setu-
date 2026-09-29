@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { ChannelPartner, GeoPoint } from '@/api/contracts';
 import { Icon, Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { isValidCoordinate } from '@/utils/geo';
 
@@ -28,14 +28,6 @@ try {
   maps = null;
 }
 
-/** Marker pins take the theme's semantic fills, not hand-picked hex. */
-const MARKER_COLOR = {
-  ACCEPTING: colors.success,
-  LIMITED: colors.warning,
-  NOT_ACCEPTING: colors.danger,
-  UNKNOWN: colors.textMuted,
-} as const;
-
 export type PartnerMapProps = {
   partners: ChannelPartner[];
   center?: GeoPoint;
@@ -46,6 +38,13 @@ export type PartnerMapProps = {
 
 export function PartnerMap({ partners, center, onSelect, unavailableMessage, userLocationText }: PartnerMapProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const markerColor = {
+    ACCEPTING: colors.success,
+    LIMITED: colors.warning,
+    NOT_ACCEPTING: colors.danger,
+    UNKNOWN: colors.textMuted,
+  } as const;
   
   const validPartners = partners.filter((p) => isValidCoordinate(p.location));
   const origin = center ?? validPartners[0]?.location ?? { latitude: 20.5937, longitude: 78.9629 };
@@ -70,7 +69,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
 
   if (!maps) {
     return (
-      <View style={styles.placeholder}>
+      <View style={[styles.placeholder, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
         <Icon name="pin" size={28} color={colors.textMuted} />
         <Text variant="caption" color={colors.textMuted} center>
           {unavailableMessage}
@@ -88,7 +87,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
   
   if (validPartners.length === 0) {
     return (
-      <View style={styles.placeholder}>
+      <View style={[styles.placeholder, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
         <Icon name="pin" size={28} color={colors.textMuted} />
         <Text variant="caption" color={colors.textMuted} center>
           {t('partners.noVerifiedMapPartners')}
@@ -99,7 +98,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
 
   try {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { borderColor: colors.border }]}>
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
@@ -123,7 +122,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
               coordinate={partner.location!}
               title={partner.name}
               description={partner.address}
-              pinColor={MARKER_COLOR[partner.eligibility.status]}
+              pinColor={markerColor[partner.eligibility.status]}
               onCalloutPress={() => onSelect?.(partner)}
             />
           ))}
@@ -133,7 +132,7 @@ export function PartnerMap({ partners, center, onSelect, unavailableMessage, use
   } catch (err) {
     console.error(`[PARTNER MAP] map initialization error:`, err);
     return (
-      <View style={styles.placeholder}>
+      <View style={[styles.placeholder, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
         <Icon name="pin" size={28} color={colors.textMuted} />
         <Text variant="caption" color={colors.textMuted} center>
           {t('partners.mapRenderingFailed')}
@@ -149,7 +148,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
   },
   placeholder: {
     height: 200,
@@ -157,10 +155,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     padding: spacing.lg,
-    backgroundColor: colors.surfaceAlt,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     borderStyle: 'dashed',
   },
 });
