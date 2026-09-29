@@ -147,6 +147,11 @@ def get_scheme_by_id(scheme_id: str) -> dict[str, Any]:
 
 from app.rag.partner_repo import get_partner_repo, partner_coordinates
 from app.profile_normalization import relevance_from_project_type
+from app.partner_filters import (
+    apply_partner_filters,
+    available_states,
+    sort_partners,
+)
 
 class PartnerSearchRequest(BaseModel):
     location: Optional[dict] = None  # Expected: {"latitude": ..., "longitude": ...}
@@ -158,6 +163,10 @@ class PartnerSearchRequest(BaseModel):
     onlyAccepting: bool = True
     language: Optional[str] = None
     allPartners: bool = False
+    stateCode: Optional[str] = None
+    npaBucket: Optional[str] = None
+    fundUtilizationBucket: Optional[str] = None
+    sortBy: Optional[str] = None
 
 
 def _map_partner(p: dict[str, Any], dist: float | None = None) -> dict[str, Any]:
@@ -239,6 +248,8 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
             "fallbackUsed": False,
             "radiusKm": req.radiusKm,
             "searchedFrom": None,
+            "availableStates": [],
+            "filteredCount": 0,
         }
     else:
         nearby_partners = repo.search_nearby(
@@ -253,19 +264,37 @@ def search_partners(req: PartnerSearchRequest) -> dict[str, Any]:
             if p.get("distance_km") is not None and partner_coordinates(p) is not None
         ]
 
-    if req.onlyAccepting:
-        filtered = []
-        for p in nearby_partners:
-            status = (p.get("eligibility") or {}).get("status", "UNKNOWN")
-            if status == "ACCEPTING":
-                filtered.append(p)
-        nearby_partners = filtered
+    states = available_states(nearby_partners)
+    npa_bucket = (req.npaBucket or "all").lower()
+    util_bucket = (req.fundUtilizationBucket or "all").lower()
+    if npa_bucket not in {"all", "unknown", "acceptable", "concern"}:
+        npa_bucket = "all"
+    if util_bucket not in {"all", "unknown", "low", "medium", "high"}:
+        util_bucket = "all"
+
+    nearby_partners = apply_partner_filters(
+        nearby_partners,
+        state_code=req.stateCode,
+        npa=npa_bucket,  # type: ignore[arg-type]
+        utilization=util_bucket,  # type: ignore[arg-type]
+        only_accepting=req.onlyAccepting,
+    )
+
+    sort_key = (req.sortBy or "").lower()
+    if sort_key in {"distance", "name", "type", "state"}:
+        nearby_partners = sort_partners(
+            nearby_partners,
+            sort_key,  # type: ignore[arg-type]
+            location_available=has_user_coords,
+        )
 
     return {
         "items": [_map_partner(p) for p in nearby_partners],
         "fallbackUsed": fallback_used,
         "radiusKm": req.radiusKm,
         "searchedFrom": {"latitude": lat, "longitude": lon} if has_user_coords else None,
+        "availableStates": states,
+        "filteredCount": len(nearby_partners),
     }
 
 

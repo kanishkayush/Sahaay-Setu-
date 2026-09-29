@@ -6,6 +6,7 @@ import { Button, Card, Chip, Icon, Text } from '@/components/ui';
 import { radius, spacing, useTheme } from '@/theme';
 import { formatDistance, isValidCoordinate } from '@/utils/geo';
 import { formatPercent } from '@/utils/format';
+import { utilizationBucket } from '@/features/partners/partnerFilters';
 
 /**
  * Channel Partner card, per the Open Design iOS sheet: a type badge, the
@@ -55,6 +56,15 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
   };
 
   const hasLocation = isValidCoordinate(partner.location);
+  const util = utilizationBucket(partner);
+  const utilizationLabel =
+    util === 'unknown'
+      ? t('partners.utilizationUnknown')
+      : util === 'low'
+        ? t('partners.utilizationLow')
+        : util === 'medium'
+          ? t('partners.utilizationMedium')
+          : t('partners.utilizationHigh');
 
   const directions = () => {
     const loc = partner.location;
@@ -120,14 +130,20 @@ export function PartnerCard({ partner, language, onPress, onSelect, isSelected }
         {/* The figures behind the status — why this partner can or cannot help. */}
         <View style={styles.kv}>
           <Row label={t('partners.typeLabel')} value={t(`partners.type.${partner.type}`)} />
-          {partner.eligibility.npaPct !== undefined ? (
+          {partner.eligibility.npaPct != null ? (
             <Row
               label={t('partners.npa')}
               value={formatPercent(partner.eligibility.npaPct)}
               tone={partner.eligibility.npaPct >= 10 ? colors.dangerText : colors.text}
-              last
             />
-          ) : null}
+          ) : (
+            <Row label={t('partners.npa')} value={t('partners.npaUnknown')} />
+          )}
+          <Row
+            label={t('partners.utilizationFilter')}
+            value={utilizationLabel}
+            last
+          />
         </View>
 
         <Text variant="caption" color={colors.textMuted} style={styles.reason}>

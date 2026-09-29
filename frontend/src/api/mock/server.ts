@@ -16,6 +16,8 @@ import type { AuthResponse } from '@/api/services/auth.service';
 import { answerFromKnowledgeBase } from './fixtures/assistant';
 import { recommendSchemes } from '@/features/recommender/ruleEngine';
 import { haversineKm, isValidCoordinate } from '@/utils/geo';
+import { applyPartnerFilters, availableStates, sortPartners } from '@/features/partners/partnerFilters';
+import { normalizeIndianMobile } from '@/auth/indianMobile';
 
 /**
  * In-memory mock backend.
@@ -84,15 +86,26 @@ export async function mockSearchPartners(
     items = [];
   }
 
-  items.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
-
-  const accepting = items.filter((p) => p.eligibility.status === 'ACCEPTING');
+  const states = availableStates(items);
+  items = applyPartnerFilters(items, {
+    stateCode: req.stateCode,
+    npa: req.npaBucket ?? 'all',
+    utilization: req.fundUtilizationBucket ?? 'all',
+    onlyAccepting: req.onlyAccepting,
+  });
+  items = sortPartners(
+    items,
+    req.sortBy ?? (origin && !req.allPartners ? 'distance' : 'name'),
+    Boolean(origin),
+  );
 
   return {
-    items: req.onlyAccepting ? accepting : items,
+    items,
     fallbackUsed: false,
     searchedFrom: origin,
     radiusKm: req.radiusKm,
+    availableStates: states,
+    filteredCount: items.length,
   };
 }
 
@@ -116,9 +129,13 @@ export async function mockAssistantQuery(
 
 export async function mockLogin(mobile: string): Promise<AuthResponse> {
   await delay();
+  const phone = normalizeIndianMobile(mobile);
+  if (!phone) {
+    throw new Error('Invalid Indian mobile number. Enter a 10-digit number starting with 6, 7, 8 or 9.');
+  }
   return {
-    token: 'mock-jwt-token-12345',
-    userId: 'mock-user-id',
-    phoneNumber: mobile,
+    token: `mock-token-${phone}`,
+    userId: `mock-user-${phone}`,
+    phoneNumber: `+91${phone}`,
   };
 }

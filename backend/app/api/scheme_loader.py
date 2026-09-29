@@ -54,7 +54,18 @@ def _load_all() -> dict[str, dict[str, Any]]:
                 api_block["recommendationCategory"] = [rc] if rc else []
             elif rc is None:
                 api_block["recommendationCategory"] = []
-                
+
+            source_url = data.get("source_url")
+            if isinstance(source_url, str) and source_url.startswith("http"):
+                if not api_block.get("sourceUrl"):
+                    api_block["sourceUrl"] = source_url
+                if not api_block.get("officialUrl"):
+                    api_block["officialUrl"] = source_url
+            if not api_block.get("implementingOrganization") and data.get("organization"):
+                api_block["implementingOrganization"] = data["organization"]
+            if not api_block.get("sourceName") and data.get("organization"):
+                api_block["sourceName"] = data["organization"]
+
             # Use api.id as the canonical key — this is what the frontend uses
             # for /schemes/{id} navigation. The top-level scheme_id is used by
             # the eligibility engine only.

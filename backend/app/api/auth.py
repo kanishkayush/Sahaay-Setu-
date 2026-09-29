@@ -1,77 +1,73 @@
 """
 app/api/auth.py
 ───────────────
-Authentication router for secure OTP-based login.
+Authentication router for hackathon login (no OTP).
+Any valid Indian 10-digit mobile becomes a stable user identity.
 """
 
-from typing import Any, Optional
+from typing import Optional
+import os
 import uuid
-from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, status, Header, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
+
+from app.auth_mobile import normalize_indian_mobile
 
 auth_router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
 # In-memory store for OTPs (In production, use Redis or DB)
-# phone -> {"otp": "123456", "expires_at": datetime, "attempts": 0}
 _otp_store = {}
 
 # In-memory store for valid sessions (In production, use Redis or stateless JWT)
-# token -> {"user_id": str, "phone": str, "expires_at": datetime}
 _sessions = {}
 
 
 # HACKATHON_AUTH_MODE=true
 # Temporary Hackathon Mode: Bypassing Fast2SMS/Twilio OTP verification.
-# Only 10-digit mobile number validation is required.
+# Any valid Indian mobile (^[6-9][0-9]{9}$) is accepted after normalisation.
+
 
 class AuthResponse(BaseModel):
     token: str
     userId: str
     phoneNumber: str
 
+
 class LoginRequest(BaseModel):
     mobile: str
 
+
 @auth_router.post("/login", response_model=AuthResponse)
 def login(request: LoginRequest) -> AuthResponse:
-    phone = request.mobile.strip()
-    
-    # Normalize Indian phone number
-    if phone.startswith("+91"):
-        phone = phone[3:]
-    elif phone.startswith("0") and len(phone) == 11:
-        phone = phone[1:]
-        
-    phone = "".join([c for c in phone if c.isdigit()])
-    
-    if len(phone) != 10:
-        raise HTTPException(status_code=400, detail="Invalid Indian phone number. Must be 10 digits.")
+    phone = normalize_indian_mobile(request.mobile)
+    if not phone:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Indian mobile number. Enter a 10-digit number starting with 6, 7, 8 or 9.",
+        )
 
     normalized_phone = f"+91{phone}"
 
     # Create session directly without OTP. To avoid fragile in-memory sessions across restarts,
     # we use the deterministic user_id as the token itself.
-    user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, normalized_phone)) # Deterministic ID based on phone
-    token = user_id 
-    
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, normalized_phone))
+    token = user_id
+
     return AuthResponse(token=token, userId=user_id, phoneNumber=normalized_phone)
 
 
 def verify_token(token: str) -> str:
     """Validate token and return user_id. Raises 401 if invalid."""
-    # Since we use user_id as the token for stateless auth, just verify it's a valid UUID
     try:
         val = uuid.UUID(token, version=5)
         return str(val)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token format")
 
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Header, Depends
-import os
 
 security = HTTPBearer(auto_error=False)
+
 
 def get_current_user_id(
     x_user_id: Optional[str] = Header(None),
@@ -83,13 +79,13 @@ def get_current_user_id(
     In production, strictly requires a valid Bearer token.
     """
     env = os.getenv("ENVIRONMENT", "development")
-    
+
     if auth and auth.credentials:
         return verify_token(auth.credentials)
-        
+
     if env != "production" and x_user_id and x_user_id.strip():
         return x_user_id.strip()
-        
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Authentication required. Provide a valid Bearer token.",

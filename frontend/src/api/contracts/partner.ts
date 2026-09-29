@@ -37,6 +37,8 @@ export const PartnerEligibilitySchema = z.object({
   npaPct: z.number().min(0).max(100).optional(),
   overdueAmount: z.number().nonnegative().optional(),
   unutilisedLimit: z.number().nonnegative().optional(),
+  utilizedAmount: z.number().nonnegative().optional(),
+  allocatedAmount: z.number().nonnegative().optional(),
   lastAssessedAt: z.string().optional(),
 });
 export type PartnerEligibility = z.infer<typeof PartnerEligibilitySchema>;
@@ -83,6 +85,11 @@ export const PartnerSearchRequestSchema = z.object({
   language: LanguageCodeSchema.optional(),
   /** When true, returns the complete partner dataset regardless of geography. */
   allPartners: z.boolean().default(false),
+  /** ISO 3166-2:IN suffix, or a canonical state name. Empty / ALL = no state filter. */
+  stateCode: z.string().optional(),
+  npaBucket: z.enum(['all', 'unknown', 'acceptable', 'concern']).optional(),
+  fundUtilizationBucket: z.enum(['all', 'unknown', 'low', 'medium', 'high']).optional(),
+  sortBy: z.enum(['distance', 'name', 'type', 'state']).optional(),
 });
 export type PartnerSearchRequest = z.infer<typeof PartnerSearchRequestSchema>;
 
@@ -92,5 +99,15 @@ export const PartnerSearchResponseSchema = z.object({
   fallbackUsed: z.boolean().default(false),
   searchedFrom: GeoPointSchema.nullish(),
   radiusKm: z.number(),
+  availableStates: z
+    .array(
+      z.object({
+        code: z.string(),
+        name: z.string(),
+        count: z.number().int().nonnegative(),
+      }),
+    )
+    .optional(),
+  filteredCount: z.number().int().nonnegative().optional(),
 });
 export type PartnerSearchResponse = z.infer<typeof PartnerSearchResponseSchema>;

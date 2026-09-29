@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,12 @@ import { pickLocalized } from '@/i18n/localized';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, spacing, useTheme } from '@/theme';
 import { formatCompactCurrency, formatCurrency, formatMonths, formatPercent } from '@/utils/format';
+import {
+  isSchemeFinancialConfirmed,
+  officialSourceUrl,
+  schemeVerificationBadge,
+  schemeVerificationKind,
+} from '@/features/schemes/verification';
 
 export default function SchemeDetailScreen() {
   const { colors } = useTheme();
@@ -45,39 +51,84 @@ export default function SchemeDetailScreen() {
   const isSaved = savedIds.includes(scheme.id);
   const monthWord = t('common.months');
   const yearWord = t('common.years');
+  const verificationKind = schemeVerificationKind(scheme);
+  const financialsConfirmed = isSchemeFinancialConfirmed(scheme);
+  const notVerified = t('common.notVerified');
+  const sourceUrl = officialSourceUrl(scheme);
+  const verificationMessage =
+    verificationKind === 'VERIFIED'
+      ? null
+      : verificationKind === 'PARTIAL'
+        ? t('schemes.partialNotice')
+        : t('schemes.unverifiedNotice');
 
   return (
     <Screen>
       <View style={styles.header}>
         <Text variant="title">{name}</Text>
+        {scheme.implementingOrganization || scheme.sourceName ? (
+          <Text variant="body" color={colors.textSecondary}>
+            {scheme.implementingOrganization || scheme.sourceName}
+          </Text>
+        ) : null}
         <Text variant="body" color={colors.textSecondary}>
           {pickLocalized(scheme.shortDescription, language)}
         </Text>
         <View style={styles.chips}>
           <Chip label={t(`category.${scheme.officialCategory}`)} tone="primary" />
           <Chip label={scheme.code} tone="neutral" />
-          {!scheme.verified ? (
-            <Chip label={t('common.unverified')} tone="warning" icon="alert" />
-          ) : null}
+          {verificationKind === 'VERIFIED' ? (
+            <Chip label={t('schemes.verifiedBadge')} tone="success" icon="check" />
+          ) : (
+            <Chip
+              label={schemeVerificationBadge(verificationKind)}
+              tone="warning"
+              icon="info"
+            />
+          )}
         </View>
       </View>
 
-      {!scheme.verified ? <Banner tone="warning" message={t('schemes.unverifiedNotice')} /> : null}
+      {verificationMessage ? (
+        <Card>
+          <Text variant="label">{t('schemes.verificationStatus')}</Text>
+          <Text variant="body" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
+            {verificationMessage}
+          </Text>
+          {sourceUrl ? (
+            <View style={{ marginTop: spacing.md }}>
+              <Text variant="label">{t('schemes.source')}</Text>
+              <Button
+                title={t('schemes.viewOfficialSource')}
+                variant="outline"
+                size="sm"
+                onPress={() => Linking.openURL(sourceUrl).catch(() => {})}
+              />
+            </View>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card>
         <Row
           label={t('schemes.loanRange')}
           value={
-            scheme.minLoanAmount == null && scheme.maxLoanAmount == null 
-              ? t('common.notSpecified', 'Not specified')
-              : `${scheme.minLoanAmount != null ? formatCompactCurrency(scheme.minLoanAmount) : '0'} – ${scheme.maxLoanAmount != null ? formatCompactCurrency(scheme.maxLoanAmount) : t('common.noLimit', 'No limit')}`
+            financialsConfirmed
+              ? scheme.minLoanAmount == null && scheme.maxLoanAmount == null
+                ? t('common.notSpecified', 'Not specified')
+                : `${scheme.minLoanAmount != null ? formatCompactCurrency(scheme.minLoanAmount) : '0'} – ${scheme.maxLoanAmount != null ? formatCompactCurrency(scheme.maxLoanAmount) : t('common.noLimit', 'No limit')}`
+              : notVerified
           }
         />
         <Row
           label={t('schemes.interestRate')}
-          value={`${formatPercent((scheme.interestRateMinPct ?? 0))} – ${formatPercent((scheme.interestRateMaxPct ?? 0))}`}
+          value={
+            financialsConfirmed && (scheme.interestRateMinPct != null || scheme.interestRateMaxPct != null)
+              ? `${formatPercent(scheme.interestRateMinPct ?? scheme.interestRateMaxPct)} – ${formatPercent(scheme.interestRateMaxPct ?? scheme.interestRateMinPct)}`
+              : notVerified
+          }
         />
-        {scheme.womenInterestRatePct !== undefined ? (
+        {financialsConfirmed && scheme.womenInterestRatePct !== undefined ? (
           <Row
             label={t('schemes.womenRate', { rate: scheme.womenInterestRatePct })}
             value={formatPercent(scheme.womenInterestRatePct)}
@@ -86,22 +137,40 @@ export default function SchemeDetailScreen() {
         ) : null}
         <Row
           label={t('schemes.tenure')}
-          value={formatMonths((scheme.maxTenureMonths ?? 0), monthWord, yearWord)}
+          value={
+            financialsConfirmed && scheme.maxTenureMonths
+              ? formatMonths(scheme.maxTenureMonths, monthWord, yearWord)
+              : notVerified
+          }
         />
         <Row
           label={t('schemes.moratorium')}
-          value={t('schemes.moratoriumRange', {
-            min: scheme.moratoriumMinMonths,
-            max: scheme.moratoriumMaxMonths,
-          })}
+          value={
+            financialsConfirmed && (scheme.moratoriumMinMonths != null || scheme.moratoriumMaxMonths != null)
+              ? t('schemes.moratoriumRange', {
+                  min: scheme.moratoriumMinMonths,
+                  max: scheme.moratoriumMaxMonths,
+                })
+              : notVerified
+          }
         />
         <Row
           label={t('schemes.incomeCeiling')}
-          value={formatCurrency(scheme.maxAnnualFamilyIncome)}
+          value={
+            financialsConfirmed && scheme.maxAnnualFamilyIncome != null
+              ? formatCurrency(scheme.maxAnnualFamilyIncome)
+              : notVerified
+          }
         />
         <Row
-          label={t('schemes.fundingShare', { pct: Math.round((scheme.fundingSharePct ?? 0) * 100) })}
-          value={`${Math.round((scheme.fundingSharePct ?? 0) * 100)}%`}
+          label={t('schemes.fundingShare', {
+            pct: financialsConfirmed ? Math.round((scheme.fundingSharePct ?? 0) * 100) : '—',
+          })}
+          value={
+            financialsConfirmed && scheme.fundingSharePct != null
+              ? `${Math.round(scheme.fundingSharePct * 100)}%`
+              : notVerified
+          }
           last
         />
       </Card>
@@ -163,21 +232,23 @@ export default function SchemeDetailScreen() {
       </View>
 
       <View style={styles.actions}>
-        <Button
-          title={t('schemes.openCalculator')}
-          onPress={() =>
-            router.push({
-              pathname: '/(tabs)/calculator',
-              params: {
-                principal: scheme.maxLoanAmount,
-                rate: (scheme.interestRateMinPct ?? 0),
-                tenure: (scheme.maxTenureMonths ?? 0),
-                moratorium: scheme.moratoriumMinMonths,
-                scheme: name,
-              },
-            })
-          }
-        />
+        {financialsConfirmed ? (
+          <Button
+            title={t('schemes.openCalculator')}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/calculator',
+                params: {
+                  principal: scheme.maxLoanAmount,
+                  rate: scheme.interestRateMinPct,
+                  tenure: scheme.maxTenureMonths,
+                  moratorium: scheme.moratoriumMinMonths,
+                  scheme: name,
+                },
+              })
+            }
+          />
+        ) : null}
         <Button
           title={t('schemes.findPartners')}
           variant="outline"

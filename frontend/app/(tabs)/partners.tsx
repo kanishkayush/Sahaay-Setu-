@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Chip,
+  FilterSelect,
   Screen,
   SegmentedControl,
   SettingToggle,
@@ -27,10 +28,11 @@ import {
 } from '@/profile/canonical';
 import { partnerSearchUiState } from '@/features/partners/searchUiState';
 import { buildPartnerSearchRequest, nearbyRequestMustIncludeCoordinates } from '@/features/partners/searchRequest';
+import { sortPartners, type NpaBucket, type PartnerSortKey, type UtilBucket } from '@/features/partners/partnerFilters';
 import { profileKeys } from '@/features/profile/queryKeys';
 
 const RADII = [25, 50, 100];
-const SORT_OPTIONS = ['distance', 'name', 'type'] as const;
+const SORT_OPTIONS = ['distance', 'name', 'type', 'state'] as const;
 type SortOption = typeof SORT_OPTIONS[number];
 
 export default function PartnersScreen() {
@@ -68,6 +70,9 @@ export default function PartnersScreen() {
   const [showMap, setShowMap] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
   const [resolvingSavedLocation, setResolvingSavedLocation] = useState(false);
+  const [stateCode, setStateCode] = useState('ALL');
+  const [npaBucket, setNpaBucket] = useState<NpaBucket>('all');
+  const [fundUtilizationBucket, setFundUtilizationBucket] = useState<UtilBucket>('all');
 
   const handleSelectPartner = (partner: ChannelPartner) => {
     updateLoanJourney({
@@ -106,6 +111,8 @@ export default function PartnersScreen() {
       });
   }, [locPoint, persistentProfile, profileStatus, queryClient]);
 
+  const extraFiltersActive = stateCode !== 'ALL' || npaBucket !== 'all' || fundUtilizationBucket !== 'all';
+
   const request: PartnerSearchRequest = useMemo(() => {
     const req = buildPartnerSearchRequest({
       viewMode,
@@ -113,6 +120,10 @@ export default function PartnersScreen() {
       radiusKm,
       onlyAccepting,
       language,
+      stateCode,
+      npaBucket,
+      fundUtilizationBucket,
+      sortBy: sortOption as PartnerSortKey,
     });
     if (__DEV__ && !nearbyRequestMustIncludeCoordinates(viewMode, locPoint, req)) {
       throw new Error('Nearby search omitted saved profile coordinates');
@@ -121,14 +132,15 @@ export default function PartnersScreen() {
     console.log(`[PARTNERS] latitude=${locPoint?.latitude ?? 'null'} longitude=${locPoint?.longitude ?? 'null'}`);
     console.log(`[PARTNERS] mode=${viewMode} request=`, JSON.stringify(req));
     return req;
-  }, [locPoint, radiusKm, viewMode, onlyAccepting, language]);
+  }, [locPoint, radiusKm, viewMode, onlyAccepting, language, stateCode, npaBucket, fundUtilizationBucket, sortOption]);
 
   const nearbyNeedsLocation = viewMode === 'nearby' && !userLocationAvailable && profileStatus === 'ready' && !resolvingSavedLocation;
   const { data, isLoading, isError } = usePartnerSearch(request, !nearbyNeedsLocation && profileStatus !== 'loading');
-  let partners = data?.items ?? [];
-  if (nearbyNeedsLocation) {
-    partners = [];
-  }
+
+  const partners = useMemo(() => {
+    const items = nearbyNeedsLocation ? [] : (data?.items ?? []);
+    return sortPartners(items, sortOption, userLocationAvailable);
+  }, [data?.items, nearbyNeedsLocation, sortOption, userLocationAvailable]);
 
   const uiState = partnerSearchUiState({
     viewMode,
@@ -138,11 +150,12 @@ export default function PartnersScreen() {
     isError,
     resultCount: partners.length,
     profileStatus: resolvingSavedLocation ? 'loading' : profileStatus,
+    extraFiltersActive,
   });
 
   const availableSortOptions = userLocationAvailable
     ? SORT_OPTIONS
-    : (['name', 'type'] as const);
+    : (['name', 'type', 'state'] as const);
 
   useEffect(() => {
     if (!userLocationAvailable && sortOption === 'distance') {
@@ -150,21 +163,17 @@ export default function PartnersScreen() {
     }
   }, [userLocationAvailable, sortOption]);
 
-  partners = useMemo(() => {
-    const sorted = [...partners];
-    if (sortOption === 'distance' && userLocationAvailable) {
-      sorted.sort((a, b) => {
-        const dA = a.distanceKm ?? 999999;
-        const dB = b.distanceKm ?? 999999;
-        return dA - dB;
-      });
-    } else if (sortOption === 'name') {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortOption === 'type') {
-      sorted.sort((a, b) => a.type.localeCompare(b.type));
+  const stateOptions = useMemo(() => {
+    const fromApi = data?.availableStates ?? [];
+    const options = [
+      { value: 'ALL', label: t('partners.allStates') },
+      ...fromApi.map((state) => ({ value: state.code, label: state.name })),
+    ];
+    if (stateCode !== 'ALL' && !options.some((option) => option.value === stateCode)) {
+      options.push({ value: stateCode, label: stateCode });
     }
-    return sorted;
-  }, [partners, sortOption, userLocationAvailable]);
+    return options;
+  }, [data?.availableStates, stateCode, t]);
 
   const locationText = formatProfileLocation(persistentProfile);
   const locationCaption = userLocationAvailable
@@ -246,7 +255,9 @@ export default function PartnersScreen() {
                   ? t('partners.distanceLabel')
                   : opt === 'name'
                     ? t('partners.nameLabel')
-                    : t('partners.typeLabel')
+                    : opt === 'type'
+                      ? t('partners.typeLabel')
+                      : t('partners.stateLabel')
               }
               tone="primary"
               selected={sortOption === opt}
@@ -255,6 +266,43 @@ export default function PartnersScreen() {
           ))}
         </View>
       </View>
+
+      <FilterSelect
+        label={t('partners.stateLabel')}
+        value={stateCode}
+        options={stateOptions}
+        onChange={setStateCode}
+        searchable={stateOptions.length > 8}
+        searchPlaceholder={t('partners.searchStates')}
+        testID="partners-state-filter"
+      />
+
+      <FilterSelect
+        label={t('partners.npaFilter')}
+        value={npaBucket}
+        options={[
+          { value: 'all', label: t('partners.npaAll') },
+          { value: 'acceptable', label: t('partners.npaAcceptable') },
+          { value: 'concern', label: t('partners.npaConcern') },
+          { value: 'unknown', label: t('partners.npaUnknown') },
+        ]}
+        onChange={(value) => setNpaBucket(value as NpaBucket)}
+        testID="partners-npa-filter"
+      />
+
+      <FilterSelect
+        label={t('partners.utilizationFilter')}
+        value={fundUtilizationBucket}
+        options={[
+          { value: 'all', label: t('partners.utilizationAll') },
+          { value: 'low', label: t('partners.utilizationLow') },
+          { value: 'medium', label: t('partners.utilizationMedium') },
+          { value: 'high', label: t('partners.utilizationHigh') },
+          { value: 'unknown', label: t('partners.utilizationUnknown') },
+        ]}
+        onChange={(value) => setFundUtilizationBucket(value as UtilBucket)}
+        testID="partners-utilization-filter"
+      />
 
       <SegmentedControl
         segments={[
@@ -321,14 +369,18 @@ export default function PartnersScreen() {
       {!showMap && uiState.kind === 'empty' ? (
         <View style={styles.empty}>
           <Text variant="subheading" center>
-            {uiState.reason === 'accepting'
+            {uiState.reason === 'filters'
+              ? t('partners.emptyFilters')
+              : uiState.reason === 'accepting'
               ? t('partners.emptyAccepting')
               : uiState.reason === 'all'
                 ? t('partners.emptyAll')
                 : t('partners.empty')}
           </Text>
           <Text variant="caption" color={colors.textMuted} center>
-            {uiState.reason === 'accepting'
+            {uiState.reason === 'filters'
+              ? t('partners.emptyFiltersBody')
+              : uiState.reason === 'accepting'
               ? t('partners.emptyAcceptingBody')
               : uiState.reason === 'all'
                 ? t('partners.emptyAllBody')

@@ -5,11 +5,11 @@ import { AssistantUICard, SchemeFitReason } from '@/api/contracts';
 import { spacing, useTheme, type ColorTokens } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
+import { ragVerificationBadge } from '@/features/schemes/verification';
 
 function verificationTone(status?: string): 'success' | 'warning' | 'danger' | 'neutral' {
   if (status === 'VERIFIED') return 'success';
-  if (status === 'PARTIAL') return 'warning';
-  if (status === 'UNVERIFIED') return 'danger';
+  if (status === 'PARTIAL' || status === 'UNVERIFIED') return 'warning';
   return 'neutral';
 }
 
@@ -37,12 +37,7 @@ export function UICardsRenderer({
   const REASON_MARK = reasonMarks(colors);
   if (!cards || cards.length === 0) return null;
 
-  const verifyLabel = (status?: string) => {
-    if (status === 'VERIFIED') return t('uiCards.verified');
-    if (status === 'PARTIAL') return t('uiCards.partial');
-    if (status === 'UNVERIFIED') return t('uiCards.verify');
-    return status || '';
-  };
+  const verifyLabel = (status?: string) => ragVerificationBadge(status);
   const fitLabel = (value: string) => {
     if (value === 'WITHIN_RANGE' || value === 'WITHIN_LIMIT') return t('uiCards.fitFits');
     if (value === 'OUTSIDE_RANGE') return t('uiCards.fitOutside');
@@ -111,6 +106,7 @@ export function UICardsRenderer({
             <Chip
               label={verifyLabel(card.verificationStatus)}
               tone={verificationTone(card.verificationStatus)}
+              icon={card.verificationStatus === 'VERIFIED' ? 'check' : 'info'}
             />
           ) : null}
           {card.genderFit === 'MATCH' ? (

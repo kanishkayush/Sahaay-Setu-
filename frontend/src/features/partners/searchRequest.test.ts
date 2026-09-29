@@ -54,4 +54,23 @@ describe('buildPartnerSearchRequest', () => {
     expect(request.allPartners).toBe(true);
     expect(request.location).toBeUndefined();
   });
+
+  it('forwards state, NPA, utilisation, and sort filters', () => {
+    const request = buildPartnerSearchRequest({
+      viewMode: 'all',
+      location: null,
+      radiusKm: 25,
+      onlyAccepting: true,
+      language: 'en',
+      stateCode: 'RJ',
+      npaBucket: 'unknown',
+      fundUtilizationBucket: 'low',
+      sortBy: 'state',
+    });
+    expect(request.stateCode).toBe('RJ');
+    expect(request.npaBucket).toBe('unknown');
+    expect(request.fundUtilizationBucket).toBe('low');
+    expect(request.sortBy).toBe('state');
+    expect(request.onlyAccepting).toBe(true);
+  });
 });

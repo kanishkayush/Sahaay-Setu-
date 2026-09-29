@@ -4,7 +4,7 @@ export type PartnerSearchUiState =
   | { kind: 'idle-location-required' }
   | { kind: 'loading' }
   | { kind: 'error' }
-  | { kind: 'empty'; reason: 'accepting' | 'nearby' | 'all' }
+  | { kind: 'empty'; reason: 'accepting' | 'nearby' | 'all' | 'filters' }
   | { kind: 'results'; count: number };
 
 export function partnerSearchUiState(input: {
@@ -15,6 +15,7 @@ export function partnerSearchUiState(input: {
   isError: boolean;
   resultCount: number;
   profileStatus?: 'loading' | 'error' | 'ready';
+  extraFiltersActive?: boolean;
 }): PartnerSearchUiState {
   const profileStatus = input.profileStatus ?? 'ready';
   if (profileStatus === 'loading') return { kind: 'loading-profile' };
@@ -26,6 +27,7 @@ export function partnerSearchUiState(input: {
   if (input.isLoading) return { kind: 'loading' };
   if (input.isError) return { kind: 'error' };
   if (input.resultCount === 0) {
+    if (input.extraFiltersActive) return { kind: 'empty', reason: 'filters' };
     if (input.onlyAccepting) return { kind: 'empty', reason: 'accepting' };
     return { kind: 'empty', reason: input.viewMode === 'all' ? 'all' : 'nearby' };
   }

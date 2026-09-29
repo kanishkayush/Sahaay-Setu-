@@ -55,4 +55,20 @@ describe('PartnerSearchResponseSchema', () => {
       expect(parsed.data.fallbackUsed).toBe(false);
     }
   });
+
+  it('accepts availableStates and filteredCount from the search response', () => {
+    const parsed = PartnerSearchResponseSchema.safeParse({
+      items: [],
+      fallbackUsed: false,
+      searchedFrom: null,
+      radiusKm: 1000,
+      availableStates: [{ code: 'RJ', name: 'Rajasthan', count: 1 }],
+      filteredCount: 0,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.filteredCount).toBe(0);
+      expect(parsed.data.availableStates?.[0]?.code).toBe('RJ');
+    }
+  });
 });

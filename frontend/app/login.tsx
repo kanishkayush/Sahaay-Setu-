@@ -4,9 +4,10 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Text, Card } from '@/components/ui';
 import { useTranslation } from 'react-i18next';
-import { radius, spacing, typography, useTheme } from '@/theme';
+import { spacing, typography, useTheme } from '@/theme';
 import { useAppStore } from '@/store/useAppStore';
 import { login } from '@/api/services/auth.service';
+import { normalizeIndianMobile } from '@/auth/indianMobile';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -16,11 +17,14 @@ export default function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const normalized = normalizeIndianMobile(inputValue);
+  const canSubmit = Boolean(normalized);
+
   const handleLogin = async () => {
     setErrorMsg('');
-    const phone = inputValue.replace(/\D/g, '');
-    if (phone.length !== 10) {
-      setErrorMsg('Enter a valid 10-digit mobile number');
+    const phone = normalizeIndianMobile(inputValue);
+    if (!phone) {
+      setErrorMsg('Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9');
       return;
     }
     
@@ -86,7 +90,7 @@ export default function LoginScreen() {
             <Button 
               title={isSubmitting ? t('login.pleaseWait', 'Please wait...') : t('common.login', 'LOGIN')}
               onPress={handleLogin}
-              disabled={inputValue.trim().length < 10 || isSubmitting}
+              disabled={!canSubmit || isSubmitting}
               style={styles.button}
             />
           </>

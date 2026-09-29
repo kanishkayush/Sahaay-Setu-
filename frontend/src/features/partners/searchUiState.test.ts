@@ -100,4 +100,17 @@ describe('partnerSearchUiState', () => {
     });
     expect(state).toEqual({ kind: 'results', count: 3 });
   });
+
+  it('uses a filters empty reason without falling back to the full catalogue', () => {
+    const state = partnerSearchUiState({
+      viewMode: 'all',
+      locationAvailable: false,
+      onlyAccepting: true,
+      isLoading: false,
+      isError: false,
+      resultCount: 0,
+      extraFiltersActive: true,
+    });
+    expect(state).toEqual({ kind: 'empty', reason: 'filters' });
+  });
 });

@@ -6,6 +6,7 @@ import { Card, Chip, StatRow, Text } from '@/components/ui';
 import { pickLocalized } from '@/i18n/localized';
 import { spacing, useTheme } from '@/theme';
 import { formatMonths, formatPercent, formatStatCurrency } from '@/utils/format';
+import { isSchemeFinancialConfirmed, schemeVerificationBadge, schemeVerificationKind } from '@/features/schemes/verification';
 
 /**
  * Scheme card, per the Open Design system: a numbered rank badge, the code as an
@@ -32,6 +33,8 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
   const amount = recommendation?.eligibleLoanAmount ?? scheme.maxLoanAmount;
   const monthWord = t('common.months');
   const yearWord = t('common.years');
+  const verificationKind = schemeVerificationKind(scheme);
+  const financialsConfirmed = isSchemeFinancialConfirmed(scheme);
 
   return (
     <Card variant="glass" onPress={onPress} accessibilityLabel={name}>
@@ -72,20 +75,33 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
       ) : null}
 
       <StatRow
-        stats={[
-          amount !== undefined && amount !== null ? {
-            value: formatStatCurrency(amount),
-            label: 'Maximum assistance',
-          } : null,
-          rate !== undefined && rate !== null ? { 
-            value: formatPercent(rate), 
-            label: 'Interest rate' 
-          } : null,
-          scheme.maxTenureMonths !== undefined && scheme.maxTenureMonths !== null ? {
-            value: formatMonths(scheme.maxTenureMonths, monthWord, yearWord),
-            label: 'Repayment period',
-          } : null,
-        ].filter(Boolean) as { value: string; label: string }[]}
+        stats={
+          financialsConfirmed
+            ? ([
+                amount !== undefined && amount !== null
+                  ? {
+                      value: formatStatCurrency(amount),
+                      label: 'Maximum assistance',
+                    }
+                  : null,
+                rate !== undefined && rate !== null
+                  ? {
+                      value: formatPercent(rate),
+                      label: 'Interest rate',
+                    }
+                  : null,
+                scheme.maxTenureMonths !== undefined && scheme.maxTenureMonths !== null
+                  ? {
+                      value: formatMonths(scheme.maxTenureMonths, monthWord, yearWord),
+                      label: 'Repayment period',
+                    }
+                  : null,
+              ].filter(Boolean) as { value: string; label: string }[])
+            : [
+                { value: t('common.notVerified'), label: t('schemes.loanRange') },
+                { value: t('common.notVerified'), label: t('schemes.interestRate') },
+              ]
+        }
       />
 
       <View style={styles.chips}>
@@ -100,9 +116,11 @@ export function SchemeCard({ scheme, language, onPress, recommendation, rank }: 
             icon="check"
           />
         ) : null}
-        {!scheme.verified ? (
-          <Chip label={t('common.unverified')} tone="warning" icon="alert" />
-        ) : null}
+        {verificationKind === 'VERIFIED' ? (
+          <Chip label={schemeVerificationBadge(verificationKind)} tone="success" icon="check" />
+        ) : (
+          <Chip label={schemeVerificationBadge(verificationKind)} tone="warning" icon="info" />
+        )}
       </View>
     </Card>
   );
